@@ -1,0 +1,297 @@
+"use client"
+
+import Image from "next/image"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+import { Search, User, Settings, Bell, Wallet, Menu, Copy, Zap, TrendingUp, X } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { useState, useRef, useEffect } from "react"
+
+const navItems = [
+  { name: "Discover", href: "/" },
+  { name: "Tracker", href: "/tracker" },
+  { name: "AI Trading", href: "/ai-trading" },
+  { name: "Portfolio", href: "/portfolio" },
+  { name: "Deployer", href: "/deployer" },
+  { name: "Meta", href: "/meta" },
+  { name: "Rewards", href: "/rewards" },
+]
+
+export function Navigation() {
+  const pathname = usePathname()
+  const [isWalletDropdownOpen, setIsWalletDropdownOpen] = useState(false)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+  const mobileMenuRef = useRef<HTMLDivElement>(null)
+
+  const connectedWallets: any[] = []
+  const isWalletConnected = false
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsWalletDropdownOpen(false)
+      }
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target as Node)) {
+        setIsMobileMenuOpen(false)
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [])
+
+  // Close mobile menu when route changes
+  useEffect(() => {
+    setIsMobileMenuOpen(false)
+    setIsSearchOpen(false)
+  }, [pathname])
+
+  return (
+    <nav className="bg-black border-b border-gray-800 px-4 py-3 relative">
+      <div className="flex items-center justify-between max-w-7xl mx-auto">
+        {/* Logo */}
+        <div className="flex items-center flex-shrink-0">
+          <Link href="/" className="flex items-center gap-2 sm:gap-3">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center">
+              <Image
+                src="/caesarbot-logo.png"
+                alt="CaesarBot"
+                width={44}
+                height={44}
+                className="rounded-full w-8 h-8 sm:w-11 sm:h-11"
+                priority
+                onError={(e) => {
+                  // Fallback if image fails to load
+                  const target = e.target as HTMLImageElement
+                  target.style.display = "none"
+                  target.parentElement!.innerHTML = '<span class="text-white font-bold text-base sm:text-lg">C</span>'
+                }}
+              />
+            </div>
+            <span className="text-[#d7a834] font-bold text-lg sm:text-xl lg:text-2xl tracking-wide hidden sm:block">
+              CAESARBOT
+            </span>
+          </Link>
+        </div>
+
+        {/* Desktop Navigation Tabs */}
+        <div className="hidden lg:flex items-center gap-1 mx-6 flex-1 justify-center">
+          {navItems.map((item) => (
+            <Link
+              key={item.name}
+              href={item.href}
+              className={`px-3 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${
+                pathname === item.href ? "bg-gray-800 text-white" : "text-gray-400 hover:text-white hover:bg-gray-900"
+              }`}
+            >
+              {item.name}
+            </Link>
+          ))}
+        </div>
+
+        {/* Desktop Search and User Actions */}
+        <div className="hidden lg:flex items-center gap-3 flex-shrink-0">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Input
+              placeholder="Search tokens..."
+              className="pl-10 w-40 bg-gray-900 border-gray-700 text-white placeholder-gray-400 text-sm"
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={() => setIsWalletDropdownOpen(!isWalletDropdownOpen)}
+                className="bg-gray-900 border border-gray-700 rounded-md px-3 py-2 flex items-center gap-2 text-sm hover:bg-gray-800 transition-colors"
+              >
+                <Wallet className="w-4 h-4 text-gray-400" />
+                <span className="text-white font-medium">0</span>
+                <div className="w-px h-4 bg-gray-600"></div>
+                <span className="text-white font-medium">0.00</span>
+                <Menu className="w-4 h-4 text-gray-400" />
+              </button>
+
+              {isWalletDropdownOpen && (
+                <div className="absolute right-0 top-full mt-2 w-80 bg-gray-900 border border-gray-700 rounded-lg shadow-xl z-50">
+                  <div className="p-4">
+                    {!isWalletConnected ? (
+                      <div className="text-center py-8">
+                        <Wallet className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+                        <h3 className="text-white font-medium mb-2">No Wallet Connected</h3>
+                        <p className="text-gray-400 text-sm mb-4">Connect your wallet to get started</p>
+                        <Button className="bg-[#d7a834] text-black hover:bg-[#c49730] w-full">Connect Wallet</Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {connectedWallets.map((wallet, index) => (
+                          <div key={index} className="flex items-center justify-between p-3 bg-gray-800 rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <div className="w-6 h-6 bg-gray-700 rounded border border-gray-600"></div>
+                              <div>
+                                <div className="text-gray-400 text-xs">{wallet.name}</div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-white text-sm font-medium">{wallet.address}</span>
+                                  <Copy className="w-3 h-3 text-gray-400 cursor-pointer hover:text-white" />
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="text-white text-sm font-medium">{wallet.balance}</span>
+                              <Menu className="w-3 h-3 text-gray-400" />
+                            </div>
+                          </div>
+                        ))}
+
+                        {/* Quick Buy Settings */}
+                        <div className="border-t border-gray-700 pt-3">
+                          <div className="text-gray-400 text-xs mb-2">Clipboard quick buy settings</div>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <Zap className="w-4 h-4 text-gray-400" />
+                              <div className="flex items-center gap-1">
+                                <span className="text-white text-sm font-medium">0</span>
+                                <Menu className="w-3 h-3 text-gray-400" />
+                              </div>
+                              <span className="text-white text-sm font-medium">P1</span>
+                              <TrendingUp className="w-4 h-4 text-gray-400" />
+                            </div>
+                            <Link href="/portfolio">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="bg-gray-800 border-gray-600 text-white hover:bg-gray-700 text-xs px-3 py-1"
+                                onClick={() => setIsWalletDropdownOpen(false)}
+                              >
+                                Manage
+                              </Button>
+                            </Link>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white w-9 h-9">
+              <Bell className="w-4 h-4" />
+            </Button>
+            <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white w-9 h-9">
+              <Settings className="w-4 h-4" />
+            </Button>
+            <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white w-9 h-9">
+              <User className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Mobile Actions */}
+        <div className="flex lg:hidden items-center gap-2">
+          {/* Mobile Search Toggle */}
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="text-gray-400 hover:text-white w-9 h-9"
+            onClick={() => setIsSearchOpen(!isSearchOpen)}
+          >
+            <Search className="w-4 h-4" />
+          </Button>
+
+          {/* Mobile Menu Toggle */}
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="text-gray-400 hover:text-white w-9 h-9"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
+            {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </Button>
+        </div>
+      </div>
+
+      {/* Mobile Search Bar */}
+      {isSearchOpen && (
+        <div className="lg:hidden mt-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Input
+              placeholder="Search tokens..."
+              className="pl-10 w-full bg-gray-900 border-gray-700 text-white placeholder-gray-400 text-sm"
+              autoFocus
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Mobile Menu */}
+      {isMobileMenuOpen && (
+        <div 
+          ref={mobileMenuRef}
+          className="lg:hidden absolute top-full left-0 right-0 bg-gray-900 border-b border-gray-800 shadow-xl z-50"
+        >
+          <div className="px-4 py-3">
+            {/* Mobile Navigation */}
+            <div className="space-y-1 mb-4">
+              {navItems.map((item) => (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`block px-3 py-3 text-sm font-medium rounded-md transition-colors ${
+                    pathname === item.href 
+                      ? "bg-gray-800 text-white" 
+                      : "text-gray-400 hover:text-white hover:bg-gray-800"
+                  }`}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  {item.name}
+                </Link>
+              ))}
+            </div>
+
+            {/* Mobile Wallet Section */}
+            <div className="border-t border-gray-700 pt-4">
+              <div className="flex items-center justify-between p-3 bg-gray-800 rounded-lg mb-3">
+                <div className="flex items-center gap-3">
+                  <Wallet className="w-5 h-5 text-gray-400" />
+                  <div>
+                    <div className="text-white font-medium text-sm">Wallet</div>
+                    <div className="text-gray-400 text-xs">Not connected</div>
+                  </div>
+                </div>
+                <Button 
+                  size="sm" 
+                  className="bg-[#d7a834] text-black hover:bg-[#c49730] text-xs px-3 py-1"
+                >
+                  Connect
+                </Button>
+              </div>
+
+              {/* Mobile Action Buttons */}
+              <div className="grid grid-cols-3 gap-2">
+                <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white text-xs">
+                  <Bell className="w-4 h-4 mr-1" />
+                  Alerts
+                </Button>
+                <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white text-xs">
+                  <Settings className="w-4 h-4 mr-1" />
+                  Settings
+                </Button>
+                <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white text-xs">
+                  <User className="w-4 h-4 mr-1" />
+                  Profile
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </nav>
+  )
+}
