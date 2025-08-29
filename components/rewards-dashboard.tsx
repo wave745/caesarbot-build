@@ -19,6 +19,75 @@ import {
   BarChart3
 } from "lucide-react"
 
+const SolanaLogoIcon = () => (
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    {/* Top parallelogram - teal gradient */}
+    <path
+      d="M4 6L20 6L18 10L2 10L4 6Z"
+      fill="url(#tealGradient)"
+      rx="1"
+    />
+    {/* Middle parallelogram - purple gradient */}
+    <path
+      d="M2 10L18 10L16 14L0 14L2 10Z"
+      fill="url(#purpleGradient)"
+      rx="1"
+    />
+    {/* Bottom parallelogram - magenta gradient */}
+    <path
+      d="M0 14L16 14L14 18L-2 18L0 14Z"
+      fill="url(#magentaGradient)"
+      rx="1"
+    />
+    
+    {/* Gradients */}
+    <defs>
+      <linearGradient id="tealGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stopColor="#14F195" />
+        <stop offset="100%" stopColor="#0ECB81" />
+      </linearGradient>
+      <linearGradient id="purpleGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stopColor="#9945FF" />
+        <stop offset="100%" stopColor="#7C3AED" />
+      </linearGradient>
+      <linearGradient id="magentaGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stopColor="#FF6B9D" />
+        <stop offset="100%" stopColor="#E91E63" />
+      </linearGradient>
+    </defs>
+  </svg>
+);
+
+const CaesarBotLogoIcon = () => (
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    {/* Three upward-pointing triangles forming a larger triangle */}
+    <path
+      d="M12 4L8 12L16 12L12 4Z"
+      fill="black"
+    />
+    <path
+      d="M10 8L6 16L14 16L10 8Z"
+      fill="black"
+    />
+    <path
+      d="M8 12L4 20L12 20L8 12Z"
+      fill="black"
+    />
+  </svg>
+);
+
 export function RewardsDashboard() {
   const [activeTab, setActiveTab] = useState("rewards")
 
@@ -61,11 +130,11 @@ export function RewardsDashboard() {
                 <div className="w-12 h-12 bg-orange-500 rounded-lg mx-auto mb-3 flex items-center justify-center">
                   <div className="w-3 h-3 bg-orange-600 rounded-full"></div>
                 </div>
-                <h3 className="text-white font-semibold mb-1 text-sm">shzrdev</h3>
-                <div className="text-orange-500 font-bold text-base mb-1">2X Rewards</div>
-                <div className="text-gray-400 text-xs mb-1">30% Referral Rate</div>
-                <div className="text-gray-400 text-xs mb-3">1 referral</div>
-                <Badge className="bg-yellow-600 text-black mb-3 text-xs">Bronze</Badge>
+                <h3 className="text-white font-semibold mb-1 text-sm">Username</h3>
+                <div className="text-orange-500 font-bold text-base mb-1">1X Rewards</div>
+                <div className="text-gray-400 text-xs mb-1">0% Referral Rate</div>
+                <div className="text-gray-400 text-xs mb-3">0 referrals</div>
+                <Badge className="bg-gray-600 text-white mb-3 text-xs">No Tier</Badge>
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" className="flex-1 text-xs">Edit Referral</Button>
                   <Button variant="outline" size="sm" className="flex-1 text-xs">Share Referral</Button>
@@ -129,23 +198,24 @@ export function RewardsDashboard() {
               <CardContent className="p-6">
                 <h3 className="text-white font-semibold mb-4">Claim</h3>
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between p-3 bg-gradient-to-r from-purple-500 to-green-500 rounded-lg">
-                    <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-between p-3 bg-transparent rounded-full border-2 border-purple-500 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-green-500 rounded-full opacity-20"></div>
+                    <div className="flex items-center gap-3 relative z-10">
                       <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
-                        <Coins className="w-4 h-4 text-black" />
+                        <img src="/sol-logo.png" alt="Solana" className="w-4 h-4" />
                       </div>
-                      <span className="text-white font-semibold">+0.022</span>
+                      <span className="text-white font-semibold">+0</span>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between p-3 bg-white rounded-lg">
+                  <div className="flex items-center justify-between p-3 bg-transparent rounded-full border border-gray-400">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                        <ChevronUp className="w-4 h-4 text-black" />
+                      <div className="w-8 h-8 bg-transparent rounded-full flex items-center justify-center">
+                        <img src="/caesarbot-logo.png" alt="CaesarBot" className="w-4 h-4" />
                       </div>
-                      <span className="text-black font-semibold">+0</span>
+                      <span className="text-white font-semibold">+0</span>
                     </div>
                   </div>
-                  <Button className="w-full bg-[#d7a834] hover:bg-[#c49730] text-black">Claim SOL</Button>
+                  <Button className="w-full bg-blue-900 hover:bg-blue-800 text-white border border-blue-400">Nothing to Claim</Button>
                 </div>
               </CardContent>
             </Card>
@@ -163,8 +233,8 @@ export function RewardsDashboard() {
                       <div className="w-8 h-8 border-2 border-[#d7a834] rounded-full border-t-transparent"></div>
                     </div>
                     <div className="flex-1">
-                      <div className="text-white text-sm">+1,500</div>
-                      <div className="text-gray-400 text-xs">Refer 3 more people</div>
+                      <div className="text-white text-sm">+0</div>
+                      <div className="text-gray-400 text-xs">No active quests</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -172,8 +242,8 @@ export function RewardsDashboard() {
                       <div className="w-8 h-8 border-2 border-[#d7a834] rounded-full border-t-transparent" style={{ transform: 'rotate(45deg)' }}></div>
                     </div>
                     <div className="flex-1">
-                      <div className="text-white text-sm">+10,000</div>
-                      <div className="text-gray-400 text-xs">Trade 50 more SOL in Volume</div>
+                      <div className="text-white text-sm">+0</div>
+                      <div className="text-gray-400 text-xs">No active quests</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -181,8 +251,8 @@ export function RewardsDashboard() {
                       <div className="w-8 h-8 border-2 border-[#d7a834] rounded-full border-t-transparent" style={{ transform: 'rotate(90deg)' }}></div>
                     </div>
                     <div className="flex-1">
-                      <div className="text-white text-sm">+500</div>
-                      <div className="text-gray-400 text-xs">Make 25 more transactions</div>
+                      <div className="text-white text-sm">+0</div>
+                      <div className="text-gray-400 text-xs">No active quests</div>
                     </div>
                   </div>
                 </div>
@@ -202,7 +272,7 @@ export function RewardsDashboard() {
               <div className="flex items-center gap-2 mb-4">
                 <Users className="w-4 h-4 text-gray-400" />
                 <span className="text-gray-400">Referrals</span>
-                <Badge variant="secondary">1</Badge>
+                <Badge variant="secondary">0</Badge>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
@@ -241,13 +311,13 @@ export function RewardsDashboard() {
                 <div className="w-12 h-12 bg-orange-500 rounded-lg mx-auto mb-3 flex items-center justify-center">
                   <div className="w-3 h-3 bg-orange-600 rounded-full"></div>
                 </div>
-                <h3 className="text-white font-semibold mb-1 text-sm">shzrdev</h3>
+                <h3 className="text-white font-semibold mb-1 text-sm">Username</h3>
                 <div className="flex items-center justify-center gap-1 text-white font-semibold mb-1 text-sm">
-                  <ChevronUp className="w-3 h-3 text-green-500" />
-                  11,727
+                  <ChevronUp className="w-3 h-3 text-gray-500" />
+                  0
                 </div>
                 <div className="flex items-center justify-center gap-2 text-gray-400 text-xs">
-                  <span>Rank 125132</span>
+                  <span>No Rank</span>
                   <Share2 className="w-3 h-3" />
                 </div>
               </CardContent>
@@ -273,24 +343,24 @@ export function RewardsDashboard() {
                   </thead>
                   <tbody>
                     <tr className="border-b border-gray-800">
-                      <td className="py-4 text-white font-semibold">1</td>
-                      <td className="py-4 text-gray-400">434...5d5</td>
+                      <td className="py-4 text-white font-semibold">-</td>
+                      <td className="py-4 text-gray-400">No data</td>
                       <td className="py-4">
                         <div className="flex items-center gap-1 text-white font-semibold">
-                          <ChevronUp className="w-4 h-4 text-green-500" />
-                          795,994,570
+                          <ChevronUp className="w-4 h-4 text-gray-500" />
+                          0
                         </div>
                       </td>
                       <td className="py-4">
                         <div className="flex items-center gap-1 text-white font-semibold">
-                          <ChevronUp className="w-4 h-4 text-green-500" />
-                          752,917,634
+                          <ChevronUp className="w-4 h-4 text-gray-500" />
+                          0
                         </div>
                       </td>
                       <td className="py-4">
                         <div className="flex items-center gap-1 text-white font-semibold">
-                          <ChevronUp className="w-4 h-4 text-green-500" />
-                          6,407,736
+                          <ChevronUp className="w-4 h-4 text-gray-500" />
+                          0
                         </div>
                       </td>
                     </tr>
