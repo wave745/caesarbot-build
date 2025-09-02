@@ -34,13 +34,13 @@ export function TokenDeployer() {
         {/* Left Column - Token Configuration */}
         <div className="space-y-6">
           {/* Token Details */}
-          <Card className="bg-gray-900 border-gray-800">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <Rocket className="w-5 h-5 text-[#d7a834]" />
-                Token Configuration
-              </CardTitle>
-            </CardHeader>
+                  <Card className="bg-[#282828] border-[#282828]">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <Rocket className="w-5 h-5 text-[#d7ab54]" />
+              Token Configuration
+            </CardTitle>
+          </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -52,7 +52,7 @@ export function TokenDeployer() {
                     value={tokenName}
                     onChange={(e) => setTokenName(e.target.value)}
                     placeholder="Enter token name"
-                    className="bg-gray-800 border-gray-700 text-white mt-1"
+                    className="bg-[#282828] border-[#282828] text-white mt-1"
                   />
                 </div>
                 <div>
@@ -64,7 +64,7 @@ export function TokenDeployer() {
                     value={tokenSymbol}
                     onChange={(e) => setTokenSymbol(e.target.value)}
                     placeholder="e.g., CAESAR"
-                    className="bg-gray-800 border-gray-700 text-white mt-1"
+                    className="bg-[#282828] border-[#282828] text-white mt-1"
                   />
                 </div>
               </div>
@@ -78,7 +78,7 @@ export function TokenDeployer() {
                   value={tokenDescription}
                   onChange={(e) => setTokenDescription(e.target.value)}
                   placeholder="Describe your token..."
-                  className="bg-gray-800 border-gray-700 text-white mt-1 min-h-[100px]"
+                  className="bg-[#282828] border-[#282828] text-white mt-1 min-h-[100px]"
                 />
               </div>
 
@@ -87,10 +87,10 @@ export function TokenDeployer() {
                   Network
                 </Label>
                 <Select value={network} onValueChange={setNetwork}>
-                  <SelectTrigger className="bg-gray-800 border-gray-700 text-white mt-1">
+                  <SelectTrigger className="bg-[#282828] border-[#282828] text-white mt-1">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-gray-800 border-gray-700">
+                  <SelectContent className="bg-[#282828] border-[#282828]">
                     <SelectItem value="Devnet">Devnet</SelectItem>
                     <SelectItem value="Mainnet">Mainnet</SelectItem>
                     <SelectItem value="Testnet">Testnet</SelectItem>
@@ -101,13 +101,13 @@ export function TokenDeployer() {
           </Card>
 
           {/* Advanced Settings */}
-          <Card className="bg-gray-900 border-gray-800">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <Settings className="w-5 h-5 text-[#d7a834]" />
-                Advanced Settings
-              </CardTitle>
-            </CardHeader>
+                  <Card className="bg-[#282828] border-[#282828]">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <Settings className="w-5 h-5 text-[#d7ab54]" />
+              Advanced Settings
+            </CardTitle>
+          </CardHeader>
             <CardContent className="space-y-4">
               <div>
                 <Label htmlFor="supply" className="text-white">
@@ -116,7 +116,7 @@ export function TokenDeployer() {
                 <Input
                   id="supply"
                   placeholder="1,000,000,000"
-                  className="bg-gray-800 border-gray-700 text-white mt-1"
+                  className="bg-[#282828] border-[#282828] text-white mt-1"
                 />
               </div>
 
@@ -124,7 +124,7 @@ export function TokenDeployer() {
                 <Label htmlFor="decimals" className="text-white">
                   Decimals
                 </Label>
-                <Input id="decimals" placeholder="9" className="bg-gray-800 border-gray-700 text-white mt-1" />
+                <Input id="decimals" placeholder="9" className="bg-[#282828] border-[#282828] text-white mt-1" />
               </div>
 
               <div className="flex items-center gap-4">
@@ -150,40 +150,40 @@ export function TokenDeployer() {
         {/* Right Column - Deployment Summary */}
         <div className="space-y-6">
           {/* Deployment Summary */}
-          <Card className="bg-gray-900 border-gray-800">
+          <Card className="bg-[#282828] border-[#282828]">
             <CardHeader>
               <CardTitle className="text-white">Deployment Summary</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-3">
-                <div className="flex justify-between items-center py-2 border-b border-gray-800">
+                <div className="flex justify-between items-center py-2 border-b border-[#282828]">
                   <span className="text-gray-400">Launchpad:</span>
                   <span className="text-white font-medium">{launchpad}</span>
                 </div>
 
-                <div className="flex justify-between items-center py-2 border-b border-gray-800">
+                <div className="flex justify-between items-center py-2 border-b border-[#282828]">
                   <span className="text-gray-400">Dev Buy:</span>
                   <span className="text-white font-medium">{devBuy} SOL</span>
                 </div>
 
-                <div className="flex justify-between items-center py-2 border-b border-gray-800">
+                <div className="flex justify-between items-center py-2 border-b border-[#282828]">
                   <span className="text-gray-400">Bundle Wallets:</span>
                   <span className="text-white font-medium">{bundleWallets}</span>
                 </div>
 
-                <div className="flex justify-between items-center py-2 border-b border-gray-800">
+                <div className="flex justify-between items-center py-2 border-b border-[#282828]">
                   <span className="text-gray-400">Total Bundle Buy:</span>
                   <span className="text-white font-medium">{totalBundleBuy} SOL</span>
                 </div>
 
-                <div className="flex justify-between items-center py-2 border-b border-gray-800">
+                <div className="flex justify-between items-center py-2 border-b border-[#282828]">
                   <span className="text-gray-400">Caesar Points Reward:</span>
-                  <Badge className="bg-[#d7a834] text-black">{caesarPointsReward}</Badge>
+                  <Badge className="bg-[#d7ab54] text-black">{caesarPointsReward}</Badge>
                 </div>
 
                 <div className="flex justify-between items-center py-2">
                   <span className="text-gray-400">Network:</span>
-                  <Badge variant="outline" className="border-[#d7a834] text-[#d7a834]">
+                  <Badge variant="outline" className="border-[#d7ab54] text-[#d7ab54]">
                     {network}
                   </Badge>
                 </div>
@@ -192,7 +192,7 @@ export function TokenDeployer() {
               {/* Deploy Button */}
               <div className="pt-4">
                 <Button
-                  className="w-full bg-[#d7a834] text-black hover:bg-[#c49730] font-semibold py-3 text-lg"
+                  className="w-full bg-[#d7ab54] text-black hover:bg-[#c49730] font-semibold py-3 text-lg"
                   disabled={!tokenName || !tokenSymbol}
                 >
                   <Rocket className="w-5 h-5 mr-2" />
@@ -204,16 +204,16 @@ export function TokenDeployer() {
           </Card>
 
           {/* Bundle Wallets Management */}
-          <Card className="bg-gray-900 border-gray-800">
+          <Card className="bg-[#282828] border-[#282828]">
             <CardHeader>
               <CardTitle className="text-white flex items-center justify-between">
                 <span className="flex items-center gap-2">
-                  <Wallet className="w-5 h-5 text-[#d7a834]" />
+                  <Wallet className="w-5 h-5 text-[#d7ab54]" />
                   Bundle Wallets (min 2, max 5 total)
                 </span>
                 <Button
                   size="sm"
-                  className="bg-[#d7a834] text-black hover:bg-[#c49730]"
+                  className="bg-[#d7ab54] text-black hover:bg-[#c49730]"
                   onClick={() => setBundleWallets(Math.min(5, bundleWallets + 1))}
                   disabled={bundleWallets >= 5}
                 >
@@ -221,23 +221,23 @@ export function TokenDeployer() {
                   Create
                 </Button>
               </CardTitle>
-              <p className="text-gray-400 text-sm">Change buttons background to hex code- #d7a834</p>
+              <p className="text-gray-400 text-sm">Change buttons background to hex code- #d7ab54</p>
             </CardHeader>
             <CardContent>
               {bundleWallets === 0 ? (
                 <div className="text-center py-8">
                   <Wallet className="w-12 h-12 text-gray-600 mx-auto mb-4" />
                   <p className="text-gray-400 mb-4">No bundle wallets created yet</p>
-                  <Button className="bg-[#d7a834] text-black hover:bg-[#c49730]" onClick={() => setBundleWallets(2)}>
+                  <Button className="bg-[#d7ab54] text-black hover:bg-[#c49730]" onClick={() => setBundleWallets(2)}>
                     Create Bundle Wallets
                   </Button>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {Array.from({ length: bundleWallets }, (_, i) => (
-                    <div key={i} className="flex items-center justify-between p-3 bg-gray-800 rounded-lg">
+                    <div key={i} className="flex items-center justify-between p-3 bg-[#282828] rounded-lg">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-[#d7a834] rounded-full flex items-center justify-center">
+                        <div className="w-8 h-8 bg-[#d7ab54] rounded-full flex items-center justify-center">
                           <span className="text-black font-semibold text-sm">{i + 1}</span>
                         </div>
                         <div>
@@ -260,14 +260,14 @@ export function TokenDeployer() {
                     <Button
                       size="sm"
                       variant="outline"
-                      className="flex-1 border-[#d7a834] text-[#d7a834] hover:bg-[#d7a834] hover:text-black bg-transparent"
+                      className="flex-1 border-[#d7ab54] text-[#d7ab54] hover:bg-[#d7ab54] hover:text-black bg-transparent"
                       onClick={() => setBundleWallets(Math.max(0, bundleWallets - 1))}
                     >
                       Remove
                     </Button>
                     <Button
                       size="sm"
-                      className="flex-1 bg-[#d7a834] text-black hover:bg-[#c49730]"
+                      className="flex-1 bg-[#d7ab54] text-black hover:bg-[#c49730]"
                       onClick={() => setBundleWallets(Math.min(5, bundleWallets + 1))}
                       disabled={bundleWallets >= 5}
                     >
@@ -280,10 +280,10 @@ export function TokenDeployer() {
           </Card>
 
           {/* Information Card */}
-          <Card className="bg-gray-900 border-gray-800">
+          <Card className="bg-[#282828] border-[#282828]">
             <CardContent className="p-4">
               <div className="flex items-start gap-3">
-                <Info className="w-5 h-5 text-[#d7a834] mt-0.5" />
+                <Info className="w-5 h-5 text-[#d7ab54] mt-0.5" />
                 <div>
                   <h4 className="text-white font-medium mb-2">Deployment Information</h4>
                   <ul className="text-gray-400 text-sm space-y-1">

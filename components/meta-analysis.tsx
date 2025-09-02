@@ -18,10 +18,10 @@ export function MetaAnalysis() {
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <Card className="bg-gray-900 border-gray-800">
+        <Card className="bg-black border-zinc-800">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
-              <div className="p-3 bg-gray-700 rounded-lg">
+              <div className="p-3 bg-zinc-700 rounded-lg">
                 <TrendingUp className="w-6 h-6 text-gray-400" />
               </div>
               <div>
@@ -33,10 +33,10 @@ export function MetaAnalysis() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gray-900 border-gray-800">
+        <Card className="bg-black border-zinc-800">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
-              <div className="p-3 bg-gray-700 rounded-lg">
+              <div className="p-3 bg-zinc-700 rounded-lg">
                 <Activity className="w-6 h-6 text-gray-400" />
               </div>
               <div>
@@ -48,10 +48,10 @@ export function MetaAnalysis() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gray-900 border-gray-800">
+        <Card className="bg-black border-zinc-800">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
-              <div className="p-3 bg-gray-700 rounded-lg">
+              <div className="p-3 bg-zinc-700 rounded-lg">
                 <BarChart3 className="w-6 h-6 text-gray-400" />
               </div>
               <div>
@@ -63,10 +63,10 @@ export function MetaAnalysis() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gray-900 border-gray-800">
+        <Card className="bg-black border-zinc-800">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
-              <div className="p-3 bg-gray-700 rounded-lg">
+              <div className="p-3 bg-zinc-700 rounded-lg">
                 <Brain className="w-6 h-6 text-gray-400" />
               </div>
               <div>
@@ -81,23 +81,23 @@ export function MetaAnalysis() {
 
       {/* Main Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="bg-gray-900 border-gray-800 mb-6">
-          <TabsTrigger value="overview" className="data-[state=active]:bg-[#d7a834] data-[state=active]:text-black">
+        <TabsList className="bg-black border-zinc-800 mb-6">
+          <TabsTrigger value="overview" className="data-[state=active]:bg-[#d7ab54] data-[state=active]:text-black">
             Overview
           </TabsTrigger>
-          <TabsTrigger value="sentiment" className="data-[state=active]:bg-[#d7a834] data-[state=active]:text-black">
+          <TabsTrigger value="sentiment" className="data-[state=active]:bg-[#d7ab54] data-[state=active]:text-black">
             Sentiment
           </TabsTrigger>
-          <TabsTrigger value="signals" className="data-[state=active]:bg-[#d7a834] data-[state=active]:text-black">
+          <TabsTrigger value="signals" className="data-[state=active]:bg-[#d7ab54] data-[state=active]:text-black">
             Signals
           </TabsTrigger>
-          <TabsTrigger value="trends" className="data-[state=active]:bg-[#d7a834] data-[state=active]:text-black">
+          <TabsTrigger value="trends" className="data-[state=active]:bg-[#d7ab54] data-[state=active]:text-black">
             Trends
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          <Card className="bg-gray-900 border-gray-800">
+          <Card className="bg-black border-zinc-800">
             <CardContent className="p-12 text-center">
               <Brain className="w-20 h-20 text-gray-600 mx-auto mb-6" />
               <h2 className="text-2xl font-bold text-white mb-4">Meta Analysis Coming Soon</h2>
@@ -109,7 +109,7 @@ export function MetaAnalysis() {
         </TabsContent>
 
         <TabsContent value="sentiment" className="space-y-6">
-          <Card className="bg-gray-900 border-gray-800">
+          <Card className="bg-black border-zinc-800">
             <CardHeader>
               <CardTitle className="text-white">Sentiment Analysis</CardTitle>
             </CardHeader>
@@ -123,21 +123,21 @@ export function MetaAnalysis() {
         </TabsContent>
 
         <TabsContent value="signals" className="space-y-6">
-          <Card className="bg-gray-900 border-gray-800">
+          <Card className="bg-black border-zinc-800">
             <CardHeader>
               <CardTitle className="text-white">Trading Signals</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-center py-8">
                 <AlertTriangle className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                <p className="text-gray-400">No active signals</p>
+                <div className="text-gray-400">No active signals</div>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="trends" className="space-y-6">
-          <Card className="bg-gray-900 border-gray-800">
+          <Card className="bg-black border-zinc-800">
             <CardHeader>
               <CardTitle className="text-white">Market Trends</CardTitle>
             </CardHeader>

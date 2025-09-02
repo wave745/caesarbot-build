@@ -14,7 +14,6 @@ const navItems = [
   { name: "AI Trading", href: "/ai-trading" },
   { name: "Portfolio", href: "/portfolio" },
   { name: "Deployer", href: "/deployer" },
-  { name: "Meta", href: "/meta" },
   { name: "Rewards", href: "/rewards" },
 ]
 
@@ -73,7 +72,7 @@ export function Navigation() {
                 }}
               />
             </div>
-            <span className="text-[#d7a834] font-bold text-lg sm:text-xl lg:text-2xl tracking-wide hidden sm:block">
+            <span className="text-[#d7ab54] font-bold text-lg sm:text-xl lg:text-2xl tracking-wide hidden sm:block">
               CAESARBOT
             </span>
           </Link>
@@ -85,11 +84,18 @@ export function Navigation() {
             <Link
               key={item.name}
               href={item.href}
-              className={`px-3 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${
-                pathname === item.href ? "bg-gray-800 text-white" : "text-gray-400 hover:text-white hover:bg-gray-900"
+              className={`px-3 py-2 text-sm font-medium rounded-md transition-all duration-300 whitespace-nowrap relative group ${
+                pathname === item.href 
+                  ? "bg-[#282828] text-white shadow-lg shadow-[#d7ab54]/20" 
+                  : "text-gray-400 hover:text-[#d7ab54] hover:bg-[#282828]/80 hover:shadow-lg hover:shadow-[#d7ab54]/20"
               }`}
             >
               {item.name}
+              <div className={`absolute inset-0 rounded-md transition-all duration-300 ${
+                pathname === item.href 
+                  ? "ring-2 ring-[#d7ab54] ring-opacity-50" 
+                  : "group-hover:ring-2 group-hover:ring-[#d7ab54] group-hover:ring-opacity-30"
+              }`}></div>
             </Link>
           ))}
         </div>
@@ -100,7 +106,7 @@ export function Navigation() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <Input
               placeholder="Search tokens..."
-              className="pl-10 w-40 bg-gray-900 border-gray-700 text-white placeholder-gray-400 text-sm"
+              className="pl-10 w-40 bg-[#282828] border-[#282828] text-white placeholder-gray-400 text-sm"
             />
           </div>
 
@@ -108,7 +114,7 @@ export function Navigation() {
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setIsWalletDropdownOpen(!isWalletDropdownOpen)}
-                className="bg-gray-900 border border-gray-700 rounded-md px-3 py-2 flex items-center gap-2 text-sm hover:bg-gray-800 transition-colors"
+                className="bg-[#282828] border border-[#282828] rounded-md px-3 py-2 flex items-center gap-2 text-sm hover:bg-[#282828] hover:border-[#d7ab54]/50 hover:shadow-lg hover:shadow-[#d7ab54]/20 transition-all duration-300"
               >
                 <Wallet className="w-4 h-4 text-gray-400" />
                 <span className="text-white font-medium">0</span>
@@ -118,21 +124,21 @@ export function Navigation() {
               </button>
 
               {isWalletDropdownOpen && (
-                <div className="absolute right-0 top-full mt-2 w-80 bg-gray-900 border border-gray-700 rounded-lg shadow-xl z-50">
+                <div className="absolute right-0 top-full mt-2 w-80 bg-[#282828] border border-[#282828] rounded-lg shadow-xl z-50">
                   <div className="p-4">
                     {!isWalletConnected ? (
                       <div className="text-center py-8">
                         <Wallet className="w-12 h-12 text-gray-600 mx-auto mb-3" />
                         <h3 className="text-white font-medium mb-2">No Wallet Connected</h3>
                         <p className="text-gray-400 text-sm mb-4">Connect your wallet to get started</p>
-                        <Button className="bg-[#d7a834] text-black hover:bg-[#c49730] w-full">Connect Wallet</Button>
+                        <Button className="bg-[#d7ab54] text-black hover:bg-[#c49730] w-full">Connect Wallet</Button>
                       </div>
                     ) : (
                       <div className="space-y-3">
                         {connectedWallets.map((wallet, index) => (
-                          <div key={index} className="flex items-center justify-between p-3 bg-gray-800 rounded-lg">
+                          <div key={index} className="flex items-center justify-between p-3 bg-[#282828] rounded-lg">
                             <div className="flex items-center gap-3">
-                              <div className="w-6 h-6 bg-gray-700 rounded border border-gray-600"></div>
+                              <div className="w-6 h-6 bg-[#282828] rounded border border-[#282828]"></div>
                               <div>
                                 <div className="text-gray-400 text-xs">{wallet.name}</div>
                                 <div className="flex items-center gap-2">
@@ -149,7 +155,7 @@ export function Navigation() {
                         ))}
 
                         {/* Quick Buy Settings */}
-                        <div className="border-t border-gray-700 pt-3">
+                        <div className="border-t border-[#282828] pt-3">
                           <div className="text-gray-400 text-xs mb-2">Clipboard quick buy settings</div>
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -162,12 +168,12 @@ export function Navigation() {
                               <TrendingUp className="w-4 h-4 text-gray-400" />
                             </div>
                             <Link href="/portfolio">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="bg-gray-800 border-gray-600 text-white hover:bg-gray-700 text-xs px-3 py-1"
-                                onClick={() => setIsWalletDropdownOpen(false)}
-                              >
+                                                              <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="bg-[#282828] border-[#282828] text-white hover:bg-[#282828] text-xs px-3 py-1"
+                                  onClick={() => setIsWalletDropdownOpen(false)}
+                                >
                                 Manage
                               </Button>
                             </Link>
@@ -180,14 +186,14 @@ export function Navigation() {
               )}
             </div>
 
-            <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white w-9 h-9">
-              <Bell className="w-4 h-4" />
+            <Button variant="ghost" size="icon" className="text-gray-400 hover:text-[#d7ab54] hover:bg-gray-800/80 transition-all duration-300 w-9 h-9 group">
+              <Bell className="w-4 h-4 group-hover:scale-110 transition-transform duration-300" />
             </Button>
-            <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white w-9 h-9">
-              <Settings className="w-4 h-4" />
+            <Button variant="ghost" size="icon" className="text-gray-400 hover:text-[#d7ab54] hover:bg-gray-800/80 transition-all duration-300 w-9 h-9 group">
+              <Settings className="w-4 h-4 group-hover:scale-110 transition-transform duration-300" />
             </Button>
-            <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white w-9 h-9">
-              <User className="w-4 h-4" />
+            <Button variant="ghost" size="icon" className="text-gray-400 hover:text-[#d7ab54] hover:bg-gray-800/80 transition-all duration-300 w-9 h-9 group">
+              <User className="w-4 h-4 group-hover:scale-110 transition-transform duration-300" />
             </Button>
           </div>
         </div>
@@ -198,20 +204,20 @@ export function Navigation() {
           <Button 
             variant="ghost" 
             size="icon" 
-            className="text-gray-400 hover:text-white w-9 h-9"
+            className="text-gray-400 hover:text-[#d7ab54] hover:bg-gray-800/80 transition-all duration-300 w-9 h-9 group"
             onClick={() => setIsSearchOpen(!isSearchOpen)}
           >
-            <Search className="w-4 h-4" />
+            <Search className="w-4 h-4 group-hover:scale-110 transition-transform duration-300" />
           </Button>
 
           {/* Mobile Menu Toggle */}
           <Button 
             variant="ghost" 
             size="icon" 
-            className="text-gray-400 hover:text-white w-9 h-9"
+            className="text-gray-400 hover:text-[#d7ab54] hover:bg-gray-800/80 transition-all duration-300 w-9 h-9 group"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
-            {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {isMobileMenuOpen ? <X className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" /> : <Menu className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />}
           </Button>
         </div>
       </div>
@@ -223,7 +229,7 @@ export function Navigation() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <Input
               placeholder="Search tokens..."
-              className="pl-10 w-full bg-gray-900 border-gray-700 text-white placeholder-gray-400 text-sm"
+              className="pl-10 w-full bg-[#282828] border-[#282828] text-white placeholder-gray-400 text-sm"
               autoFocus
             />
           </div>
@@ -234,7 +240,7 @@ export function Navigation() {
       {isMobileMenuOpen && (
         <div 
           ref={mobileMenuRef}
-          className="lg:hidden absolute top-full left-0 right-0 bg-gray-900 border-b border-gray-800 shadow-xl z-50"
+          className="lg:hidden absolute top-full left-0 right-0 bg-[#282828] border-b border-[#282828] shadow-xl z-50"
         >
           <div className="px-4 py-3">
             {/* Mobile Navigation */}
@@ -243,21 +249,26 @@ export function Navigation() {
                 <Link
                   key={item.name}
                   href={item.href}
-                  className={`block px-3 py-3 text-sm font-medium rounded-md transition-colors ${
+                  className={`block px-3 py-3 text-sm font-medium rounded-md transition-all duration-300 relative group ${
                     pathname === item.href 
-                      ? "bg-gray-800 text-white" 
-                      : "text-gray-400 hover:text-white hover:bg-gray-800"
+                      ? "bg-[#282828] text-white shadow-lg shadow-[#d7ab54]/20" 
+                      : "text-gray-400 hover:text-[#d7ab54] hover:bg-[#282828]/80 hover:shadow-lg hover:shadow-[#d7ab54]/20"
                   }`}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   {item.name}
+                  <div className={`absolute inset-0 rounded-md transition-all duration-300 ${
+                    pathname === item.href 
+                      ? "ring-2 ring-[#d7ab54] ring-opacity-50" 
+                      : "group-hover:ring-2 group-hover:ring-[#d7ab54] group-hover:ring-opacity-30"
+                  }`}></div>
                 </Link>
               ))}
             </div>
 
             {/* Mobile Wallet Section */}
-            <div className="border-t border-gray-700 pt-4">
-              <div className="flex items-center justify-between p-3 bg-gray-800 rounded-lg mb-3">
+                                        <div className="border-t border-[#282828] pt-4">
+                <div className="flex items-center justify-between p-3 bg-[#282828] rounded-lg mb-3">
                 <div className="flex items-center gap-3">
                   <Wallet className="w-5 h-5 text-gray-400" />
                   <div>
@@ -267,7 +278,7 @@ export function Navigation() {
                 </div>
                 <Button 
                   size="sm" 
-                  className="bg-[#d7a834] text-black hover:bg-[#c49730] text-xs px-3 py-1"
+                  className="bg-[#d7ab54] text-black hover:bg-[#c49730] text-xs px-3 py-1"
                 >
                   Connect
                 </Button>
@@ -275,16 +286,16 @@ export function Navigation() {
 
               {/* Mobile Action Buttons */}
               <div className="grid grid-cols-3 gap-2">
-                <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white text-xs">
-                  <Bell className="w-4 h-4 mr-1" />
+                <Button variant="ghost" size="sm" className="text-gray-400 hover:text-[#d7ab54] hover:bg-gray-700/80 transition-all duration-300 text-xs group">
+                  <Bell className="w-4 h-4 mr-1 group-hover:scale-110 transition-transform duration-300" />
                   Alerts
                 </Button>
-                <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white text-xs">
-                  <Settings className="w-4 h-4 mr-1" />
+                <Button variant="ghost" size="sm" className="text-gray-400 hover:text-[#d7ab54] hover:bg-gray-700/80 transition-all duration-300 text-xs group">
+                  <Settings className="w-4 h-4 mr-1 group-hover:scale-110 transition-transform duration-300" />
                   Settings
                 </Button>
-                <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white text-xs">
-                  <User className="w-4 h-4 mr-1" />
+                <Button variant="ghost" size="sm" className="text-gray-400 hover:text-[#d7ab54] hover:bg-gray-700/80 transition-all duration-300 text-xs group">
+                  <User className="w-4 h-4 mr-1 group-hover:scale-110 transition-transform duration-300" />
                   Profile
                 </Button>
               </div>

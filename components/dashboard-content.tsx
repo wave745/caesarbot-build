@@ -14,34 +14,26 @@ export function DashboardContent() {
       </div>
 
       {/* Secondary Navigation */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 border-b border-gray-800 pb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 border-b border-[#282828] pb-4">
         <div className="flex flex-wrap items-center gap-2 sm:gap-6">
           {["Overview", "Assets", "Liquidity", "Reports", "Data", "Fees"].map((item, index) => (
             <button
               key={item}
-              className={`text-sm font-medium transition-colors hover:text-[#d7a834] px-2 py-1 sm:px-0 sm:py-0 ${
-                index === 0 ? "text-white border-b-2 border-[#d7a834] pb-1 sm:pb-2" : "text-gray-400"
-              }`}
+                          className={`text-sm font-medium transition-colors hover:text-[#d7ab54] px-2 py-1 sm:px-0 sm:py-0 ${
+              index === 0 ? "text-white border-b-2 border-[#d7ab54] pb-1 sm:pb-2" : "text-gray-400"
+            }`}
             >
               {item}
             </button>
           ))}
         </div>
-        <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
-          <div className="bg-gray-800 px-3 py-1 rounded text-sm text-gray-300">Connect Wallet</div>
-          <Button variant="outline" size="sm" className="bg-[#d7a834] text-black border-[#d7a834] hover:bg-[#c49730] text-xs sm:text-sm">
-            Sort ▼
-          </Button>
-          <Button variant="outline" size="sm" className="bg-[#d7a834] text-black border-[#d7a834] hover:bg-[#c49730] text-xs sm:text-sm">
-            Add
-          </Button>
-        </div>
+
       </div>
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Pool Performance */}
-        <Card className="lg:col-span-2 bg-gray-900 border-gray-800">
+        <Card className="lg:col-span-2 bg-[#282828] border-[#282828]">
           <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <CardTitle className="text-white text-lg sm:text-xl">Pool Performance</CardTitle>
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
@@ -49,7 +41,7 @@ export function DashboardContent() {
                 <span className="text-gray-400">Price</span>
                 <span className="text-gray-400">APY</span>
               </div>
-              <select className="bg-gray-800 text-white text-sm px-3 py-1 rounded border border-gray-700 w-full sm:w-auto">
+              <select className="bg-[#282828] text-white text-sm px-3 py-1 rounded border border-[#282828] w-full sm:w-auto">
                 <option>Drop down filter for changing time frame metric</option>
                 <option>1H</option>
                 <option>24H</option>
@@ -71,10 +63,9 @@ export function DashboardContent() {
         </Card>
 
         {/* Overview Stats */}
-        <Card className="bg-gray-900 border-gray-800">
+        <Card className="bg-[#282828] border-[#282828]">
           <CardHeader>
             <CardTitle className="text-white text-lg sm:text-xl">Overview</CardTitle>
-            <div className="text-sm text-[#d7a834] font-medium">Open for investments</div>
           </CardHeader>
           <CardContent className="space-y-3 sm:space-y-4">
             {[
@@ -84,7 +75,7 @@ export function DashboardContent() {
               { label: "TOTAL HOLDERS", value: "--" },
               { label: "MARKET RANK", value: "--" },
             ].map((stat, index) => (
-              <div key={index} className="flex justify-between items-center py-2 border-b border-gray-800">
+                                <div key={index} className="flex justify-between items-center py-2 border-b border-[#282828]">
                 <span className="text-gray-400 text-xs sm:text-sm">{stat.label}</span>
                 <span className="text-white font-semibold text-sm sm:text-base">{stat.value}</span>
               </div>
@@ -96,14 +87,14 @@ export function DashboardContent() {
       {/* Bottom Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* META Section */}
-        <Card className="bg-gray-900 border-gray-800">
+        <Card className="bg-[#282828] border-[#282828]">
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <CardTitle className="text-white text-lg sm:text-xl">META</CardTitle>
               <Button
                 variant="outline"
                 size="sm"
-                className="w-fit bg-[#d7a834] text-black border-[#d7a834] hover:bg-[#c49730] text-xs sm:text-sm"
+                className="w-fit bg-[#d7ab54] text-black border-[#d7ab54] hover:bg-[#c49730] text-xs sm:text-sm"
               >
                 View all
               </Button>
@@ -114,7 +105,7 @@ export function DashboardContent() {
               <div className="text-gray-400 mb-2">No meta analysis available</div>
               <p className="text-sm text-gray-500 mb-4">Analysis will appear here when data is available</p>
               <Link href="/meta">
-                <Button className="bg-[#d7a834] text-black hover:bg-[#c49730] w-full sm:w-auto text-sm">
+                <Button className="bg-[#d7ab54] text-black hover:bg-[#c49730] w-full sm:w-auto text-sm">
                   View Full Analysis
                 </Button>
               </Link>
@@ -123,7 +114,7 @@ export function DashboardContent() {
         </Card>
 
         {/* Recently Added */}
-        <Card className="bg-gray-900 border-gray-800">
+        <Card className="bg-[#282828] border-[#282828]">
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <CardTitle className="text-white text-lg sm:text-xl">Recently Added</CardTitle>
@@ -145,7 +136,7 @@ export function DashboardContent() {
         </Card>
 
         {/* Wallet Tracker */}
-        <Card className="bg-gray-900 border-gray-800 md:col-span-2 lg:col-span-1">
+        <Card className="bg-[#282828] border-[#282828] md:col-span-2 lg:col-span-1">
           <CardHeader>
             <CardTitle className="text-white text-lg sm:text-xl">WALLET TRACKER</CardTitle>
           </CardHeader>

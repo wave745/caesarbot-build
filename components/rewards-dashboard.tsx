@@ -98,21 +98,21 @@ export function RewardsDashboard() {
         <div className="flex gap-2 mb-6">
           <Button 
             variant={activeTab === "rewards" ? "default" : "ghost"}
-            className={`text-lg font-semibold px-6 py-3 ${activeTab === "rewards" ? "bg-[#d7a834] hover:bg-[#c49730] text-black" : "text-gray-400 hover:text-white"}`}
+            className={`text-lg font-semibold px-6 py-3 ${activeTab === "rewards" ? "bg-[#d7ab54] hover:bg-[#c49730] text-black" : "text-gray-400 hover:text-white"}`}
             onClick={() => setActiveTab("rewards")}
           >
             Rewards
           </Button>
           <Button 
             variant={activeTab === "leaderboard" ? "default" : "ghost"}
-            className={`text-lg font-semibold px-6 py-3 ${activeTab === "leaderboard" ? "bg-[#d7a834] hover:bg-[#c49730] text-black" : "text-gray-400 hover:text-white"}`}
+            className={`text-lg font-semibold px-6 py-3 ${activeTab === "leaderboard" ? "bg-[#d7ab54] hover:bg-[#c49730] text-black" : "text-gray-400 hover:text-white"}`}
             onClick={() => setActiveTab("leaderboard")}
           >
             Leaderboard
           </Button>
           <Button 
             variant={activeTab === "benefits" ? "default" : "ghost"}
-            className={`text-lg font-semibold px-6 py-3 ${activeTab === "benefits" ? "bg-[#d7a834] hover:bg-[#c49730] text-black" : "text-gray-400 hover:text-white"}`}
+            className={`text-lg font-semibold px-6 py-3 ${activeTab === "benefits" ? "bg-[#d7ab54] hover:bg-[#c49730] text-black" : "text-gray-400 hover:text-white"}`}
             onClick={() => setActiveTab("benefits")}
           >
             Benefits
@@ -125,7 +125,7 @@ export function RewardsDashboard() {
         <div className="space-y-6">
           {/* User Profile Card */}
           <div className="flex justify-center mb-8">
-            <Card className="bg-gray-900 border-gray-800 w-64 text-center">
+            <Card className="bg-black border-zinc-800 w-64 text-center">
               <CardContent className="p-4">
                 <div className="w-12 h-12 bg-orange-500 rounded-lg mx-auto mb-3 flex items-center justify-center">
                   <div className="w-3 h-3 bg-orange-600 rounded-full"></div>
@@ -146,39 +146,39 @@ export function RewardsDashboard() {
           {/* Progress and Claim Section */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* SOL Rewards Graph Card */}
-            <Card className="bg-gray-900 border-gray-800">
+            <Card className="bg-black border-zinc-800">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-white font-semibold">SOL Rewards</h3>
                   <BarChart3 className="w-5 h-5 text-gray-400" />
                 </div>
-                <div className="h-32 bg-gray-800 rounded-lg mb-4 flex items-end justify-between px-4 py-2">
+                <div className="h-32 bg-[#282828] rounded-lg mb-4 flex items-end justify-between px-4 py-2">
                   <div className="flex flex-col items-center">
-                    <div className="w-2 bg-[#d7a834] rounded-t" style={{ height: '60%' }}></div>
+                    <div className="w-2 bg-[#d7ab54] rounded-t" style={{ height: '60%' }}></div>
                     <span className="text-xs text-gray-400 mt-1">Aug 22</span>
                   </div>
                   <div className="flex flex-col items-center">
-                    <div className="w-2 bg-[#d7a834] rounded-t" style={{ height: '80%' }}></div>
+                    <div className="w-2 bg-[#d7ab54] rounded-t" style={{ height: '80%' }}></div>
                     <span className="text-xs text-gray-400 mt-1">Aug 23</span>
                   </div>
                   <div className="flex flex-col items-center">
-                    <div className="w-2 bg-[#d7a834] rounded-t" style={{ height: '70%' }}></div>
+                    <div className="w-2 bg-[#d7ab54] rounded-t" style={{ height: '70%' }}></div>
                     <span className="text-xs text-gray-400 mt-1">Aug 24</span>
                   </div>
                   <div className="flex flex-col items-center">
-                    <div className="w-2 bg-[#d7a834] rounded-t" style={{ height: '90%' }}></div>
+                    <div className="w-2 bg-[#d7ab54] rounded-t" style={{ height: '90%' }}></div>
                     <span className="text-xs text-gray-400 mt-1">Aug 25</span>
                   </div>
                   <div className="flex flex-col items-center">
-                    <div className="w-2 bg-[#d7a834] rounded-t" style={{ height: '75%' }}></div>
+                    <div className="w-2 bg-[#d7ab54] rounded-t" style={{ height: '75%' }}></div>
                     <span className="text-xs text-gray-400 mt-1">Aug 26</span>
                   </div>
                   <div className="flex flex-col items-center">
-                    <div className="w-2 bg-[#d7a834] rounded-t" style={{ height: '85%' }}></div>
+                    <div className="w-2 bg-[#d7ab54] rounded-t" style={{ height: '85%' }}></div>
                     <span className="text-xs text-gray-400 mt-1">Aug 27</span>
                   </div>
                   <div className="flex flex-col items-center">
-                    <div className="w-2 bg-[#d7a834] rounded-t" style={{ height: '95%' }}></div>
+                    <div className="w-2 bg-[#d7ab54] rounded-t" style={{ height: '95%' }}></div>
                     <span className="text-xs text-gray-400 mt-1">Aug 28</span>
                   </div>
                   <div className="flex flex-col items-center">
@@ -194,7 +194,7 @@ export function RewardsDashboard() {
             </Card>
 
             {/* Claim Card */}
-            <Card className="bg-gray-900 border-gray-800">
+            <Card className="bg-black border-zinc-800">
               <CardContent className="p-6">
                 <h3 className="text-white font-semibold mb-4">Claim</h3>
                 <div className="space-y-4">
@@ -215,41 +215,41 @@ export function RewardsDashboard() {
                       <span className="text-white font-semibold">+0</span>
                     </div>
                   </div>
-                  <Button className="w-full bg-blue-900 hover:bg-blue-800 text-white border border-blue-400">Nothing to Claim</Button>
+                  <Button className="w-full bg-black hover:bg-zinc-900 text-white border border-zinc-600">Nothing to Claim</Button>
                 </div>
               </CardContent>
             </Card>
 
             {/* Quests Card */}
-            <Card className="bg-gray-900 border-gray-800">
+            <Card className="bg-black border-zinc-800">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-white font-semibold">Quests</h3>
-                  <Button variant="link" className="text-[#d7a834] p-0 h-auto">Points Breakdown</Button>
+                  <Button variant="link" className="text-[#d7ab54] p-0 h-auto">Points Breakdown</Button>
                 </div>
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center">
-                      <div className="w-8 h-8 border-2 border-[#d7a834] rounded-full border-t-transparent"></div>
-                    </div>
+                                          <div className="w-12 h-12 bg-[#282828] rounded-full flex items-center justify-center">
+                        <div className="w-8 h-8 border-2 border-[#d7ab54] rounded-full border-t-transparent"></div>
+                      </div>
                     <div className="flex-1">
                       <div className="text-white text-sm">+0</div>
                       <div className="text-gray-400 text-xs">No active quests</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center">
-                      <div className="w-8 h-8 border-2 border-[#d7a834] rounded-full border-t-transparent" style={{ transform: 'rotate(45deg)' }}></div>
-                    </div>
+                                          <div className="w-12 h-12 bg-[#282828] rounded-full flex items-center justify-center">
+                        <div className="w-8 h-8 border-2 border-[#d7ab54] rounded-full border-t-transparent" style={{ transform: 'rotate(45deg)' }}></div>
+                      </div>
                     <div className="flex-1">
                       <div className="text-white text-sm">+0</div>
                       <div className="text-gray-400 text-xs">No active quests</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center">
-                      <div className="w-8 h-8 border-2 border-[#d7a834] rounded-full border-t-transparent" style={{ transform: 'rotate(90deg)' }}></div>
-                    </div>
+                                          <div className="w-12 h-12 bg-[#282828] rounded-full flex items-center justify-center">
+                        <div className="w-8 h-8 border-2 border-[#d7ab54] rounded-full border-t-transparent" style={{ transform: 'rotate(90deg)' }}></div>
+                      </div>
                     <div className="flex-1">
                       <div className="text-white text-sm">+0</div>
                       <div className="text-gray-400 text-xs">No active quests</div>
@@ -261,7 +261,7 @@ export function RewardsDashboard() {
           </div>
 
           {/* Activity Section */}
-          <Card className="bg-gray-900 border-gray-800">
+          <Card className="bg-black border-zinc-800">
             <CardHeader>
               <CardTitle className="text-white flex items-center gap-2">
                 <Activity className="w-5 h-5" />
@@ -277,7 +277,7 @@ export function RewardsDashboard() {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-gray-800">
+                    <tr className="border-b border-[#282828]">
                       <th className="text-left py-3 text-gray-400 font-normal">Email/Wallet</th>
                       <th className="text-left py-3 text-gray-400 font-normal">Date Joined ↓</th>
                       <th className="text-left py-3 text-gray-400 font-normal">Type</th>
@@ -306,7 +306,7 @@ export function RewardsDashboard() {
         <div className="space-y-6">
           {/* User Summary Card */}
           <div className="flex justify-center mb-8">
-            <Card className="bg-gray-900 border-gray-800 w-64 text-center">
+            <Card className="bg-[#282828] border-[#282828] w-64 text-center">
               <CardContent className="p-4">
                 <div className="w-12 h-12 bg-orange-500 rounded-lg mx-auto mb-3 flex items-center justify-center">
                   <div className="w-3 h-3 bg-orange-600 rounded-full"></div>
@@ -325,7 +325,7 @@ export function RewardsDashboard() {
           </div>
 
           {/* Leaderboard Table */}
-          <Card className="bg-gray-900 border-gray-800">
+          <Card className="bg-[#282828] border-[#282828]">
             <CardHeader>
               <CardTitle className="text-white">Points Leaderboard</CardTitle>
             </CardHeader>
@@ -333,7 +333,7 @@ export function RewardsDashboard() {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-gray-800">
+                    <tr className="border-b border-[#282828]">
                       <th className="text-left py-3 text-gray-400 font-normal">Rank</th>
                       <th className="text-left py-3 text-gray-400 font-normal">User ID</th>
                       <th className="text-left py-3 text-gray-400 font-normal">Total Points</th>
@@ -342,7 +342,7 @@ export function RewardsDashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    <tr className="border-b border-gray-800">
+                    <tr className="border-b border-[#282828]">
                       <td className="py-4 text-white font-semibold">-</td>
                       <td className="py-4 text-gray-400">No data</td>
                       <td className="py-4">
@@ -387,7 +387,7 @@ export function RewardsDashboard() {
           {/* Reward Cards */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Raydium Rewards */}
-            <Card className="bg-gray-900 border-gray-800">
+            <Card className="bg-[#282828] border-[#282828]">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-green-500 rounded-lg flex items-center justify-center">
@@ -407,7 +407,7 @@ export function RewardsDashboard() {
             </Card>
 
             {/* Sugar Rewards */}
-            <Card className="bg-gray-900 border-gray-800">
+            <Card className="bg-[#282828] border-[#282828]">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 bg-pink-500 rounded-full flex items-center justify-center">
@@ -428,13 +428,13 @@ export function RewardsDashboard() {
           </div>
 
           {/* Reward Tiers */}
-          <Card className="bg-gray-900 border-gray-800">
+          <Card className="bg-[#282828] border-[#282828]">
             <CardHeader>
               <CardTitle className="text-white">Reward Tiers</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="text-center p-6 border border-gray-800 rounded-lg">
+                <div className="text-center p-6 border border-[#282828] rounded-lg">
                   <div className="w-16 h-16 bg-yellow-600 rounded-full mx-auto mb-4 flex items-center justify-center">
                     <Trophy className="w-8 h-8 text-black" />
                   </div>
@@ -443,8 +443,8 @@ export function RewardsDashboard() {
                   <div className="text-yellow-500 font-semibold">2X Rewards</div>
                 </div>
                 
-                <div className="text-center p-6 border border-gray-800 rounded-lg">
-                  <div className="w-16 h-16 bg-gray-600 rounded-full mx-auto mb-4 flex items-center justify-center">
+                <div className="text-center p-6 border border-[#282828] rounded-lg">
+                  <div className="w-16 h-16 bg-[#282828] rounded-full mx-auto mb-4 flex items-center justify-center">
                     <Award className="w-8 h-8 text-gray-400" />
                   </div>
                   <h3 className="text-gray-400 font-semibold mb-2">Silver</h3>
@@ -452,7 +452,7 @@ export function RewardsDashboard() {
                   <div className="text-gray-500 font-semibold">2.5X Rewards</div>
                 </div>
                 
-                <div className="text-center p-6 border border-gray-800 rounded-lg">
+                <div className="text-center p-6 border border-[#282828] rounded-lg">
                   <div className="w-16 h-16 bg-yellow-400 rounded-full mx-auto mb-4 flex items-center justify-center">
                     <Crown className="w-8 h-8 text-black" />
                   </div>
