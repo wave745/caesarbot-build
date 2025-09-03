@@ -9,10 +9,6 @@ import { Wallet, TrendingUp, Plus, Search, Filter } from "lucide-react"
 
 export function WalletTracker() {
   const [searchQuery, setSearchQuery] = useState("")
-  const [activeTab, setActiveTab] = useState("overview")
-
-  const trackedWallets: any[] = []
-  const walletTokens: any[] = []
 
   return (
     <div className="min-h-screen bg-black text-white p-6">

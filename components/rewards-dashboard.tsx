@@ -6,87 +6,14 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { 
   Trophy, 
-  Star, 
-  Gift, 
-  TrendingUp, 
   Users, 
   Award, 
   Crown, 
   Share2, 
   ChevronUp,
-  Coins,
   Activity,
   BarChart3
 } from "lucide-react"
-
-const SolanaLogoIcon = () => (
-  <svg
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    {/* Top parallelogram - teal gradient */}
-    <path
-      d="M4 6L20 6L18 10L2 10L4 6Z"
-      fill="url(#tealGradient)"
-      rx="1"
-    />
-    {/* Middle parallelogram - purple gradient */}
-    <path
-      d="M2 10L18 10L16 14L0 14L2 10Z"
-      fill="url(#purpleGradient)"
-      rx="1"
-    />
-    {/* Bottom parallelogram - magenta gradient */}
-    <path
-      d="M0 14L16 14L14 18L-2 18L0 14Z"
-      fill="url(#magentaGradient)"
-      rx="1"
-    />
-    
-    {/* Gradients */}
-    <defs>
-      <linearGradient id="tealGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-        <stop offset="0%" stopColor="#14F195" />
-        <stop offset="100%" stopColor="#0ECB81" />
-      </linearGradient>
-      <linearGradient id="purpleGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-        <stop offset="0%" stopColor="#9945FF" />
-        <stop offset="100%" stopColor="#7C3AED" />
-      </linearGradient>
-      <linearGradient id="magentaGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-        <stop offset="0%" stopColor="#FF6B9D" />
-        <stop offset="100%" stopColor="#E91E63" />
-      </linearGradient>
-    </defs>
-  </svg>
-);
-
-const CaesarBotLogoIcon = () => (
-  <svg
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    {/* Three upward-pointing triangles forming a larger triangle */}
-    <path
-      d="M12 4L8 12L16 12L12 4Z"
-      fill="black"
-    />
-    <path
-      d="M10 8L6 16L14 16L10 8Z"
-      fill="black"
-    />
-    <path
-      d="M8 12L4 20L12 20L8 12Z"
-      fill="black"
-    />
-  </svg>
-);
 
 export function RewardsDashboard() {
   const [activeTab, setActiveTab] = useState("rewards")

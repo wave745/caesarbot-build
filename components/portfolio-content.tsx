@@ -102,12 +102,12 @@ export function PortfolioContent() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             <Card className="bg-[#282828] border-[#282828] p-4 sm:p-8">
               <div className="text-center">
-                <div className="text-gray-400 mb-2 text-sm sm:text-base">You don't have assets in any of the selected wallets</div>
+                <div className="text-gray-400 mb-2 text-sm sm:text-base">You don&apos;t have assets in any of the selected wallets</div>
               </div>
             </Card>
             <Card className="bg-[#282828] border-[#282828] p-4 sm:p-8">
               <div className="text-center">
-                <div className="text-gray-400 mb-2 text-sm sm:text-base">You don't have assets in any of the selected wallets</div>
+                <div className="text-gray-400 mb-2 text-sm sm:text-base">You don&apos;t have assets in any of the selected wallets</div>
               </div>
             </Card>
           </div>
@@ -163,7 +163,7 @@ export function PortfolioContent() {
 
             <Card className="bg-[#282828] border-[#282828] p-4 sm:p-8">
               <div className="text-center">
-                <div className="text-gray-400 mb-2 text-sm sm:text-base">You don't have SOL withdrawal wallets</div>
+                <div className="text-gray-400 mb-2 text-sm sm:text-base">You don&apos;t have SOL withdrawal wallets</div>
               </div>
             </Card>
           </div>

@@ -4,8 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Download } from "lucide-react"
 import Link from "next/link"
+import { useState } from "react"
 
 export function DashboardContent() {
+  const [selectedView, setSelectedView] = useState<"price" | "volume" | "wallet">("price")
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Dashboard Header */}
@@ -15,13 +17,13 @@ export function DashboardContent() {
 
       {/* Secondary Navigation */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 border-b border-[#282828] pb-4">
-        <div className="flex flex-wrap items-center gap-2 sm:gap-6">
-          {["Overview", "Assets", "Liquidity", "Reports", "Data", "Fees"].map((item, index) => (
+        <div className="flex items-center gap-6">
+          {["Overview", "Assets", "Liquidity"].map((item, index) => (
             <button
               key={item}
-                          className={`text-sm font-medium transition-colors hover:text-[#d7ab54] px-2 py-1 sm:px-0 sm:py-0 ${
-              index === 0 ? "text-white border-b-2 border-[#d7ab54] pb-1 sm:pb-2" : "text-gray-400"
-            }`}
+              className={`text-sm font-medium transition-colors hover:text-[#d7ab54] ${
+                index === 0 ? "text-white border-b-2 border-[#d7ab54] pb-1 sm:pb-2" : "text-gray-400"
+              }`}
             >
               {item}
             </button>
@@ -35,16 +37,45 @@ export function DashboardContent() {
         {/* Pool Performance */}
         <Card className="lg:col-span-2 bg-[#282828] border-[#282828]">
           <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <CardTitle className="text-white text-lg sm:text-xl">Pool Performance</CardTitle>
+            <CardTitle className="text-white text-lg sm:text-xl">Market Overview</CardTitle>
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
               <div className="flex items-center gap-2 text-sm">
-                <span className="text-gray-400">Price</span>
-                <span className="text-gray-400">APY</span>
+                <div className="flex bg-[#1a1a1a] rounded-lg p-1">
+                  <button 
+                    onClick={() => setSelectedView("price")}
+                    className={`px-3 py-1 rounded-md text-sm transition-colors ${
+                      selectedView === "price" 
+                        ? "bg-[#282828] text-white" 
+                        : "text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    Price
+                  </button>
+                  <button 
+                    onClick={() => setSelectedView("volume")}
+                    className={`px-3 py-1 rounded-md text-sm transition-colors ${
+                      selectedView === "volume" 
+                        ? "bg-[#282828] text-white" 
+                        : "text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    Volume
+                  </button>
+                  <button 
+                    onClick={() => setSelectedView("wallet")}
+                    className={`px-3 py-1 rounded-md text-sm transition-colors ${
+                      selectedView === "wallet" 
+                        ? "bg-[#282828] text-white" 
+                        : "text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    Wallet
+                  </button>
+                </div>
               </div>
               <select className="bg-[#282828] text-white text-sm px-3 py-1 rounded border border-[#282828] w-full sm:w-auto">
-                <option>Drop down filter for changing time frame metric</option>
-                <option>1H</option>
                 <option>24H</option>
+                <option>1H</option>
                 <option>7D</option>
                 <option>30D</option>
               </select>
@@ -56,8 +87,22 @@ export function DashboardContent() {
           </CardHeader>
           <CardContent>
             <div className="text-center py-8 sm:py-12">
-              <div className="text-gray-400 mb-4">No pool data available</div>
-              <p className="text-sm text-gray-500">Connect your wallet to view pool performance</p>
+              {selectedView === "price" ? (
+                <>
+                  <div className="text-gray-400 mb-4">No price data available</div>
+                  <p className="text-sm text-gray-500">Connect your wallet to view price performance</p>
+                </>
+              ) : selectedView === "volume" ? (
+                <>
+                  <div className="text-gray-400 mb-4">No volume data available</div>
+                  <p className="text-sm text-gray-500">Connect your wallet to view volume performance</p>
+                </>
+              ) : (
+                <>
+                  <div className="text-gray-400 mb-4">No wallet data available</div>
+                  <p className="text-sm text-gray-500">Connect your wallet to view wallet performance</p>
+                </>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -90,7 +135,7 @@ export function DashboardContent() {
         <Card className="bg-[#282828] border-[#282828]">
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <CardTitle className="text-white text-lg sm:text-xl">META</CardTitle>
+              <CardTitle className="text-white text-lg sm:text-xl">Meta</CardTitle>
               <Button
                 variant="outline"
                 size="sm"
@@ -138,7 +183,7 @@ export function DashboardContent() {
         {/* Wallet Tracker */}
         <Card className="bg-[#282828] border-[#282828] md:col-span-2 lg:col-span-1">
           <CardHeader>
-            <CardTitle className="text-white text-lg sm:text-xl">WALLET TRACKER</CardTitle>
+                          <CardTitle className="text-white text-lg sm:text-xl">Wallet Tracker</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-center py-6 sm:py-8">

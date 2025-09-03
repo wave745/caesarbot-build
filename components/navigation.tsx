@@ -25,7 +25,14 @@ export function Navigation() {
   const dropdownRef = useRef<HTMLDivElement>(null)
   const mobileMenuRef = useRef<HTMLDivElement>(null)
 
-  const connectedWallets: any[] = []
+  interface ConnectedWallet {
+    name: string
+    address: string
+    balance: number
+    isConnected: boolean
+  }
+
+  const connectedWallets: ConnectedWallet[] = []
   const isWalletConnected = false
 
   useEffect(() => {

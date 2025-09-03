@@ -17,12 +17,10 @@ import {
 } from "lucide-react"
 
 export function TradingChart() {
-  const [selectedPair, setSelectedPair] = useState("BTC/USDT")
+  const [selectedPair] = useState("BTC/USDT")
   const [orderType, setOrderType] = useState("limit")
   const [side, setSide] = useState("buy")
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-
-  const tradingPairs: any[] = []
 
   return (
     <div className="h-screen bg-black text-white overflow-hidden">
