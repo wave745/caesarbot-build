@@ -3,15 +3,16 @@
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Search, User, Settings, Bell, Wallet, Menu, Copy, Zap, TrendingUp, X } from "lucide-react"
+import { User, Settings, Bell, Wallet, Menu, Copy, Zap, TrendingUp, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { useState, useRef, useEffect } from "react"
 
 const navItems = [
   { name: "Discover", href: "/" },
   { name: "Tracker", href: "/tracker" },
+  { name: "Scanner", href: "/scanner" },
   { name: "AI Trading", href: "/ai-trading" },
+  { name: "Sniper", href: "/sniper" },
   { name: "Portfolio", href: "/portfolio" },
   { name: "Deployer", href: "/deployer" },
   { name: "Rewards", href: "/rewards" },
@@ -21,7 +22,6 @@ export function Navigation() {
   const pathname = usePathname()
   const [isWalletDropdownOpen, setIsWalletDropdownOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [isSearchOpen, setIsSearchOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const mobileMenuRef = useRef<HTMLDivElement>(null)
 
@@ -54,7 +54,6 @@ export function Navigation() {
   // Close mobile menu when route changes
   useEffect(() => {
     setIsMobileMenuOpen(false)
-    setIsSearchOpen(false)
   }, [pathname])
 
   return (
@@ -107,15 +106,8 @@ export function Navigation() {
           ))}
         </div>
 
-        {/* Desktop Search and User Actions */}
+        {/* Desktop User Actions */}
         <div className="hidden lg:flex items-center gap-3 flex-shrink-0">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <Input
-              placeholder="Search tokens..."
-              className="pl-10 w-40 bg-[#282828] border-[#282828] text-white placeholder-gray-400 text-sm"
-            />
-          </div>
 
           <div className="flex items-center gap-2">
             <div className="relative" ref={dropdownRef}>
@@ -207,15 +199,6 @@ export function Navigation() {
 
         {/* Mobile Actions */}
         <div className="flex lg:hidden items-center gap-2">
-          {/* Mobile Search Toggle */}
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="text-gray-400 hover:text-[#d7ab54] hover:bg-gray-800/80 transition-all duration-300 w-9 h-9 group"
-            onClick={() => setIsSearchOpen(!isSearchOpen)}
-          >
-            <Search className="w-4 h-4 group-hover:scale-110 transition-transform duration-300" />
-          </Button>
 
           {/* Mobile Menu Toggle */}
           <Button 
@@ -229,19 +212,7 @@ export function Navigation() {
         </div>
       </div>
 
-      {/* Mobile Search Bar */}
-      {isSearchOpen && (
-        <div className="lg:hidden mt-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <Input
-              placeholder="Search tokens..."
-              className="pl-10 w-full bg-[#282828] border-[#282828] text-white placeholder-gray-400 text-sm"
-              autoFocus
-            />
-          </div>
-        </div>
-      )}
+
 
       {/* Mobile Menu */}
       {isMobileMenuOpen && (

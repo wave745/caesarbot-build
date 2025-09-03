@@ -2,8 +2,9 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Download } from "lucide-react"
+import { Input } from "@/components/ui/input"
 import Link from "next/link"
+import { Search } from "lucide-react"
 import { useState } from "react"
 
 export function DashboardContent() {
@@ -37,7 +38,16 @@ export function DashboardContent() {
         {/* Pool Performance */}
         <Card className="lg:col-span-2 bg-[#282828] border-[#282828]">
           <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <CardTitle className="text-white text-lg sm:text-xl">Market Overview</CardTitle>
+            <div className="flex items-center gap-4">
+              <CardTitle className="text-white text-lg sm:text-xl">Market Overview</CardTitle>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  placeholder="Search tokens..."
+                  className="pl-10 w-48 bg-[#282828] border-[#282828] text-white placeholder-gray-400 text-sm"
+                />
+              </div>
+            </div>
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
               <div className="flex items-center gap-2 text-sm">
                 <div className="flex bg-[#1a1a1a] rounded-lg p-1">
@@ -79,10 +89,7 @@ export function DashboardContent() {
                 <option>7D</option>
                 <option>30D</option>
               </select>
-              <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white w-full sm:w-auto">
-                <Download className="w-4 h-4 mr-2" />
-                Download
-              </Button>
+
             </div>
           </CardHeader>
           <CardContent>

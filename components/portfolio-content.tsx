@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Plus, Download, Filter } from "lucide-react"
+import { Plus, Filter } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 
@@ -129,14 +129,7 @@ export function PortfolioContent() {
                   <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                   Create
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="bg-[#282828] border-[#282828] text-white hover:bg-[#282828] text-xs sm:text-sm"
-                >
-                  <Download className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                  Import
-                </Button>
+
               </div>
             </div>
 
