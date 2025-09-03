@@ -40,11 +40,11 @@ export function DashboardContent() {
           <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <CardTitle className="text-white text-lg sm:text-xl">Market Overview</CardTitle>
-              <div className="relative">
+              <div className="relative bg-[#1a1a1a] rounded-lg p-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
                   placeholder="Search tokens..."
-                  className="pl-10 w-48 bg-[#282828] border-[#282828] text-white placeholder-gray-400 text-sm"
+                  className="pl-10 w-40 bg-transparent border-0 text-white placeholder-gray-400 text-sm focus:ring-0 focus:ring-offset-0"
                 />
               </div>
             </div>
@@ -83,12 +83,14 @@ export function DashboardContent() {
                   </button>
                 </div>
               </div>
-              <select className="bg-[#282828] text-white text-sm px-3 py-1 rounded border border-[#282828] w-full sm:w-auto">
-                <option>24H</option>
-                <option>1H</option>
-                <option>7D</option>
-                <option>30D</option>
-              </select>
+              <div className="bg-[#1a1a1a] rounded-lg p-1">
+                <select className="bg-transparent text-white text-sm px-3 py-1 border-0 w-full sm:w-auto focus:ring-0 focus:ring-offset-0">
+                  <option>24H</option>
+                  <option>1H</option>
+                  <option>7D</option>
+                  <option>30D</option>
+                </select>
+              </div>
 
             </div>
           </CardHeader>
