@@ -1,6 +1,6 @@
 # Scanner Components
 
-This directory contains all the components for the CaesarBot Scanner page - a real-time token discovery and analysis tool.
+This directory contains all the components for the CaesarX Scanner page - a real-time token discovery and analysis tool.
 
 ## Components
 
@@ -48,13 +48,13 @@ This directory contains all the components for the CaesarBot Scanner page - a re
 
 ## Usage
 
-The scanner page is accessible at `/scanner` and integrates with the existing CaesarBot navigation. All components are built with Tailwind CSS and follow the existing design system.
+The scanner page is accessible at `/scanner` and integrates with the existing CaesarX navigation. All components are built with Tailwind CSS and follow the existing design system.
 
 **Note**: The scanner is currently configured to return empty data and is ready for real data integration. To connect real data sources, update the `ScannerService` class in `lib/scanner-service.ts`.
 
 ## Data Integration
 
-The scanner is designed to integrate with CaesarBot's existing command system:
+The scanner is designed to integrate with CaesarX's existing command system:
 - `/th`, `/top_holders` → Security analysis
 - `/whale`, `/whale_map` → Whale detection
 - `/early_map`, `/fresh`, `/sn` → Early buyer analysis

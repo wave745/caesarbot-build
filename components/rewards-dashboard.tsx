@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import Image from "next/image"
 import { 
   Trophy, 
   Users, 
@@ -129,7 +130,7 @@ export function RewardsDashboard() {
                     <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-green-500 rounded-full opacity-20"></div>
                     <div className="flex items-center gap-3 relative z-10">
                       <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
-                        <img src="/sol-logo.png" alt="Solana" className="w-4 h-4" />
+                        <Image src="/sol-logo.png" alt="Solana" width={16} height={16} className="w-4 h-4" />
                       </div>
                       <span className="text-white font-semibold">+0</span>
                     </div>
@@ -137,7 +138,7 @@ export function RewardsDashboard() {
                   <div className="flex items-center justify-between p-3 bg-transparent rounded-full border border-gray-400">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 bg-transparent rounded-full flex items-center justify-center">
-                        <img src="/caesarbot-logo.png" alt="CaesarBot" className="w-4 h-4" />
+                        <Image src="/caesarx-logo.png" alt="CaesarX" width={16} height={16} className="w-4 h-4" />
                       </div>
                       <span className="text-white font-semibold">+0</span>
                     </div>

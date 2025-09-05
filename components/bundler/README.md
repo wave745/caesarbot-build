@@ -1,4 +1,4 @@
-# Bundler Integration for Caesarbot
+# Bundler Integration for CaesarX
 
 This implementation provides a complete bundler integration that allows Copy Trading, Sniper, and dedicated Bundler automations to execute transactions as Jito bundles for faster, more reliable execution.
 
@@ -320,4 +320,4 @@ const result = await integration.executeBundlerAutomation(
 - Execution failures
 - Authority changes
 
-This implementation provides a production-ready bundler system that integrates seamlessly with your existing Caesarbot architecture while maintaining the highest standards of safety and reliability.
+This implementation provides a production-ready bundler system that integrates seamlessly with your existing CaesarX architecture while maintaining the highest standards of safety and reliability.

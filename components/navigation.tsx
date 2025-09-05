@@ -64,8 +64,8 @@ export function Navigation() {
           <Link href="/" className="flex items-center gap-2 sm:gap-3">
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center">
               <Image
-                src="/caesarbot-logo.png"
-                alt="CaesarBot"
+                src="/caesarx-logo.png"
+                alt="CaesarX"
                 width={44}
                 height={44}
                 className="rounded-full w-8 h-8 sm:w-11 sm:h-11"
@@ -79,7 +79,7 @@ export function Navigation() {
               />
             </div>
             <span className="text-[#d7ab54] font-bold text-lg sm:text-xl lg:text-2xl tracking-wide hidden sm:block">
-              CAESARBOT
+              CAESARx
             </span>
           </Link>
         </div>

@@ -139,7 +139,7 @@
   }
 }
 
-/* Caesarbot Theme Variables */
+/* CaesarX Theme Variables */
 :root {
   --cb-bg:        #0a0a0a;   /* page */
   --cb-panel:     #0f0f0f;   /* cards/modals */
@@ -159,7 +159,7 @@
   --cb-info:      #38bdf8;   /* sky */
 }
 
-/* Caesarbot Component Classes */
+/* CaesarX Component Classes */
 .cb-panel   { background:var(--cb-panel); border:1px solid var(--cb-border); border-radius:14px; }
 .cb-input   { background:linear-gradient(0deg, var(--cb-muted), var(--cb-muted));
               border:1px solid var(--cb-border); color:var(--cb-text); border-radius:12px; }

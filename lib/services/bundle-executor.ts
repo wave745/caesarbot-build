@@ -8,7 +8,8 @@
 
 // Mock Connection type
 interface Connection {
-  // Mock connection interface
+  // Mock connection interface - placeholder for Solana connection
+  rpcEndpoint?: string;
 }
 import { getPortfolioSigner } from './portfolio-signer'
 import { PreparedBundle, RelayResult, BundleStep, ExecParams } from '@/lib/types/automation'
@@ -17,7 +18,7 @@ export interface BundleExecutionOptions {
   walletId: string
   recipe: BundleStep[]
   exec: ExecParams
-  context?: Record<string, any> // token, pool, amount, etc.
+  context?: Record<string, unknown> // token, pool, amount, etc.
   maxTxsPerBundle?: number
   rateLimitMs?: number
 }

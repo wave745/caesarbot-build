@@ -18,7 +18,7 @@ const buttonVariants = cva(
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
-        // Caesarbot variants
+        // CaesarX variants
         gold: "bg-gradient-to-r from-yellow-600/20 to-yellow-500/20 border border-yellow-500/40 text-yellow-100 hover:from-yellow-600/30 hover:to-yellow-500/30 hover:border-yellow-400/60 hover:text-yellow-50 focus-visible:ring-yellow-500/50",
         goldSolid: "bg-yellow-600 border border-yellow-500 text-white hover:bg-yellow-500 hover:border-yellow-400 focus-visible:ring-yellow-500/50",
         dark: "bg-zinc-800 border border-zinc-700 text-zinc-200 hover:bg-zinc-700 hover:border-zinc-600 hover:text-white focus-visible:ring-zinc-500/50",

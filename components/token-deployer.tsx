@@ -184,7 +184,7 @@ export function TokenDeployer() {
                       id="tweetMentions"
                       value={tweetMentions}
                       onChange={(e) => setTweetMentions(e.target.value)}
-                      placeholder="@Solana @CaesarBot"
+                      placeholder="@Solana @CaesarX"
                       className="bg-[#282828] border-[#282828] text-white mt-1"
                     />
                     <p className="text-gray-400 text-xs mt-1">Separate usernames with spaces</p>

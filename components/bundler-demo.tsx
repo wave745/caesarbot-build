@@ -8,7 +8,8 @@ import { Card } from "@/components/ui/card"
 import { initializeBundlerIntegration, getBundlerIntegration } from "@/lib/services/bundler-integration"
 // Mock Connection type
 interface Connection {
-  // Mock connection interface
+  // Mock connection interface - placeholder for Solana connection
+  rpcEndpoint?: string;
 }
 
 const MockConnection = class MockConnection implements Connection {}
@@ -17,8 +18,8 @@ import { BundleStep, ExecParams } from "@/lib/types/automation"
 export function BundlerDemo() {
   const [isInitialized, setIsInitialized] = useState(false)
   const [isExecuting, setIsExecuting] = useState(false)
-  const [executionResult, setExecutionResult] = useState<any>(null)
-  const [stats, setStats] = useState<any>(null)
+  const [executionResult, setExecutionResult] = useState<{ success: boolean; message: string; data?: unknown } | null>(null)
+  const [stats, setStats] = useState<{ totalBundles: number; successRate: number; avgExecutionTime: number } | null>(null)
 
   // Initialize the bundler integration
   useEffect(() => {

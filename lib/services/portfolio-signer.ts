@@ -8,7 +8,8 @@
 
 // Mock Solana types for development
 interface Connection {
-  // Mock connection interface
+  // Mock connection interface - placeholder for Solana connection
+  rpcEndpoint?: string;
 }
 
 interface PublicKey {
@@ -16,11 +17,11 @@ interface PublicKey {
 }
 
 interface Transaction {
-  serialize(options?: any): Buffer
+  serialize(options?: { requireAllSignatures?: boolean; verifySignatures?: boolean }): Buffer
 }
 
 interface VersionedTransaction {
-  serialize(options?: any): Buffer
+  serialize(options?: { requireAllSignatures?: boolean; verifySignatures?: boolean }): Buffer
 }
 
 // Mock implementations
