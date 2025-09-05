@@ -42,6 +42,7 @@ export function SnipeForm({ automation, onSubmit, isSubmitting, onClose }: Snipe
       slippage: 1.0,
       mev: true
     },
+    execAsBundle: false,
     expiresAt: undefined as number | undefined
   })
 
@@ -59,15 +60,17 @@ export function SnipeForm({ automation, onSubmit, isSubmitting, onClose }: Snipe
         maxSpendSol: automation.snipe.maxSpendSol,
         maxSnipes: automation.snipe.maxSnipes,
         hasSocials: automation.snipe.hasSocials || false,
-        devParams: automation.snipe.devParams || {
-          tokensCreated: { min: undefined, max: undefined },
-          bondedCount: { min: undefined, max: undefined },
-          creatorBuy: { min: undefined, max: undefined },
-          bundleBuy: { min: undefined, max: undefined }
-        },
+        devParams: {
+          tokensCreated: { min: undefined as number | undefined, max: undefined as number | undefined },
+          bondedCount: { min: undefined as number | undefined, max: undefined as number | undefined },
+          creatorBuy: { min: undefined as number | undefined, max: undefined as number | undefined },
+          bundleBuy: { min: undefined as number | undefined, max: undefined as number | undefined },
+          ...automation.snipe.devParams
+        } as any,
         blacklist: automation.snipe.blacklist || [],
         whitelist: automation.snipe.whitelist || [],
         exec: automation.exec,
+        execAsBundle: false,
         expiresAt: automation.expiresAt
       })
     }
@@ -82,14 +85,14 @@ export function SnipeForm({ automation, onSubmit, isSubmitting, onClose }: Snipe
     setFormData(prev => {
       const keys = path.split('.')
       const newData = { ...prev }
-      let current = newData
+      let current: any = newData
       
       for (let i = 0; i < keys.length - 1; i++) {
         current = current[keys[i]] = { ...current[keys[i]] }
       }
       
       current[keys[keys.length - 1]] = value
-      return newData
+      return newData as any
     })
   }
 
@@ -534,6 +537,19 @@ export function SnipeForm({ automation, onSubmit, isSubmitting, onClose }: Snipe
           <Switch
             checked={formData.exec.mev}
             onCheckedChange={(checked) => updateFormData("exec.mev", checked)}
+          />
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div>
+            <Label style={{ color: "var(--cb-text)" }}>Execute as Bundle</Label>
+            <p className="text-xs" style={{ color: "var(--cb-subtext)" }}>
+              Use Jito bundling for faster execution
+            </p>
+          </div>
+          <Switch
+            checked={formData.execAsBundle || false}
+            onCheckedChange={(checked) => updateFormData("execAsBundle", checked)}
           />
         </div>
       </div>

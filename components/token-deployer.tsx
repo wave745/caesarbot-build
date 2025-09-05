@@ -275,7 +275,7 @@ export function TokenDeployer() {
 
                 <div className="flex justify-between items-center py-2 border-b border-[#282828]">
                   <span className="text-gray-400">Network:</span>
-                  <Badge variant="outline" className="border-[#d7ab54] text-[#d7ab54]">
+                  <Badge variant="INFO" className="border-[#d7ab54] text-[#d7ab54]">
                     {network}
                   </Badge>
                 </div>

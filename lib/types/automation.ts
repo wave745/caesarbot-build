@@ -6,9 +6,35 @@ export type ExecParams = {
   mev: boolean
 }
 
+export type BundleStep =
+  | { kind: "approve"; program: "token" | "router" }
+  | { kind: "buy"; route: "raydium" | "jupiter" | "pump"; amountSol?: number; pctCap?: number }
+  | { kind: "guard"; minOutPct?: number; maxImpactPct?: number; minLp?: number }
+  | { kind: "list"; tpPct?: number; slPct?: number; trailingPct?: number }
+  | { kind: "sell"; pct?: number; amountSol?: number }
+
+export type BundleTrigger =
+  | { mode: "manual" }
+  | { mode: "signal"; type: "liquidity_add" | "trading_enabled" | "ticker" | "copy_wallet_buy" | "volume_spike"; args?: Record<string, any> }
+
+export type BundlerAutomation = {
+  id: string
+  walletId: string
+  trigger: BundleTrigger
+  recipe: BundleStep[]
+  limits: { maxSol: number; retries: number; cooldownSec: number; dailyCap: number }
+  exec: ExecParams
+  status: "active" | "paused" | "expired"
+  createdAt: number
+  expiresAt?: number
+}
+
+export type PreparedBundle = { txsBase58: string[]; routeMeta?: any }
+export type RelayResult = { ok: boolean; bundleId?: string; txids?: string[]; reason?: string }
+
 export type Automation = {
   id: string
-  mode: "copy" | "snipe"
+  mode: "copy" | "snipe" | "bundler"
   walletId: string
   status: "active" | "paused" | "expired"
   createdAt: number
@@ -20,7 +46,7 @@ export type Automation = {
     limits: { maxSingleBuy: number; maxPerToken: number }
     buy: {
       once: boolean
-      skipPumpfun: boolean
+      skipLaunchpads: boolean
       mcapMin?: number
       mcapMax?: number
       buyPercent?: number
@@ -53,6 +79,12 @@ export type Automation = {
     }
     blacklist?: string[]
     whitelist?: string[]
+  }
+  // bundler-only
+  bundler?: {
+    trigger: BundleTrigger
+    recipe: BundleStep[]
+    limits: { maxSol: number; retries: number; cooldownSec: number; dailyCap: number }
   }
 }
 

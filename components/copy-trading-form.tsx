@@ -30,7 +30,7 @@ export function CopyTradingForm({ automation, onSubmit, isSubmitting, onClose }:
     },
     buy: {
       once: true,
-      skipPumpfun: true,
+      skipLaunchpads: true,
       mcapMin: 5000,
       mcapMax: undefined as number | undefined,
       buyPercent: 50,
@@ -56,6 +56,7 @@ export function CopyTradingForm({ automation, onSubmit, isSubmitting, onClose }:
       slippage: 1.0,
       mev: true
     },
+    execAsBundle: false,
     expiresAt: undefined as number | undefined
   })
 
@@ -69,9 +70,26 @@ export function CopyTradingForm({ automation, onSubmit, isSubmitting, onClose }:
         walletId: automation.walletId,
         target: automation.copy.target,
         limits: automation.copy.limits,
-        buy: automation.copy.buy,
+        buy: {
+          ...automation.copy.buy,
+          mcapMin: automation.copy.buy.mcapMin || 0,
+          mcapMax: automation.copy.buy.mcapMax,
+          buyPercent: automation.copy.buy.buyPercent || 5,
+          minBuySize: automation.copy.buy.minBuySize || 0.01,
+          mintAuthDisabled: automation.copy.buy.mintAuthDisabled || false,
+          freezeAuthDisabled: automation.copy.buy.freezeAuthDisabled || false,
+          devPct: automation.copy.buy.devPct || { min: 0, max: 100 } as any,
+          top10Pct: automation.copy.buy.top10Pct || { min: 0, max: 100 } as any,
+          tokenAgeMin: automation.copy.buy.tokenAgeMin || 0,
+          tokenAgeMax: automation.copy.buy.tokenAgeMax,
+          holdersMin: automation.copy.buy.holdersMin || 0,
+          holdersMax: automation.copy.buy.holdersMax,
+          minDevFund: automation.copy.buy.minDevFund || 0,
+          devFundSource: automation.copy.buy.devFundSource || "any"
+        },
         sell: automation.copy.sell,
         exec: automation.exec,
+        execAsBundle: false,
         expiresAt: automation.expiresAt
       })
     }
@@ -109,14 +127,14 @@ export function CopyTradingForm({ automation, onSubmit, isSubmitting, onClose }:
     setFormData(prev => {
       const keys = path.split('.')
       const newData = { ...prev }
-      let current = newData
+      let current: any = newData
       
       for (let i = 0; i < keys.length - 1; i++) {
         current = current[keys[i]] = { ...current[keys[i]] }
       }
       
       current[keys[keys.length - 1]] = value
-      return newData
+      return newData as any
     })
   }
 
@@ -283,10 +301,10 @@ export function CopyTradingForm({ automation, onSubmit, isSubmitting, onClose }:
           </div>
           
           <div className="flex items-center justify-between">
-            <Label style={{ color: "var(--cb-text)" }}>Skip Pumpfun</Label>
+            <Label style={{ color: "var(--cb-text)" }}>Skip Launchpads</Label>
             <Switch
-              checked={formData.buy.skipPumpfun}
-              onCheckedChange={(checked) => updateFormData("buy.skipPumpfun", checked)}
+              checked={formData.buy.skipLaunchpads}
+              onCheckedChange={(checked) => updateFormData("buy.skipLaunchpads", checked)}
             />
           </div>
           
@@ -466,6 +484,19 @@ export function CopyTradingForm({ automation, onSubmit, isSubmitting, onClose }:
           <Switch
             checked={formData.exec.mev}
             onCheckedChange={(checked) => updateFormData("exec.mev", checked)}
+          />
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div>
+            <Label style={{ color: "var(--cb-text)" }}>Execute as Bundle</Label>
+            <p className="text-xs" style={{ color: "var(--cb-subtext)" }}>
+              Use Jito bundling for faster execution
+            </p>
+          </div>
+          <Switch
+            checked={formData.execAsBundle || false}
+            onCheckedChange={(checked) => updateFormData("execAsBundle", checked)}
           />
         </div>
       </div>

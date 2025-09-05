@@ -199,7 +199,7 @@ export function RewardsDashboard() {
               <div className="flex items-center gap-2 mb-4">
                 <Users className="w-4 h-4 text-gray-400" />
                 <span className="text-gray-400">Referrals</span>
-                <Badge variant="secondary">0</Badge>
+                <Badge variant="INFO">0</Badge>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full">

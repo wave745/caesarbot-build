@@ -1,13 +1,14 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { X, Target, Zap, Plus, Trash2 } from "lucide-react"
+import { X, Target, Zap, Plus, Trash2, Package } from "lucide-react"
 import { useSniperStore } from "@/stores/sniper"
 import { AutomationAPI } from "@/lib/services/automation-api"
 import { Automation } from "@/lib/types/automation"
 import { Button } from "@/components/ui/button"
 import { CopyTradingForm } from "@/components/copy-trading-form"
 import { SnipeForm } from "@/components/snipe-form"
+import { BundlerForm } from "@/components/bundler-form"
 
 interface AutomationModalProps {
   mode: "create" | "edit" | "duplicate"
@@ -17,7 +18,7 @@ interface AutomationModalProps {
 
 export function AutomationModal({ mode, automation, onClose }: AutomationModalProps) {
   const { activeTab, setActiveTab, createAutomation, updateAutomation } = useSniperStore()
-  const [currentTab, setCurrentTab] = useState<"copy" | "snipe">(activeTab)
+  const [currentTab, setCurrentTab] = useState<"copy" | "snipe" | "bundler">(activeTab)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Set initial tab based on automation mode
@@ -47,8 +48,10 @@ export function AutomationModal({ mode, automation, onClose }: AutomationModalPr
         },
         ...(currentTab === "copy" ? {
           copy: formData.copy
-        } : {
+        } : currentTab === "snipe" ? {
           snipe: formData.snipe
+        } : {
+          bundler: formData.bundler
         })
       }
 
@@ -117,7 +120,17 @@ export function AutomationModal({ mode, automation, onClose }: AutomationModalPr
             aria-selected={currentTab === "snipe"}
           >
             <Zap className="w-4 h-4" />
-            Pumpfun Snipe
+            Sniper
+          </button>
+          <button
+            onClick={() => setCurrentTab("bundler")}
+            className={`cb-tab flex-1 flex items-center justify-center gap-2 ${
+              currentTab === "bundler" ? 'cb-tab[aria-selected="true"]' : ''
+            }`}
+            aria-selected={currentTab === "bundler"}
+          >
+            <Package className="w-4 h-4" />
+            Bundler
           </button>
         </div>
 
@@ -130,8 +143,15 @@ export function AutomationModal({ mode, automation, onClose }: AutomationModalPr
               isSubmitting={isSubmitting}
               onClose={onClose}
             />
-          ) : (
+          ) : currentTab === "snipe" ? (
             <SnipeForm
+              automation={automation}
+              onSubmit={handleSubmit}
+              isSubmitting={isSubmitting}
+              onClose={onClose}
+            />
+          ) : (
+            <BundlerForm
               automation={automation}
               onSubmit={handleSubmit}
               isSubmitting={isSubmitting}

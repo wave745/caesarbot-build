@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Plus, Target, Zap, Pause, Play, Edit, Copy, Trash2, FileText, Settings } from "lucide-react"
+import { Plus, Target, Zap, Pause, Play, Edit, Copy, Trash2, FileText, Settings, Package } from "lucide-react"
 import { useSniperStore } from "@/stores/sniper"
 import { AutomationAPI } from "@/lib/services/automation-api"
 import { Badge } from "@/components/ui/badge"
@@ -117,7 +117,7 @@ export function SniperContent() {
   }
 
   const getModeLabel = (mode: string) => {
-    return mode === "copy" ? "Copy Trading" : "Pumpfun Snipe"
+    return mode === "copy" ? "Copy Trading" : "Sniper"
   }
 
   return (
@@ -192,7 +192,15 @@ export function SniperContent() {
           aria-selected={activeTab === "snipe"}
         >
           <Zap className="w-4 h-4 mr-2 inline" />
-          Pumpfun Snipes
+          Sniper
+        </button>
+        <button
+          onClick={() => setActiveTab("bundler")}
+          className={`cb-tab ${activeTab === "bundler" ? 'cb-tab[aria-selected="true"]' : ''}`}
+          aria-selected={activeTab === "bundler"}
+        >
+          <Package className="w-4 h-4 mr-2 inline" />
+          Bundler
         </button>
       </div>
 
@@ -356,7 +364,7 @@ export function SniperContent() {
           {automations.filter(automation => automation.mode === activeTab).length === 0 && (
             <div className="p-8 text-center">
               <div className="text-lg mb-2" style={{ color: "var(--cb-subtext)" }}>
-                No {activeTab === "copy" ? "copy trading" : "snipe"} automations yet
+                No {activeTab === "copy" ? "copy trading" : "sniper"} automations yet
               </div>
               <div className="text-sm mb-4" style={{ color: "var(--cb-subtext)" }}>
                 Create your first automation to start auto-trading

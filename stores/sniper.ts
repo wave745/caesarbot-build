@@ -9,7 +9,7 @@ interface SniperState {
   selectedAutomation: Automation | null
   
   // UI State
-  activeTab: "copy" | "snipe"
+  activeTab: "copy" | "snipe" | "bundler"
   isModalOpen: boolean
   modalMode: "create" | "edit" | "duplicate"
   
@@ -30,7 +30,7 @@ interface SniperState {
   logs: AutomationLog[]
   
   // Actions
-  setActiveTab: (tab: "copy" | "snipe") => void
+  setActiveTab: (tab: "copy" | "snipe" | "bundler") => void
   openModal: (mode: "create" | "edit" | "duplicate", automation?: Automation) => void
   closeModal: () => void
   setSelectedAutomation: (automation: Automation | null) => void
