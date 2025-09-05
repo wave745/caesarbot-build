@@ -138,3 +138,44 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Caesarbot Theme Variables */
+:root {
+  --cb-bg:        #0a0a0a;   /* page */
+  --cb-panel:     #0f0f0f;   /* cards/modals */
+  --cb-muted:     #18181b;   /* inputs, table rows */
+  --cb-border:    #27272a;   /* subtle borders */
+  --cb-text:      #e5e7eb;   /* primary text */
+  --cb-subtext:   #a1a1aa;   /* secondary text */
+
+  --cb-gold:      #eab308;   /* accent */
+  --cb-gold-20:   rgba(234,179,8,.20);
+  --cb-gold-30:   rgba(234,179,8,.30);
+
+  /* semantic */
+  --cb-ok:        #34d399;   /* emerald */
+  --cb-warn:      #f59e0b;   /* amber */
+  --cb-err:       #f43f5e;   /* rose */
+  --cb-info:      #38bdf8;   /* sky */
+}
+
+/* Caesarbot Component Classes */
+.cb-panel   { background:var(--cb-panel); border:1px solid var(--cb-border); border-radius:14px; }
+.cb-input   { background:linear-gradient(0deg, var(--cb-muted), var(--cb-muted));
+              border:1px solid var(--cb-border); color:var(--cb-text); border-radius:12px; }
+.cb-accent  { border-color:var(--cb-gold-30) !important; box-shadow:0 0 0 0 rgba(0,0,0,0); }
+.cb-chip    { border:1px solid var(--cb-border); background:rgba(24,24,27,.6); border-radius:999px; }
+.cb-chip[data-on="true"]{ border-color:var(--cb-gold-30); background:var(--cb-gold-20); }
+.cb-underline { border-bottom:2px solid rgba(255,255,255,.85); }
+
+.cb-badge { font-size:11px; padding:2px 8px; border-radius:999px; border:1px solid var(--cb-border); }
+.cb-ok   { color:var(--cb-ok);   border-color:rgba(52,211,153,.35); background:rgba(52,211,153,.12); }
+.cb-warn { color:var(--cb-warn); border-color:rgba(245,158,11,.35); background:rgba(245,158,11,.12); }
+.cb-err  { color:var(--cb-err);  border-color:rgba(244,63,94,.35);  background:rgba(244,63,94,.12); }
+.cb-info { color:var(--cb-info); border-color:rgba(56,189,248,.35); background:rgba(56,189,248,.12); }
+
+/* tabs & focus */
+.cb-tab     { color:var(--cb-subtext); padding:8px 0; }
+.cb-tab[aria-selected="true"] { color:var(--cb-text); border-bottom:2px solid var(--cb-text); }
+.cb-focus:focus { outline:none; box-shadow:0 0 0 3px var(--cb-gold-20), inset 0 0 0 1px var(--cb-gold-30); }
+.cb-hover:hover { border-color:var(--cb-gold-30); }
