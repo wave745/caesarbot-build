@@ -18,8 +18,8 @@ export function ScannerContent() {
   const [loading, setLoading] = useState(true);
   const [allTokens, setAllTokens] = useState(tokens);
 
-  // Empty trending data - ready for real data integration
-  const trendingTokens: { rank:number; ticker:string; name:string; vol:number; change:number }[] = [];
+  // Load trending tokens
+  const [trendingTokens, setTrendingTokens] = useState<{ rank:number; ticker:string; name:string; vol:number; change:number }[]>([]);
 
   // Load tokens based on filters
   useEffect(() => {
@@ -61,6 +61,17 @@ export function ScannerContent() {
     loadLiveFeed();
     const interval = setInterval(loadLiveFeed, 10000); // Update every 10 seconds
     return () => clearInterval(interval);
+  }, []);
+
+  // Load trending tokens
+  useEffect(() => {
+    const loadTrendingTokens = async () => {
+      const scannerService = ScannerService.getInstance();
+      const trending = await scannerService.getTrendingTokens();
+      setTrendingTokens(trending);
+    };
+    
+    loadTrendingTokens();
   }, []);
 
   return (

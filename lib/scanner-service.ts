@@ -1,4 +1,5 @@
 import { TokenRow } from "@/stores/scanner";
+import { ScannerMockData } from "@/lib/mock-data/scanner-mock-data";
 
 // Service layer for scanner data
 export class ScannerService {
@@ -20,19 +21,47 @@ export class ScannerService {
     riskyOnly?: boolean;
   }): Promise<TokenRow[]> {
     try {
-      const response = await fetch('/api/scanner/tokens', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(filters)
-      })
+      // For now, return mock data instead of making API calls
+      // TODO: Replace with real API calls when backend is ready
+      const mockTokens = ScannerMockData.generateTokens(50);
       
-      if (!response.ok) {
-        throw new Error(`Failed to fetch tokens: ${response.statusText}`)
+      // Apply filters to mock data
+      let filteredTokens = mockTokens;
+      
+      if (filters?.whales) {
+        filteredTokens = filteredTokens.filter(token => 
+          token.tags?.includes("whale-in") || token.whaleInflow && token.whaleInflow > 100000
+        );
       }
       
-      return await response.json()
+      if (filters?.early) {
+        filteredTokens = filteredTokens.filter(token => 
+          token.tags?.includes("early") || (token.age && token.age < 24)
+        );
+      }
+      
+      if (filters?.snipers) {
+        filteredTokens = filteredTokens.filter(token => 
+          token.tags?.includes("sniper")
+        );
+      }
+      
+      if (filters?.kol) {
+        filteredTokens = filteredTokens.filter(token => 
+          token.tags?.includes("kol")
+        );
+      }
+      
+      if (filters?.riskyOnly) {
+        filteredTokens = filteredTokens.filter(token => 
+          token.risk === "high" || token.flags?.bundled || token.flags?.devSold
+        );
+      }
+      
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      return filteredTokens;
     } catch (error) {
       console.error("Error fetching tokens:", error)
       return []
@@ -41,15 +70,31 @@ export class ScannerService {
 
   async getLiveFeed(): Promise<{ts: number, text: string}[]> {
     try {
-      const response = await fetch('/api/scanner/live-feed')
+      // Return mock live feed data
+      // TODO: Replace with real WebSocket/API calls when backend is ready
+      const mockFeed = ScannerMockData.generateLiveFeedEvents();
       
-      if (!response.ok) {
-        throw new Error(`Failed to fetch live feed: ${response.statusText}`)
-      }
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 100));
       
-      return await response.json()
+      return mockFeed;
     } catch (error) {
       console.error("Error fetching live feed:", error)
+      return []
+    }
+  }
+
+  async getTrendingTokens(): Promise<{ rank: number; ticker: string; name: string; vol: number; change: number }[]> {
+    try {
+      // Return mock trending data
+      const mockTrending = ScannerMockData.generateTrendingTokens();
+      
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      return mockTrending;
+    } catch (error) {
+      console.error("Error fetching trending tokens:", error)
       return []
     }
   }
