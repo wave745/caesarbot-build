@@ -79,7 +79,7 @@ export function Navigation() {
               />
             </div>
             <span className="text-[#d7ab54] font-bold text-lg sm:text-xl lg:text-2xl tracking-wide hidden sm:block">
-              CAESARx
+              Caesar X
             </span>
           </Link>
         </div>

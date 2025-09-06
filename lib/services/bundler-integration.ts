@@ -8,8 +8,7 @@
 
 // Mock Solana types
 interface Connection {
-  // Mock connection interface - placeholder for Solana connection
-  rpcEndpoint?: string;
+  // Mock connection interface
 }
 
 interface PublicKey {
