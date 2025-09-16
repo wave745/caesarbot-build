@@ -11,7 +11,6 @@ const navItems = [
   { name: "Discover", href: "/" },
   { name: "Tracker", href: "/tracker" },
   { name: "Scanner", href: "/scanner" },
-  { name: "AI Trading", href: "/ai-trading" },
   { name: "Sniper", href: "/sniper" },
   { name: "Portfolio", href: "/portfolio" },
   { name: "Deployer", href: "/deployer" },

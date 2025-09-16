@@ -127,9 +127,9 @@ export class SniperMockData {
       },
       snipe: {
         tickers: [
-          { value: "PEPE", op: "eq" },
-          { value: "BONK", op: "eq" },
-          { value: "WIF", op: "eq" }
+          { value: "PEPE", op: "eq" as const },
+          { value: "BONK", op: "eq" as const },
+          { value: "WIF", op: "eq" as const }
         ].slice(0, Math.floor(Math.random() * 3) + 1),
         budgetSol: Math.random() * 20 + 5, // 5-25 SOL
         maxSpendSol: Math.random() * 5 + 1, // 1-6 SOL per snipe

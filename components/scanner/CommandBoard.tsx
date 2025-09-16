@@ -44,12 +44,15 @@ export default function CommandBoard({ onClose, onChoose }:{
   onClose:()=>void; 
   onChoose?:(key:string)=>void;
 }) {
-  const { setFilters } = useScanner();
+  const { setFilters, setSelectedFeature } = useScanner();
   const tabs = Object.keys(GROUPS);
   const [tab, setTab] = useState(tabs[0]);
 
   const handle = (k:string) => {
-    // Map commands to filters
+    // Set the selected feature for advanced analysis
+    setSelectedFeature(k);
+    
+    // For some commands, also apply filters
     switch(k) {
       case "whale":
         setFilters({ whales: true });
@@ -64,8 +67,8 @@ export default function CommandBoard({ onClose, onChoose }:{
         setFilters({ riskyOnly: true });
         break;
       default:
-        // For other commands, you could open specific drawer sections
-        console.log(`Command: ${k}`);
+        // For other commands, just set the feature
+        break;
     }
     
     onChoose?.(k);

@@ -1,5 +1,4 @@
 import { TokenRow } from "@/stores/scanner";
-import { ScannerMockData } from "@/lib/mock-data/scanner-mock-data";
 
 // Service layer for scanner data
 export class ScannerService {
@@ -12,6 +11,29 @@ export class ScannerService {
     return ScannerService.instance;
   }
 
+  async searchToken(query: string): Promise<TokenRow[]> {
+    try {
+      // Make API call to search for token
+      const response = await fetch('/api/scanner/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to search token');
+      }
+
+      const data = await response.json();
+      return data.tokens || [];
+    } catch (error) {
+      console.error("Error searching token:", error);
+      return [];
+    }
+  }
+
   async getTokens(filters?: {
     group?: string;
     whales?: boolean;
@@ -21,81 +43,24 @@ export class ScannerService {
     riskyOnly?: boolean;
   }): Promise<TokenRow[]> {
     try {
-      // For now, return mock data instead of making API calls
-      // TODO: Replace with real API calls when backend is ready
-      const mockTokens = ScannerMockData.generateTokens(50);
-      
-      // Apply filters to mock data
-      let filteredTokens = mockTokens;
-      
-      if (filters?.whales) {
-        filteredTokens = filteredTokens.filter(token => 
-          token.tags?.includes("whale-in") || token.whaleInflow && token.whaleInflow > 100000
-        );
-      }
-      
-      if (filters?.early) {
-        filteredTokens = filteredTokens.filter(token => 
-          token.tags?.includes("early") || (token.age && token.age < 24)
-        );
-      }
-      
-      if (filters?.snipers) {
-        filteredTokens = filteredTokens.filter(token => 
-          token.tags?.includes("sniper")
-        );
-      }
-      
-      if (filters?.kol) {
-        filteredTokens = filteredTokens.filter(token => 
-          token.tags?.includes("kol")
-        );
-      }
-      
-      if (filters?.riskyOnly) {
-        filteredTokens = filteredTokens.filter(token => 
-          token.risk === "high" || token.flags?.bundled || token.flags?.devSold
-        );
-      }
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      return filteredTokens;
-    } catch (error) {
-      console.error("Error fetching tokens:", error)
-      return []
-    }
-  }
+      // Make API call to get tokens with filters
+      const response = await fetch('/api/scanner/tokens', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(filters || {}),
+      });
 
-  async getLiveFeed(): Promise<{ts: number, text: string}[]> {
-    try {
-      // Return mock live feed data
-      // TODO: Replace with real WebSocket/API calls when backend is ready
-      const mockFeed = ScannerMockData.generateLiveFeedEvents();
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      return mockFeed;
-    } catch (error) {
-      console.error("Error fetching live feed:", error)
-      return []
-    }
-  }
+      if (!response.ok) {
+        throw new Error('Failed to fetch tokens');
+      }
 
-  async getTrendingTokens(): Promise<{ rank: number; ticker: string; name: string; vol: number; change: number }[]> {
-    try {
-      // Return mock trending data
-      const mockTrending = ScannerMockData.generateTrendingTokens();
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 200));
-      
-      return mockTrending;
+      const data = await response.json();
+      return data.tokens || [];
     } catch (error) {
-      console.error("Error fetching trending tokens:", error)
-      return []
+      console.error("Error fetching tokens:", error);
+      return [];
     }
   }
 }

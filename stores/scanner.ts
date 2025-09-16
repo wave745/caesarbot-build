@@ -38,10 +38,14 @@ type ScannerState = {
   };
   tokens: TokenRow[];
   selected?: TokenRow | null;
+  selectedToken?: TokenRow | null;
+  selectedFeature?: string | null;
   setQuery: (q: string) => void;
   setFilters: (p: Partial<ScannerState["filters"]>) => void;
   setTokens: (t: TokenRow[]) => void;
   select: (t: TokenRow | null) => void;
+  setSelectedToken: (t: TokenRow | null) => void;
+  setSelectedFeature: (f: string | null) => void;
 };
 
 export const useScanner = create<ScannerState>((set) => ({
@@ -49,8 +53,12 @@ export const useScanner = create<ScannerState>((set) => ({
   filters: { group: "top" },
   tokens: [],
   selected: null,
+  selectedToken: null,
+  selectedFeature: null,
   setQuery: (q) => set({ query: q }),
   setFilters: (p) => set(s => ({ filters: { ...s.filters, ...p } })),
   setTokens: (t) => set({ tokens: t }),
   select: (t) => set({ selected: t }),
+  setSelectedToken: (t) => set({ selectedToken: t }),
+  setSelectedFeature: (f) => set({ selectedFeature: f }),
 }));

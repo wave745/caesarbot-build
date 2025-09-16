@@ -1,15 +1,12 @@
 import { NextResponse } from 'next/server';
-import { ScannerMockData } from '@/lib/mock-data/scanner-mock-data';
 
 export async function GET() {
   try {
-    // Generate mock live feed data
-    const mockFeed = ScannerMockData.generateLiveFeedEvents();
+    // TODO: Replace with real live feed data
+    // For now, return empty array
+    const liveFeed: any[] = [];
     
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
-    return NextResponse.json(mockFeed);
+    return NextResponse.json(liveFeed);
   } catch (error) {
     console.error('Error in scanner live feed API:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
