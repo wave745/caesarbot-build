@@ -9,7 +9,7 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        default: "bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-semibold rounded-xl hover:from-yellow-400 hover:to-orange-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:ring-offset-zinc-900",
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline:
@@ -20,8 +20,9 @@ const buttonVariants = cva(
         link: "text-primary underline-offset-4 hover:underline",
         // CaesarX variants
         gold: "bg-gradient-to-r from-yellow-600/20 to-yellow-500/20 border border-yellow-500/40 text-yellow-100 hover:from-yellow-600/30 hover:to-yellow-500/30 hover:border-yellow-400/60 hover:text-yellow-50 focus-visible:ring-yellow-500/50",
-        goldSolid: "bg-yellow-600 border border-yellow-500 text-white hover:bg-yellow-500 hover:border-yellow-400 focus-visible:ring-yellow-500/50",
+        goldSolid: "bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-semibold rounded-xl hover:from-yellow-400 hover:to-orange-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:ring-offset-zinc-900",
         dark: "bg-zinc-800 border border-zinc-700 text-zinc-200 hover:bg-zinc-700 hover:border-zinc-600 hover:text-white focus-visible:ring-zinc-500/50",
+        gradient: "bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-semibold rounded-xl hover:from-yellow-400 hover:to-orange-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:ring-offset-zinc-900",
       },
       size: {
         default: "h-10 px-4 py-2",

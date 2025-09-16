@@ -82,16 +82,16 @@ export function MetaAnalysis() {
       {/* Main Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="bg-black border-zinc-800 mb-6">
-          <TabsTrigger value="overview" className="data-[state=active]:bg-[#d7ab54] data-[state=active]:text-black">
+          <TabsTrigger value="overview" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-500 data-[state=active]:to-orange-500 data-[state=active]:text-black">
             Overview
           </TabsTrigger>
-          <TabsTrigger value="sentiment" className="data-[state=active]:bg-[#d7ab54] data-[state=active]:text-black">
+          <TabsTrigger value="sentiment" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-500 data-[state=active]:to-orange-500 data-[state=active]:text-black">
             Sentiment
           </TabsTrigger>
-          <TabsTrigger value="signals" className="data-[state=active]:bg-[#d7ab54] data-[state=active]:text-black">
+          <TabsTrigger value="signals" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-500 data-[state=active]:to-orange-500 data-[state=active]:text-black">
             Signals
           </TabsTrigger>
-          <TabsTrigger value="trends" className="data-[state=active]:bg-[#d7ab54] data-[state=active]:text-black">
+          <TabsTrigger value="trends" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-500 data-[state=active]:to-orange-500 data-[state=active]:text-black">
             Trends
           </TabsTrigger>
         </TabsList>

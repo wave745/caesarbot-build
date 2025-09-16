@@ -22,8 +22,8 @@ export function DashboardContent() {
           {["Overview", "Assets", "Liquidity"].map((item, index) => (
             <button
               key={item}
-              className={`text-sm font-medium transition-colors hover:text-[#d7ab54] ${
-                index === 0 ? "text-white border-b-2 border-[#d7ab54] pb-1 sm:pb-2" : "text-gray-400"
+              className={`text-sm font-medium transition-colors hover:text-yellow-400 ${
+                index === 0 ? "text-white border-b-2 border-yellow-500 pb-1 sm:pb-2" : "text-gray-400"
               }`}
             >
               {item}
@@ -36,11 +36,11 @@ export function DashboardContent() {
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Pool Performance */}
-        <Card className="lg:col-span-2 bg-[#282828] border-[#282828]">
+        <Card className="lg:col-span-2 bg-[#111111] border-[#282828]">
           <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <CardTitle className="text-white text-lg sm:text-xl">Market Overview</CardTitle>
-              <div className="relative bg-[#1a1a1a] rounded-lg p-1">
+              <div className="relative bg-[#111111] rounded-lg p-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
                   placeholder="Search tokens..."
@@ -50,13 +50,13 @@ export function DashboardContent() {
             </div>
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
               <div className="flex items-center gap-2 text-sm">
-                <div className="flex bg-[#1a1a1a] rounded-lg p-1">
+                <div className="flex bg-[#111111] rounded-lg p-1">
                   <button 
                     onClick={() => setSelectedView("price")}
                     className={`px-3 py-1 rounded-md text-sm transition-colors ${
                       selectedView === "price" 
-                        ? "bg-[#282828] text-white" 
-                        : "text-gray-400 hover:text-white"
+                        ? "bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-white border border-yellow-500/30" 
+                        : "text-gray-400 hover:text-yellow-400"
                     }`}
                   >
                     Price
@@ -65,8 +65,8 @@ export function DashboardContent() {
                     onClick={() => setSelectedView("volume")}
                     className={`px-3 py-1 rounded-md text-sm transition-colors ${
                       selectedView === "volume" 
-                        ? "bg-[#282828] text-white" 
-                        : "text-gray-400 hover:text-white"
+                        ? "bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-white border border-yellow-500/30" 
+                        : "text-gray-400 hover:text-yellow-400"
                     }`}
                   >
                     Volume
@@ -75,15 +75,15 @@ export function DashboardContent() {
                     onClick={() => setSelectedView("wallet")}
                     className={`px-3 py-1 rounded-md text-sm transition-colors ${
                       selectedView === "wallet" 
-                        ? "bg-[#282828] text-white" 
-                        : "text-gray-400 hover:text-white"
+                        ? "bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-white border border-yellow-500/30" 
+                        : "text-gray-400 hover:text-yellow-400"
                     }`}
                   >
                     Wallet
                   </button>
                 </div>
               </div>
-              <div className="bg-[#1a1a1a] rounded-lg p-1">
+              <div className="bg-[#111111] rounded-lg p-1">
                 <select className="bg-transparent text-white text-sm px-3 py-1 border-0 w-full sm:w-auto focus:ring-0 focus:ring-offset-0">
                   <option>24H</option>
                   <option>1H</option>
@@ -117,7 +117,7 @@ export function DashboardContent() {
         </Card>
 
         {/* Overview Stats */}
-        <Card className="bg-[#282828] border-[#282828]">
+        <Card className="bg-[#111111] border-[#282828]">
           <CardHeader>
             <CardTitle className="text-white text-lg sm:text-xl">Overview</CardTitle>
           </CardHeader>
@@ -141,14 +141,14 @@ export function DashboardContent() {
       {/* Bottom Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* META Section */}
-        <Card className="bg-[#282828] border-[#282828]">
+        <Card className="bg-[#111111] border-[#282828]">
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <CardTitle className="text-white text-lg sm:text-xl">Meta</CardTitle>
               <Button
                 variant="outline"
                 size="sm"
-                className="w-fit bg-[#d7ab54] text-black border-[#d7ab54] hover:bg-[#c49730] text-xs sm:text-sm"
+                className="w-fit bg-gradient-to-r from-yellow-500 to-orange-500 text-black border-yellow-500 hover:from-yellow-400 hover:to-orange-400 text-xs sm:text-sm"
               >
                 View all
               </Button>
@@ -159,7 +159,7 @@ export function DashboardContent() {
               <div className="text-gray-400 mb-2">No meta analysis available</div>
               <p className="text-sm text-gray-500 mb-4">Analysis will appear here when data is available</p>
               <Link href="/meta">
-                <Button className="bg-[#d7ab54] text-black hover:bg-[#c49730] w-full sm:w-auto text-sm">
+                <Button className="bg-gradient-to-r from-yellow-500 to-orange-500 text-black hover:from-yellow-400 hover:to-orange-400 w-full sm:w-auto text-sm">
                   View Full Analysis
                 </Button>
               </Link>
@@ -168,14 +168,14 @@ export function DashboardContent() {
         </Card>
 
         {/* Recently Added */}
-        <Card className="bg-[#282828] border-[#282828]">
+        <Card className="bg-[#111111] border-[#282828]">
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <CardTitle className="text-white text-lg sm:text-xl">Recently Added</CardTitle>
               <Button
                 variant="outline"
                 size="sm"
-                className="text-[#d7a834] border-[#d7a834] bg-transparent hover:bg-[#d7a834] hover:text-black text-xs sm:text-sm"
+                className="text-yellow-500 border-yellow-500 bg-transparent hover:bg-gradient-to-r hover:from-yellow-500 hover:to-orange-500 hover:text-black text-xs sm:text-sm"
               >
                 Quick Trading
               </Button>
@@ -190,7 +190,7 @@ export function DashboardContent() {
         </Card>
 
         {/* Wallet Tracker */}
-        <Card className="bg-[#282828] border-[#282828] md:col-span-2 lg:col-span-1">
+        <Card className="bg-[#111111] border-[#282828] md:col-span-2 lg:col-span-1">
           <CardHeader>
                           <CardTitle className="text-white text-lg sm:text-xl">Wallet Tracker</CardTitle>
           </CardHeader>
@@ -199,7 +199,7 @@ export function DashboardContent() {
               <div className="text-gray-400 mb-2">No wallets tracked</div>
               <p className="text-sm text-gray-500 mb-4">Add wallets to start tracking</p>
               <Link href="/tracker">
-                <Button className="bg-[#d7a834] text-black hover:bg-[#c49730] w-full sm:w-auto text-sm">
+                <Button className="bg-gradient-to-r from-yellow-500 to-orange-500 text-black hover:from-yellow-400 hover:to-orange-400 w-full sm:w-auto text-sm">
                   Add Wallet
                 </Button>
               </Link>

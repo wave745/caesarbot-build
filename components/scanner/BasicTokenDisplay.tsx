@@ -11,9 +11,6 @@ export default function BasicTokenDisplay() {
   const [token, setToken] = useState<TokenRow | null>(null);
   const [loading, setLoading] = useState(false);
   
-  // If no search query, don't show anything
-  if (!query.trim()) return null;
-  
   // Search for token when query changes
   useEffect(() => {
     const searchToken = async () => {
@@ -39,9 +36,12 @@ export default function BasicTokenDisplay() {
     searchToken();
   }, [query, setSelectedToken, setTokens]);
   
+  // If no search query, don't show anything
+  if (!query.trim()) return null;
+  
   if (loading) {
     return (
-      <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 mb-6">
+      <div className="bg-[#111111]/90 border border-zinc-800 rounded-xl p-6 mb-6">
         <div className="text-center text-zinc-400">
           <p className="text-lg mb-2">Searching...</p>
         </div>
@@ -51,7 +51,7 @@ export default function BasicTokenDisplay() {
   
   if (!token) {
     return (
-      <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 mb-6">
+      <div className="bg-[#111111]/90 border border-zinc-800 rounded-xl p-6 mb-6">
         <div className="text-center text-zinc-400">
           <p className="text-lg mb-2">No token found</p>
           <p className="text-sm">Try searching with a different ticker or contract address</p>
@@ -61,10 +61,10 @@ export default function BasicTokenDisplay() {
   }
 
   return (
-    <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 mb-6">
+    <div className="bg-[#111111]/90 border border-zinc-800 rounded-xl p-6 mb-6">
       <div className="flex items-start justify-between mb-4">
         <div>
-          <h2 className="text-2xl font-bold text-white mb-1">{token.ticker}</h2>
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-yellow-500 to-orange-500 bg-clip-text text-transparent mb-1">{token.ticker}</h2>
           <p className="text-zinc-400 text-sm">{token.name}</p>
         </div>
         <RiskBadge level={token.risk} />

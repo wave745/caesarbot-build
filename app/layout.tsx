@@ -2,6 +2,7 @@ import type React from "react"
 import type { Metadata } from "next"
 import { GeistSans } from "geist/font/sans"
 import { GeistMono } from "geist/font/mono"
+import { Navigation } from "@/components/navigation"
 import "./globals.css"
 
 export const metadata: Metadata = {
@@ -24,7 +25,12 @@ export default function RootLayout({
         <link rel="icon" type="image/png" href="/caesarx-logo.png" />
       </head>
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable} bg-black text-white antialiased`}>
-        {children}
+        <div className="min-h-screen bg-black">
+          <Navigation />
+          <main className="p-3 sm:p-6">
+            {children}
+          </main>
+        </div>
       </body>
     </html>
   )

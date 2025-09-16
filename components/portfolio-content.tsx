@@ -15,11 +15,11 @@ export function PortfolioContent() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-4">
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           {/* Portfolio/Wallets Toggle */}
-          <div className="flex bg-[#282828] rounded-lg p-1 w-fit">
+          <div className="flex bg-[#111111] rounded-lg p-1 w-fit">
             <button
               onClick={() => setActiveTab("portfolio")}
               className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                activeTab === "portfolio" ? "bg-[#d7ab54] text-black" : "text-gray-400 hover:text-white"
+                activeTab === "portfolio" ? "bg-gradient-to-r from-yellow-500 to-orange-500 text-black" : "text-gray-400 hover:text-white"
               }`}
             >
               <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full border border-current" />
@@ -29,10 +29,10 @@ export function PortfolioContent() {
             <button
               onClick={() => setActiveTab("wallets")}
               className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                activeTab === "wallets" ? "bg-[#d7ab54] text-black" : "text-gray-400 hover:text-white"
+                activeTab === "wallets" ? "bg-gradient-to-r from-yellow-500 to-orange-500 text-black" : "text-gray-400 hover:text-white"
               }`}
             >
-              <div className="w-3 h-3 sm:w-4 sm:h-4 bg-[#d7ab54] rounded" />
+              <div className="w-3 h-3 sm:w-4 sm:h-4 bg-gradient-to-r from-yellow-500 to-orange-500 rounded" />
               <span className="hidden sm:inline">Wallets</span>
               <span className="sm:hidden">Wallets</span>
             </button>
@@ -75,7 +75,7 @@ export function PortfolioContent() {
                   className={`text-xs sm:text-sm font-medium pb-2 border-b-2 transition-colors whitespace-nowrap ${
                     (tab === "Overview" && activePortfolioTab === "overview") ||
                     activePortfolioTab === tab.toLowerCase().replace(/\s+/g, "-")
-                      ? "text-[#d7ab54] border-[#d7ab54]"
+                      ? "text-yellow-500 border-yellow-500"
                       : "text-gray-400 border-transparent hover:text-white"
                   }`}
                 >
@@ -85,13 +85,13 @@ export function PortfolioContent() {
             </div>
 
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" className="bg-[#282828] border-[#282828] text-white hover:bg-[#282828] p-2 sm:px-3">
-                <div className="w-3 h-3 sm:w-4 sm:h-4 bg-[#d7ab54] rounded mr-1 sm:mr-2" />
+              <Button variant="outline" size="sm" className="bg-[#111111] border-[#282828] text-white hover:bg-[#111111] p-2 sm:px-3">
+                <div className="w-3 h-3 sm:w-4 sm:h-4 bg-gradient-to-r from-yellow-500 to-orange-500 rounded mr-1 sm:mr-2" />
               </Button>
-              <Button variant="outline" size="sm" className="bg-[#282828] border-[#282828] text-white hover:bg-[#282828] p-2 sm:px-3">
-                <div className="w-3 h-3 sm:w-4 sm:h-4 bg-[#282828] rounded-full mr-1 sm:mr-2" />
+              <Button variant="outline" size="sm" className="bg-[#111111] border-[#282828] text-white hover:bg-[#111111] p-2 sm:px-3">
+                <div className="w-3 h-3 sm:w-4 sm:h-4 bg-[#111111] rounded-full mr-1 sm:mr-2" />
               </Button>
-              <Button variant="outline" size="sm" className="bg-[#282828] border-[#282828] text-white hover:bg-[#282828] p-2 sm:px-3">
+              <Button variant="outline" size="sm" className="bg-[#111111] border-[#282828] text-white hover:bg-[#111111] p-2 sm:px-3">
                 <Filter className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                 <span className="hidden sm:inline">Filter</span>
               </Button>
@@ -100,12 +100,12 @@ export function PortfolioContent() {
 
           {/* Portfolio Content */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-            <Card className="bg-[#282828] border-[#282828] p-4 sm:p-8">
+            <Card className="bg-[#111111] border-[#282828] p-4 sm:p-8">
               <div className="text-center">
                 <div className="text-gray-400 mb-2 text-sm sm:text-base">You don&apos;t have assets in any of the selected wallets</div>
               </div>
             </Card>
-            <Card className="bg-[#282828] border-[#282828] p-4 sm:p-8">
+            <Card className="bg-[#111111] border-[#282828] p-4 sm:p-8">
               <div className="text-center">
                 <div className="text-gray-400 mb-2 text-sm sm:text-base">You don&apos;t have assets in any of the selected wallets</div>
               </div>
@@ -122,10 +122,10 @@ export function PortfolioContent() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
               <div className="flex items-center gap-2">
                 <h2 className="text-base sm:text-lg font-medium text-white">Trading Wallets</h2>
-                <span className="bg-[#282828] text-gray-300 px-2 py-1 rounded text-xs sm:text-sm">0</span>
+                <span className="bg-[#111111] text-gray-300 px-2 py-1 rounded text-xs sm:text-sm">0</span>
               </div>
               <div className="flex gap-2">
-                <Button size="sm" className="bg-[#d7ab54] hover:bg-[#c49730] text-black text-xs sm:text-sm">
+                <Button size="sm" className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 text-black text-xs sm:text-sm">
                   <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                   Create
                 </Button>
@@ -133,7 +133,7 @@ export function PortfolioContent() {
               </div>
             </div>
 
-            <Card className="bg-[#282828] border-[#282828] p-4 sm:p-8">
+            <Card className="bg-[#111111] border-[#282828] p-4 sm:p-8">
               <div className="text-center">
                 <div className="text-gray-400 mb-4 text-sm sm:text-base">No trading wallets connected</div>
                 <div className="text-xs sm:text-sm text-gray-500">Create or import a wallet to get started</div>
@@ -146,15 +146,15 @@ export function PortfolioContent() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
               <div className="flex items-center gap-2">
                 <h2 className="text-base sm:text-lg font-medium text-white">Withdrawal Wallets</h2>
-                <span className="bg-[#282828] text-gray-300 px-2 py-1 rounded text-xs sm:text-sm">0</span>
+                <span className="bg-[#111111] text-gray-300 px-2 py-1 rounded text-xs sm:text-sm">0</span>
               </div>
-              <Button size="sm" className="bg-[#d7ab54] hover:bg-[#c49730] text-black text-xs sm:text-sm">
+              <Button size="sm" className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 text-black text-xs sm:text-sm">
                 <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                 Add
               </Button>
             </div>
 
-            <Card className="bg-[#282828] border-[#282828] p-4 sm:p-8">
+            <Card className="bg-[#111111] border-[#282828] p-4 sm:p-8">
               <div className="text-center">
                 <div className="text-gray-400 mb-2 text-sm sm:text-base">You don&apos;t have SOL withdrawal wallets</div>
               </div>

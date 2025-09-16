@@ -42,10 +42,10 @@ export function TokenDeployer() {
         {/* Left Column - Token Configuration */}
         <div className="space-y-6">
           {/* Token Details */}
-                  <Card className="bg-[#282828] border-[#282828]">
+                  <Card className="bg-[#111111] border-[#282828]">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
-              <Rocket className="w-5 h-5 text-[#d7ab54]" />
+              <Rocket className="w-5 h-5 text-yellow-500" />
               Token Configuration
             </CardTitle>
           </CardHeader>
@@ -60,7 +60,7 @@ export function TokenDeployer() {
                     value={tokenName}
                     onChange={(e) => setTokenName(e.target.value)}
                     placeholder="Enter token name"
-                    className="bg-[#282828] border-[#282828] text-white mt-1"
+                    className="bg-[#111111] border-[#282828] text-white mt-1"
                   />
                 </div>
                 <div>
@@ -72,7 +72,7 @@ export function TokenDeployer() {
                     value={tokenSymbol}
                     onChange={(e) => setTokenSymbol(e.target.value)}
                     placeholder="e.g., CAESAR"
-                    className="bg-[#282828] border-[#282828] text-white mt-1"
+                    className="bg-[#111111] border-[#282828] text-white mt-1"
                   />
                 </div>
               </div>
@@ -86,7 +86,7 @@ export function TokenDeployer() {
                   value={tokenDescription}
                   onChange={(e) => setTokenDescription(e.target.value)}
                   placeholder="Describe your token..."
-                  className="bg-[#282828] border-[#282828] text-white mt-1 min-h-[100px]"
+                  className="bg-[#111111] border-[#282828] text-white mt-1 min-h-[100px]"
                 />
               </div>
 
@@ -95,10 +95,10 @@ export function TokenDeployer() {
                   Network
                 </Label>
                 <Select value={network} onValueChange={setNetwork}>
-                  <SelectTrigger className="bg-[#282828] border-[#282828] text-white mt-1">
+                  <SelectTrigger className="bg-[#111111] border-[#282828] text-white mt-1">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-[#282828] border-[#282828]">
+                  <SelectContent className="bg-[#111111] border-[#282828]">
                     <SelectItem value="Devnet">Devnet</SelectItem>
                     <SelectItem value="Mainnet">Mainnet</SelectItem>
                     <SelectItem value="Testnet">Testnet</SelectItem>
@@ -111,10 +111,10 @@ export function TokenDeployer() {
 
 
           {/* Tweet Auto-Post Settings */}
-          <Card className="bg-[#282828] border-[#282828]">
+          <Card className="bg-[#111111] border-[#282828]">
             <CardHeader>
               <CardTitle className="text-white flex items-center gap-2">
-                <svg className="w-5 h-5 text-[#d7ab54]" fill="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.665 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
                 </svg>
                 Tweet Auto-Post Settings
@@ -130,7 +130,7 @@ export function TokenDeployer() {
                 <div className="flex items-center gap-2">
                   <input 
                     type="checkbox" 
-                    className="rounded w-4 h-4 text-[#d7ab54] bg-[#282828] border-[#d7ab54] focus:ring-[#d7ab54] focus:ring-2"
+                    className="rounded w-4 h-4 text-yellow-500 bg-[#111111] border-yellow-500 focus:ring-yellow-500 focus:ring-2"
                     checked={enableAutoTweet}
                     onChange={(e) => setEnableAutoTweet(e.target.checked)}
                   />
@@ -149,7 +149,7 @@ export function TokenDeployer() {
                       value={tweetText}
                       onChange={(e) => setTweetText(e.target.value)}
                       placeholder="🚀 Exciting news! Just launched $TOKEN on Solana! Join the revolution... #Solana #DeFi"
-                      className="bg-[#282828] border-[#282828] text-white mt-1 min-h-[100px]"
+                      className="bg-[#111111] border-[#282828] text-white mt-1 min-h-[100px]"
                       maxLength={280}
                     />
                     <div className="flex justify-between items-center mt-1">
@@ -170,7 +170,7 @@ export function TokenDeployer() {
                       value={tweetHashtags}
                       onChange={(e) => setTweetHashtags(e.target.value)}
                       placeholder="#Solana #DeFi #TokenLaunch #Crypto"
-                      className="bg-[#282828] border-[#282828] text-white mt-1"
+                      className="bg-[#111111] border-[#282828] text-white mt-1"
                     />
                     <p className="text-gray-400 text-xs mt-1">Separate hashtags with spaces</p>
                   </div>
@@ -185,7 +185,7 @@ export function TokenDeployer() {
                       value={tweetMentions}
                       onChange={(e) => setTweetMentions(e.target.value)}
                       placeholder="@Solana @CaesarX"
-                      className="bg-[#282828] border-[#282828] text-white mt-1"
+                      className="bg-[#111111] border-[#282828] text-white mt-1"
                     />
                     <p className="text-gray-400 text-xs mt-1">Separate usernames with spaces</p>
                   </div>
@@ -196,10 +196,10 @@ export function TokenDeployer() {
                       Post Schedule
                     </Label>
                     <Select value={tweetSchedule} onValueChange={setTweetSchedule}>
-                      <SelectTrigger className="bg-[#282828] border-[#282828] text-white mt-1">
+                      <SelectTrigger className="bg-[#111111] border-[#282828] text-white mt-1">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="bg-[#282828] border-[#282828]">
+                      <SelectContent className="bg-[#111111] border-[#282828]">
                         <SelectItem value="immediate">Immediate (after deployment)</SelectItem>
                         <SelectItem value="5min">5 minutes after deployment</SelectItem>
                         <SelectItem value="15min">15 minutes after deployment</SelectItem>
@@ -219,17 +219,17 @@ export function TokenDeployer() {
                       value={tweetImage}
                       onChange={(e) => setTweetImage(e.target.value)}
                       placeholder="https://example.com/token-image.png"
-                      className="bg-[#282828] border-[#282828] text-white mt-1"
+                      className="bg-[#111111] border-[#282828] text-white mt-1"
                     />
                     <p className="text-gray-400 text-xs mt-1">Direct link to image (PNG, JPG, GIF)</p>
                   </div>
 
                   {/* Tweet Preview */}
-                  <div className="border border-[#d7ab54]/20 rounded-lg p-3 bg-[#1a1a1a]">
+                  <div className="border border-yellow-500/20 rounded-lg p-3 bg-[#111111]">
                     <Label className="text-white text-sm mb-2">Tweet Preview</Label>
                     <div className="text-gray-300 text-sm">
                       {tweetText || "Your tweet will appear here..."}
-                      {tweetHashtags && <span className="text-[#d7ab54]"> {tweetHashtags}</span>}
+                      {tweetHashtags && <span className="text-yellow-500"> {tweetHashtags}</span>}
                       {tweetMentions && <span className="text-blue-400"> {tweetMentions}</span>}
                     </div>
                   </div>
@@ -242,7 +242,7 @@ export function TokenDeployer() {
         {/* Right Column - Deployment Summary */}
         <div className="space-y-6">
           {/* Deployment Summary */}
-          <Card className="bg-[#282828] border-[#282828]">
+          <Card className="bg-[#111111] border-[#282828]">
             <CardHeader>
               <CardTitle className="text-white">Deployment Summary</CardTitle>
             </CardHeader>
@@ -270,12 +270,12 @@ export function TokenDeployer() {
 
                 <div className="flex justify-between items-center py-2 border-b border-[#282828]">
                   <span className="text-gray-400">Caesar Points Reward:</span>
-                  <Badge className="bg-[#d7ab54] text-black">{caesarPointsReward}</Badge>
+                  <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-black">{caesarPointsReward}</Badge>
                 </div>
 
                 <div className="flex justify-between items-center py-2 border-b border-[#282828]">
                   <span className="text-gray-400">Network:</span>
-                  <Badge variant="INFO" className="border-[#d7ab54] text-[#d7ab54]">
+                  <Badge variant="INFO" className="border-yellow-500 text-yellow-500">
                     {network}
                   </Badge>
                 </div>
@@ -303,7 +303,7 @@ export function TokenDeployer() {
               {/* Deploy Button */}
               <div className="pt-4">
                 <Button
-                  className="w-full bg-[#d7ab54] text-black hover:bg-[#c49730] font-semibold py-3 text-lg"
+                  className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 text-black hover:from-yellow-400 hover:to-orange-400 font-semibold py-3 text-lg"
                   disabled={!tokenName || !tokenSymbol}
                 >
                   <Rocket className="w-5 h-5 mr-2" />
@@ -320,16 +320,16 @@ export function TokenDeployer() {
           </Card>
 
           {/* Bundle Wallets Management */}
-          <Card className="bg-[#282828] border-[#282828]">
+          <Card className="bg-[#111111] border-[#282828]">
             <CardHeader>
               <CardTitle className="text-white flex items-center justify-between">
                 <span className="flex items-center gap-2">
-                  <Wallet className="w-5 h-5 text-[#d7ab54]" />
+                  <Wallet className="w-5 h-5 text-yellow-500" />
                   Bundle Wallets (min 2, max 5 total)
                 </span>
                 <Button
                   size="sm"
-                  className="bg-[#d7ab54] text-black hover:bg-[#c49730]"
+                  className="bg-gradient-to-r from-yellow-500 to-orange-500 text-black hover:from-yellow-400 hover:to-orange-400"
                   onClick={() => setBundleWallets(Math.min(5, bundleWallets + 1))}
                   disabled={bundleWallets >= 5}
                 >
@@ -344,16 +344,16 @@ export function TokenDeployer() {
                 <div className="text-center py-8">
                   <Wallet className="w-12 h-12 text-gray-600 mx-auto mb-4" />
                   <p className="text-gray-400 mb-4">No bundle wallets created yet</p>
-                  <Button className="bg-[#d7ab54] text-black hover:bg-[#c49730]" onClick={() => setBundleWallets(2)}>
+                  <Button className="bg-gradient-to-r from-yellow-500 to-orange-500 text-black hover:from-yellow-400 hover:to-orange-400" onClick={() => setBundleWallets(2)}>
                     Create Bundle Wallets
                   </Button>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {Array.from({ length: bundleWallets }, (_, i) => (
-                    <div key={i} className="flex items-center justify-between p-3 bg-[#282828] rounded-lg">
+                    <div key={i} className="flex items-center justify-between p-3 bg-[#111111] rounded-lg">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-[#d7ab54] rounded-full flex items-center justify-center">
+                        <div className="w-8 h-8 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full flex items-center justify-center">
                           <span className="text-black font-semibold text-sm">{i + 1}</span>
                         </div>
                         <div>
@@ -376,14 +376,14 @@ export function TokenDeployer() {
                     <Button
                       size="sm"
                       variant="outline"
-                      className="flex-1 border-[#d7ab54] text-[#d7ab54] hover:bg-[#d7ab54] hover:text-black bg-transparent"
+                      className="flex-1 border-yellow-500 text-yellow-500 hover:bg-gradient-to-r from-yellow-500 to-orange-500 hover:text-black bg-transparent"
                       onClick={() => setBundleWallets(Math.max(0, bundleWallets - 1))}
                     >
                       Remove
                     </Button>
                     <Button
                       size="sm"
-                      className="flex-1 bg-[#d7ab54] text-black hover:bg-[#c49730]"
+                      className="flex-1 bg-gradient-to-r from-yellow-500 to-orange-500 text-black hover:from-yellow-400 hover:to-orange-400"
                       onClick={() => setBundleWallets(Math.min(5, bundleWallets + 1))}
                       disabled={bundleWallets >= 5}
                     >
@@ -396,10 +396,10 @@ export function TokenDeployer() {
           </Card>
 
           {/* Information Card */}
-          <Card className="bg-[#282828] border-[#282828]">
+          <Card className="bg-[#111111] border-[#282828]">
             <CardContent className="p-4">
               <div className="flex items-start gap-3">
-                <Info className="w-5 h-5 text-[#d7ab54] mt-0.5" />
+                <Info className="w-5 h-5 text-yellow-500 mt-0.5" />
                 <div>
                   <h4 className="text-white font-medium mb-2">Deployment Information</h4>
                   <ul className="text-gray-400 text-sm space-y-1">

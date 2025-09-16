@@ -135,7 +135,6 @@ export function SniperContent() {
         
         <Button 
           onClick={handleCreateAutomation}
-          variant="gold"
         >
           <Plus className="w-4 h-4" />
           New Automation

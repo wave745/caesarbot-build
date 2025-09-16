@@ -9,6 +9,7 @@ import { useState, useRef, useEffect } from "react"
 
 const navItems = [
   { name: "Discover", href: "/" },
+  { name: "Trending", href: "/trending" },
   { name: "Tracker", href: "/tracker" },
   { name: "Scanner", href: "/scanner" },
   { name: "Sniper", href: "/sniper" },
@@ -61,13 +62,13 @@ export function Navigation() {
         {/* Logo */}
         <div className="flex items-center flex-shrink-0">
           <Link href="/" className="flex items-center gap-2 sm:gap-3">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center">
+            <div className="flex items-center justify-center">
               <Image
                 src="/caesarx-logo.png"
                 alt="CaesarX"
                 width={44}
                 height={44}
-                className="rounded-full w-8 h-8 sm:w-11 sm:h-11"
+                className="w-8 h-8 sm:w-10 sm:h-10 object-contain"
                 priority
                 onError={(e) => {
                   // Fallback if image fails to load
@@ -77,8 +78,8 @@ export function Navigation() {
                 }}
               />
             </div>
-            <span className="text-[#d7ab54] font-bold text-lg sm:text-xl lg:text-2xl tracking-wide hidden sm:block">
-              Caesar X
+            <span className="bg-gradient-to-r from-yellow-500 to-orange-500 bg-clip-text text-transparent font-bold text-base sm:text-lg lg:text-xl tracking-normal hidden sm:block">
+              CaesarX
             </span>
           </Link>
         </div>
@@ -91,15 +92,15 @@ export function Navigation() {
               href={item.href}
               className={`px-3 py-2 text-sm font-medium rounded-md transition-all duration-300 whitespace-nowrap relative group ${
                 pathname === item.href 
-                  ? "bg-[#282828] text-white shadow-lg shadow-[#d7ab54]/20" 
-                  : "text-gray-400 hover:text-[#d7ab54] hover:bg-[#282828]/80 hover:shadow-lg hover:shadow-[#d7ab54]/20"
+                  ? "bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-white shadow-lg shadow-yellow-500/20 border border-yellow-500/30" 
+                  : "text-gray-400 hover:text-yellow-400 hover:bg-gradient-to-r hover:from-yellow-500/10 hover:to-orange-500/10 hover:shadow-lg hover:shadow-yellow-500/20"
               }`}
             >
               {item.name}
               <div className={`absolute inset-0 rounded-md transition-all duration-300 ${
                 pathname === item.href 
-                  ? "ring-2 ring-[#d7ab54] ring-opacity-50" 
-                  : "group-hover:ring-2 group-hover:ring-[#d7ab54] group-hover:ring-opacity-30"
+                  ? "ring-2 ring-yellow-500 ring-opacity-50" 
+                  : "group-hover:ring-2 group-hover:ring-yellow-500 group-hover:ring-opacity-30"
               }`}></div>
             </Link>
           ))}
@@ -112,7 +113,7 @@ export function Navigation() {
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setIsWalletDropdownOpen(!isWalletDropdownOpen)}
-                className="bg-[#282828] border border-[#282828] rounded-md px-3 py-2 flex items-center gap-2 text-sm hover:bg-[#282828] hover:border-[#d7ab54]/50 hover:shadow-lg hover:shadow-[#d7ab54]/20 transition-all duration-300"
+                className="bg-[#111111] border border-[#111111] rounded-md px-3 py-2 flex items-center gap-2 text-sm hover:bg-[#111111] hover:border-yellow-500/50 hover:shadow-lg hover:shadow-yellow-500/20 transition-all duration-300"
               >
                 <Wallet className="w-4 h-4 text-gray-400" />
                 <span className="text-white font-medium">0</span>
@@ -122,21 +123,21 @@ export function Navigation() {
               </button>
 
               {isWalletDropdownOpen && (
-                <div className="absolute right-0 top-full mt-2 w-80 bg-[#282828] border border-[#282828] rounded-lg shadow-xl z-50">
+                <div className="absolute right-0 top-full mt-2 w-80 bg-[#111111] border border-[#111111] rounded-lg shadow-xl z-50">
                   <div className="p-4">
                     {!isWalletConnected ? (
                       <div className="text-center py-8">
                         <Wallet className="w-12 h-12 text-gray-600 mx-auto mb-3" />
                         <h3 className="text-white font-medium mb-2">No Wallet Connected</h3>
                         <p className="text-gray-400 text-sm mb-4">Connect your wallet to get started</p>
-                        <Button className="bg-[#d7ab54] text-black hover:bg-[#c49730] w-full">Connect Wallet</Button>
+                        <Button className="bg-gradient-to-r from-yellow-500 to-orange-500 text-black hover:from-yellow-400 hover:to-orange-400 w-full">Connect Wallet</Button>
                       </div>
                     ) : (
                       <div className="space-y-3">
                         {connectedWallets.map((wallet, index) => (
-                          <div key={index} className="flex items-center justify-between p-3 bg-[#282828] rounded-lg">
+                          <div key={index} className="flex items-center justify-between p-3 bg-[#111111] rounded-lg">
                             <div className="flex items-center gap-3">
-                              <div className="w-6 h-6 bg-[#282828] rounded border border-[#282828]"></div>
+                              <div className="w-6 h-6 bg-[#111111] rounded border border-[#111111]"></div>
                               <div>
                                 <div className="text-gray-400 text-xs">{wallet.name}</div>
                                 <div className="flex items-center gap-2">
@@ -184,13 +185,13 @@ export function Navigation() {
               )}
             </div>
 
-            <Button variant="ghost" size="icon" className="text-gray-400 hover:text-[#d7ab54] hover:bg-gray-800/80 transition-all duration-300 w-9 h-9 group">
+            <Button variant="ghost" size="icon" className="text-gray-400 hover:text-yellow-400 hover:bg-gray-800/80 transition-all duration-300 w-9 h-9 group">
               <Bell className="w-4 h-4 group-hover:scale-110 transition-transform duration-300" />
             </Button>
-            <Button variant="ghost" size="icon" className="text-gray-400 hover:text-[#d7ab54] hover:bg-gray-800/80 transition-all duration-300 w-9 h-9 group">
+            <Button variant="ghost" size="icon" className="text-gray-400 hover:text-yellow-400 hover:bg-gray-800/80 transition-all duration-300 w-9 h-9 group">
               <Settings className="w-4 h-4 group-hover:scale-110 transition-transform duration-300" />
             </Button>
-            <Button variant="ghost" size="icon" className="text-gray-400 hover:text-[#d7ab54] hover:bg-gray-800/80 transition-all duration-300 w-9 h-9 group">
+            <Button variant="ghost" size="icon" className="text-gray-400 hover:text-yellow-400 hover:bg-gray-800/80 transition-all duration-300 w-9 h-9 group">
               <User className="w-4 h-4 group-hover:scale-110 transition-transform duration-300" />
             </Button>
           </div>
@@ -203,7 +204,7 @@ export function Navigation() {
           <Button 
             variant="ghost" 
             size="icon" 
-            className="text-gray-400 hover:text-[#d7ab54] hover:bg-gray-800/80 transition-all duration-300 w-9 h-9 group"
+            className="text-gray-400 hover:text-yellow-400 hover:bg-gray-800/80 transition-all duration-300 w-9 h-9 group"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
             {isMobileMenuOpen ? <X className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" /> : <Menu className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />}
@@ -228,24 +229,24 @@ export function Navigation() {
                   href={item.href}
                   className={`block px-3 py-3 text-sm font-medium rounded-md transition-all duration-300 relative group ${
                     pathname === item.href 
-                      ? "bg-[#282828] text-white shadow-lg shadow-[#d7ab54]/20" 
-                      : "text-gray-400 hover:text-[#d7ab54] hover:bg-[#282828]/80 hover:shadow-lg hover:shadow-[#d7ab54]/20"
+                      ? "bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-white shadow-lg shadow-yellow-500/20 border border-yellow-500/30" 
+                      : "text-gray-400 hover:text-yellow-400 hover:bg-gradient-to-r hover:from-yellow-500/10 hover:to-orange-500/10 hover:shadow-lg hover:shadow-yellow-500/20"
                   }`}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   {item.name}
                   <div className={`absolute inset-0 rounded-md transition-all duration-300 ${
                     pathname === item.href 
-                      ? "ring-2 ring-[#d7ab54] ring-opacity-50" 
-                      : "group-hover:ring-2 group-hover:ring-[#d7ab54] group-hover:ring-opacity-30"
+                      ? "ring-2 ring-yellow-500 ring-opacity-50" 
+                      : "group-hover:ring-2 group-hover:ring-yellow-500 group-hover:ring-opacity-30"
                   }`}></div>
                 </Link>
               ))}
             </div>
 
             {/* Mobile Wallet Section */}
-                                        <div className="border-t border-[#282828] pt-4">
-                <div className="flex items-center justify-between p-3 bg-[#282828] rounded-lg mb-3">
+                                        <div className="border-t border-[#111111] pt-4">
+                <div className="flex items-center justify-between p-3 bg-[#111111] rounded-lg mb-3">
                 <div className="flex items-center gap-3">
                   <Wallet className="w-5 h-5 text-gray-400" />
                   <div>
@@ -255,7 +256,7 @@ export function Navigation() {
                 </div>
                 <Button 
                   size="sm" 
-                  className="bg-[#d7ab54] text-black hover:bg-[#c49730] text-xs px-3 py-1"
+                  className="bg-gradient-to-r from-yellow-500 to-orange-500 text-black hover:from-yellow-400 hover:to-orange-400 text-xs px-3 py-1"
                 >
                   Connect
                 </Button>
@@ -263,15 +264,15 @@ export function Navigation() {
 
               {/* Mobile Action Buttons */}
               <div className="grid grid-cols-3 gap-2">
-                <Button variant="ghost" size="sm" className="text-gray-400 hover:text-[#d7ab54] hover:bg-gray-700/80 transition-all duration-300 text-xs group">
+                <Button variant="ghost" size="sm" className="text-gray-400 hover:text-yellow-400 hover:bg-gray-700/80 transition-all duration-300 text-xs group">
                   <Bell className="w-4 h-4 mr-1 group-hover:scale-110 transition-transform duration-300" />
                   Alerts
                 </Button>
-                <Button variant="ghost" size="sm" className="text-gray-400 hover:text-[#d7ab54] hover:bg-gray-700/80 transition-all duration-300 text-xs group">
+                <Button variant="ghost" size="sm" className="text-gray-400 hover:text-yellow-400 hover:bg-gray-700/80 transition-all duration-300 text-xs group">
                   <Settings className="w-4 h-4 mr-1 group-hover:scale-110 transition-transform duration-300" />
                   Settings
                 </Button>
-                <Button variant="ghost" size="sm" className="text-gray-400 hover:text-[#d7ab54] hover:bg-gray-700/80 transition-all duration-300 text-xs group">
+                <Button variant="ghost" size="sm" className="text-gray-400 hover:text-yellow-400 hover:bg-gray-700/80 transition-all duration-300 text-xs group">
                   <User className="w-4 h-4 mr-1 group-hover:scale-110 transition-transform duration-300" />
                   Profile
                 </Button>

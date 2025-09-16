@@ -9,7 +9,7 @@ export default function TokenCard({ t }: { t: TokenRow }) {
   const { select } = useScanner();
   return (
     <div 
-      className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-4 hover:border-yellow-500/30 hover:shadow-[0_0_40px_-20px_rgba(234,179,8,0.25)] transition-all duration-200 cursor-pointer group"
+      className="rounded-2xl border border-zinc-800 bg-[#111111]/80 p-4 hover:border-yellow-500/30 hover:shadow-[0_0_40px_-20px_rgba(234,179,8,0.25)] transition-all duration-200 cursor-pointer group"
       data-token-card
       role="button"
       tabIndex={0}
@@ -47,7 +47,7 @@ export default function TokenCard({ t }: { t: TokenRow }) {
         <button className="px-3 py-1.5 text-sm rounded-lg bg-zinc-900 border border-zinc-700 hover:bg-zinc-800 transition-colors">
           Track
         </button>
-        <button className="px-3 py-1.5 text-sm rounded-lg bg-yellow-600/20 border border-yellow-600/40 hover:bg-yellow-600/30 transition-colors">
+        <button className="px-3 py-1.5 text-sm rounded-lg bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/40 hover:from-yellow-500/30 hover:to-orange-500/30 transition-colors">
           Snipe
         </button>
         <button 

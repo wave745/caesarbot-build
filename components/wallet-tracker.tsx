@@ -19,7 +19,7 @@ export function WalletTracker() {
           <p className="text-gray-400">Track and analyze wallet performance</p>
         </div>
         <div className="flex items-center gap-4">
-                  <Button className="bg-[#d7ab54] text-black hover:bg-[#c49730]">
+                  <Button className="bg-gradient-to-r from-yellow-500 to-orange-500 text-black hover:from-yellow-400 hover:to-orange-400">
           <Plus className="w-4 h-4 mr-2" />
           Add Wallet
         </Button>
@@ -28,7 +28,7 @@ export function WalletTracker() {
 
       <div className="grid grid-cols-12 gap-6 h-[calc(100vh-200px)]">
         {/* Left Sidebar - Wallet List */}
-        <div className="col-span-4 bg-[#282828] rounded-lg border border-[#282828]">
+        <div className="col-span-4 bg-[#111111] rounded-lg border border-[#282828]">
                       <div className="p-4 border-b border-[#282828]">
             <div className="flex items-center gap-2 mb-4">
               <div className="relative flex-1">
@@ -37,7 +37,7 @@ export function WalletTracker() {
                   placeholder="Search wallets..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 bg-[#282828] border-[#282828] text-white"
+                  className="pl-10 bg-[#111111] border-[#282828] text-white"
                 />
               </div>
               <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white">
@@ -46,7 +46,7 @@ export function WalletTracker() {
             </div>
             <div className="flex items-center justify-between">
               <span className="text-white font-medium">Tracked Wallets</span>
-              <Badge className="bg-[#d7ab54] text-black">0</Badge>
+              <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-black">0</Badge>
             </div>
           </div>
 
@@ -54,7 +54,7 @@ export function WalletTracker() {
             <Wallet className="w-16 h-16 text-gray-600 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-white mb-2">No Wallets Tracked</h3>
             <p className="text-gray-400 mb-4">Add wallets to start tracking their performance</p>
-            <Button className="bg-[#d7ab54] text-black hover:bg-[#c49730]">
+            <Button className="bg-gradient-to-r from-yellow-500 to-orange-500 text-black hover:from-yellow-400 hover:to-orange-400">
               <Plus className="w-4 h-4 mr-2" />
               Add First Wallet
             </Button>
@@ -63,7 +63,7 @@ export function WalletTracker() {
 
         {/* Main Content - Empty State */}
         <div className="col-span-8 space-y-6">
-          <Card className="bg-[#282828] border-[#282828]">
+          <Card className="bg-[#111111] border-[#282828]">
             <CardContent className="p-12 text-center">
               <TrendingUp className="w-20 h-20 text-gray-600 mx-auto mb-6" />
               <h2 className="text-2xl font-bold text-white mb-4">Start Tracking Wallets</h2>
@@ -71,7 +71,7 @@ export function WalletTracker() {
                 Add wallet addresses to monitor their trading activity, token holdings, and performance metrics in
                 real-time.
               </p>
-              <Button className="bg-[#d7ab54] text-black hover:bg-[#c49730]">
+              <Button className="bg-gradient-to-r from-yellow-500 to-orange-500 text-black hover:from-yellow-400 hover:to-orange-400">
                 <Plus className="w-4 h-4 mr-2" />
                 Add Wallet to Track
               </Button>
