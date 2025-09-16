@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Plus, Filter } from "lucide-react"
+import { Plus, SlidersHorizontal } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 
@@ -92,7 +92,7 @@ export function PortfolioContent() {
                 <div className="w-3 h-3 sm:w-4 sm:h-4 bg-[#111111] rounded-full mr-1 sm:mr-2" />
               </Button>
               <Button variant="outline" size="sm" className="bg-[#111111] border-[#282828] text-white hover:bg-[#111111] p-2 sm:px-3">
-                <Filter className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                <SlidersHorizontal className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                 <span className="hidden sm:inline">Filter</span>
               </Button>
             </div>

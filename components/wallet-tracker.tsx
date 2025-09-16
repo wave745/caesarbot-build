@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Wallet, TrendingUp, Plus, Search, Filter } from "lucide-react"
+import { Wallet, TrendingUp, Plus, Search, SlidersHorizontal } from "lucide-react"
 
 export function WalletTracker() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -41,7 +41,7 @@ export function WalletTracker() {
                 />
               </div>
               <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white">
-                <Filter className="w-4 h-4" />
+                <SlidersHorizontal className="w-4 h-4" />
               </Button>
             </div>
             <div className="flex items-center justify-between">

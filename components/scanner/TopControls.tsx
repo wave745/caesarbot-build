@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useScanner } from "@/stores/scanner";
-import { Filter, ChevronDown } from "lucide-react";
+import { SlidersHorizontal, ChevronDown } from "lucide-react";
 
 const FILTER_OPTIONS = [
   { key: "whale", label: "🐋 Whale Map", description: "Top whale holders" },
@@ -55,7 +55,7 @@ export default function TopControls() {
           onClick={() => setIsOpen(!isOpen)}
           className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-semibold rounded-xl hover:from-yellow-400 hover:to-orange-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:ring-offset-zinc-900"
         >
-          <Filter className="w-4 h-4" />
+          <SlidersHorizontal className="w-4 h-4" />
           Advanced Scan
           <ChevronDown className="w-4 h-4" />
         </button>

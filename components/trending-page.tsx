@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { 
-  Filter,
+  SlidersHorizontal,
   Wallet,
   ChevronDown,
   TrendingUp,
@@ -137,7 +137,7 @@ export function TrendingPage() {
             size="sm"
             className="border-[#282828] text-gray-400 hover:text-white hover:border-yellow-500"
           >
-            <Filter className="w-4 h-4 mr-2" />
+            <SlidersHorizontal className="w-4 h-4 mr-2" />
             Filter
           </Button>
 
