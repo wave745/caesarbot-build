@@ -28,6 +28,7 @@ export type TokenRow = {
 
 type ScannerState = {
   query: string;
+  mode: "standard" | "advanced";
   filters: {
     group: "top" | "wallets" | "early" | "security" | "socials" | "bundles";
     whales?: boolean;
@@ -41,6 +42,7 @@ type ScannerState = {
   selectedToken?: TokenRow | null;
   selectedFeature?: string | null;
   setQuery: (q: string) => void;
+  setMode: (m: "standard" | "advanced") => void;
   setFilters: (p: Partial<ScannerState["filters"]>) => void;
   setTokens: (t: TokenRow[]) => void;
   select: (t: TokenRow | null) => void;
@@ -50,12 +52,14 @@ type ScannerState = {
 
 export const useScanner = create<ScannerState>((set) => ({
   query: "",
+  mode: "standard",
   filters: { group: "top" },
   tokens: [],
   selected: null,
   selectedToken: null,
   selectedFeature: null,
   setQuery: (q) => set({ query: q }),
+  setMode: (m) => set({ mode: m }),
   setFilters: (p) => set(s => ({ filters: { ...s.filters, ...p } })),
   setTokens: (t) => set({ tokens: t }),
   select: (t) => set({ selected: t }),
