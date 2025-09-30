@@ -41,7 +41,7 @@ export function DashboardContent() {
             <div className="flex items-center gap-4">
               <CardTitle className="text-white text-lg sm:text-xl">Market Overview</CardTitle>
               <div className="relative bg-[#111111] rounded-lg p-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white w-4 h-4" />
                 <Input
                   placeholder="Search tokens..."
                   className="pl-10 w-40 bg-transparent border-0 text-white placeholder-gray-400 text-sm focus:ring-0 focus:ring-offset-0"

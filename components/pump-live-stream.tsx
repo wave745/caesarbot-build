@@ -18,53 +18,86 @@ import {
   WifiOff,
   RefreshCw
 } from "lucide-react"
-import { PumpPortalAPI, PumpToken, PumpTrade, PumpLiveStreamData } from "@/lib/services/pumpportal-api"
+// Define interfaces locally since we're now using Moralis
+interface PumpToken {
+  mint: string
+  symbol: string
+  name: string
+  image?: string
+  mcUsd: number
+  volume24h: number
+  transactions: number
+  holders: number
+  timeAgo: number
+}
+
+interface PumpTrade {
+  id: string
+  token: string
+  type: 'buy' | 'sell'
+  amount: number
+  price: number
+  timestamp: number
+  user: string
+}
+
+interface PumpLiveStreamData {
+  tokens: PumpToken[]
+  trades: PumpTrade[]
+  timestamp: number
+}
 
 export function PumpLiveStream() {
   const [data, setData] = useState<PumpLiveStreamData>({
-    newTokens: [],
-    recentTrades: [],
-    topGainers: [],
-    topLosers: []
+    tokens: [],
+    trades: [],
+    timestamp: Date.now()
   })
   const [isConnected, setIsConnected] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("new-tokens")
 
   useEffect(() => {
-    const api = PumpPortalAPI.getInstance()
-    
-    const handleData = (newData: PumpLiveStreamData) => {
-      setData(newData)
-      setIsLoading(false)
-    }
-
-    const handleConnectionChange = () => {
-      setIsConnected(api.getConnectionStatus())
-    }
-
-    // Subscribe to data updates
-    api.subscribe(handleData)
-    
-    // Connect to PumpPortal
-    api.connect()
-      .then(() => {
-        setIsConnected(true)
+    const fetchData = async () => {
+      try {
+        const response = await fetch('/api/moralis/new-tokens')
+        const result = await response.json()
+        
+        if (result.success) {
+          setData({
+            tokens: result.tokens,
+            trades: [], // No trades data from Moralis new tokens endpoint
+            timestamp: Date.now()
+          })
+          setIsConnected(true)
+        } else {
+          setData({
+            tokens: [],
+            trades: [],
+            timestamp: Date.now()
+          })
+          setIsConnected(false)
+        }
         setIsLoading(false)
-      })
-      .catch((error) => {
-        console.error('Failed to connect to PumpPortal:', error)
+      } catch (error) {
+        console.error('Error fetching data:', error)
+        setData({
+          tokens: [],
+          trades: [],
+          timestamp: Date.now()
+        })
         setIsConnected(false)
         setIsLoading(false)
-      })
-
-    // Check connection status periodically
-    const statusInterval = setInterval(handleConnectionChange, 1000)
-
-    return () => {
-      api.unsubscribe(handleData)
-      clearInterval(statusInterval)
+      }
     }
+
+    // Initial fetch
+    fetchData()
+
+    // Poll every 30 seconds for updates
+    const interval = setInterval(fetchData, 30000)
+
+    return () => clearInterval(interval)
   }, [])
 
   const formatNumber = (num: number) => {
@@ -93,12 +126,35 @@ export function PumpLiveStream() {
     return null
   }
 
-  const reconnect = () => {
-    const api = PumpPortalAPI.getInstance()
-    api.disconnect()
-    api.connect()
-      .then(() => setIsConnected(true))
-      .catch(() => setIsConnected(false))
+  const reconnect = async () => {
+    try {
+      const response = await fetch('/api/moralis/new-tokens')
+      const result = await response.json()
+      
+      if (result.success) {
+        setData({
+          tokens: result.tokens,
+          trades: [],
+          timestamp: Date.now()
+        })
+        setIsConnected(true)
+      } else {
+        setData({
+          tokens: [],
+          trades: [],
+          timestamp: Date.now()
+        })
+        setIsConnected(false)
+      }
+    } catch (error) {
+      console.error('Error during reconnect:', error)
+      setData({
+        tokens: [],
+        trades: [],
+        timestamp: Date.now()
+      })
+      setIsConnected(false)
+    }
   }
 
   return (

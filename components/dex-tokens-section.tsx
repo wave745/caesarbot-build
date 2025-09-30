@@ -22,15 +22,29 @@ import {
   TrendingDown,
   BarChart3
 } from "lucide-react"
-import { DexScreenerAPI, DexToken } from "@/lib/services/dexscreener-api"
+import { DexScreenerService } from "@/lib/services/dexscreener-api"
+import { DexToken } from "@/lib/types/dex-token"
+import { useRouter } from "next/navigation"
 
-export function DexTokensSection() {
+interface DexTokensSectionProps {
+  sortBy?: 'new' | 'volume' | 'marketCap' | 'priceChange'
+}
+
+export function DexTokensSection({ sortBy: propSortBy }: DexTokensSectionProps = {}) {
   const [tokens, setTokens] = useState<DexToken[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [sortBy, setSortBy] = useState<'new' | 'volume' | 'marketCap'>('new')
+  const [sortBy, setSortBy] = useState<'new' | 'volume' | 'marketCap' | 'priceChange'>(propSortBy || 'new')
   const [error, setError] = useState<string | null>(null)
+  const router = useRouter()
+ 
+  const dexAPI = DexScreenerService.getInstance()
 
-  const dexAPI = DexScreenerAPI.getInstance()
+  // Update local sortBy when prop changes
+  useEffect(() => {
+    if (propSortBy) {
+      setSortBy(propSortBy)
+    }
+  }, [propSortBy])
 
   useEffect(() => {
     const fetchTokens = async () => {
@@ -38,15 +52,95 @@ export function DexTokensSection() {
         setIsLoading(true)
         setError(null)
         
+        console.log(`Fetching DEX tokens with sortBy: ${sortBy}`)
+        
+        // Use DexScreener's trending pairs API
+        const response = await fetch('https://api.dexscreener.com/latest/dex/tokens/solana', {
+          method: 'GET',
+          headers: {
+            'Accept': '*/*',
+            'User-Agent': 'CaesarBot/1.0'
+          }
+        })
+        
+        console.log(`DexScreener API response status: ${response.status}`)
+        
+        if (!response.ok) {
+          throw new Error(`DexScreener API error: ${response.status}`)
+        }
+        
+        const apiData = await response.json()
+        console.log(`DexScreener API response data:`, apiData)
+        
         let data: DexToken[] = []
         
-        if (sortBy === 'new') {
-          data = await dexAPI.getNewTokens(20)
-        } else if (sortBy === 'volume') {
-          data = await dexAPI.getTrendingTokens(20)
+        if (apiData.pairs && Array.isArray(apiData.pairs) && apiData.pairs.length > 0) {
+          // All pairs from this endpoint are already Solana pairs
+          const solanaTokens = apiData.pairs.filter((pair: any) => 
+            pair.baseToken && 
+            pair.quoteToken
+          )
+          
+          // Sort based on selected criteria
+          let sortedTokens = [...solanaTokens]
+          switch (sortBy) {
+            case 'volume':
+              sortedTokens.sort((a, b) => (b.volume?.h24 || 0) - (a.volume?.h24 || 0))
+              break
+            case 'marketCap':
+              sortedTokens.sort((a, b) => (b.marketCap || 0) - (a.marketCap || 0))
+              break
+            case 'new':
+            default:
+              sortedTokens.sort((a, b) => (b.pairCreatedAt || 0) - (a.pairCreatedAt || 0))
+              break
+          }
+          
+          data = sortedTokens.slice(0, 20) // Limit to 20 tokens
+          console.log(`Got ${data.length} Solana DEX tokens`)
         } else {
-          data = await dexAPI.getTrendingTokens(20)
-          data.sort((a, b) => b.marketCap - a.marketCap)
+          // Fallback: Try to get trending Solana pairs using search
+          console.log('No data from tokens endpoint, trying search fallback...')
+          const fallbackResponse = await fetch('https://api.dexscreener.com/latest/dex/search/?q=chainId:solana', {
+            method: 'GET',
+            headers: {
+              'Accept': '*/*',
+              'User-Agent': 'CaesarBot/1.0'
+            }
+          })
+          
+          if (fallbackResponse.ok) {
+            const fallbackData = await fallbackResponse.json()
+            if (fallbackData.pairs && Array.isArray(fallbackData.pairs) && fallbackData.pairs.length > 0) {
+              const solanaTokens = fallbackData.pairs.filter((pair: any) => 
+                pair.chainId === 'solana' && 
+                pair.baseToken && 
+                pair.quoteToken
+              )
+              
+              // Sort based on selected criteria
+              let sortedTokens = [...solanaTokens]
+              switch (sortBy) {
+                case 'volume':
+                  sortedTokens.sort((a, b) => (b.volume?.h24 || 0) - (a.volume?.h24 || 0))
+                  break
+                case 'marketCap':
+                  sortedTokens.sort((a, b) => (b.marketCap || 0) - (a.marketCap || 0))
+                  break
+                case 'new':
+                default:
+                  sortedTokens.sort((a, b) => (b.pairCreatedAt || 0) - (a.pairCreatedAt || 0))
+                  break
+              }
+              
+              data = sortedTokens.slice(0, 20) // Limit to 20 tokens
+              console.log(`Got ${data.length} Solana DEX tokens from fallback`)
+            } else {
+              throw new Error('No Solana pairs found in DexScreener API')
+            }
+          } else {
+            throw new Error('DexScreener API fallback failed')
+          }
         }
         
         setTokens(data)
@@ -111,15 +205,92 @@ export function DexTokensSection() {
     setIsLoading(true)
     setError(null)
     try {
+      console.log(`Refreshing DEX tokens with sortBy: ${sortBy}`)
+      
+      // Use DexScreener's trending pairs API
+      const response = await fetch('https://api.dexscreener.com/latest/dex/tokens/solana', {
+        method: 'GET',
+        headers: {
+          'Accept': '*/*',
+          'User-Agent': 'CaesarBot/1.0'
+        }
+      })
+      
+      if (!response.ok) {
+        throw new Error(`DexScreener API error: ${response.status}`)
+      }
+      
+      const apiData = await response.json()
+      
       let data: DexToken[] = []
       
-      if (sortBy === 'new') {
-        data = await dexAPI.getNewTokens(20)
-      } else if (sortBy === 'volume') {
-        data = await dexAPI.getTrendingTokens(20)
+      if (apiData.pairs && Array.isArray(apiData.pairs) && apiData.pairs.length > 0) {
+        // All pairs from this endpoint are already Solana pairs
+        const solanaTokens = apiData.pairs.filter((pair: any) => 
+          pair.baseToken && 
+          pair.quoteToken
+        )
+        
+        // Sort based on selected criteria
+        let sortedTokens = [...solanaTokens]
+        switch (sortBy) {
+          case 'volume':
+            sortedTokens.sort((a, b) => (b.volume?.h24 || 0) - (a.volume?.h24 || 0))
+            break
+          case 'marketCap':
+            sortedTokens.sort((a, b) => (b.marketCap || 0) - (a.marketCap || 0))
+            break
+          case 'new':
+          default:
+            sortedTokens.sort((a, b) => (b.pairCreatedAt || 0) - (a.pairCreatedAt || 0))
+            break
+        }
+        
+        data = sortedTokens.slice(0, 20) // Limit to 20 tokens
+        console.log(`Refreshed ${data.length} Solana DEX tokens`)
       } else {
-        data = await dexAPI.getTrendingTokens(20)
-        data.sort((a, b) => b.marketCap - a.marketCap)
+        // Fallback: Try to get trending Solana pairs using search
+        console.log('No data from tokens endpoint, trying search fallback...')
+        const fallbackResponse = await fetch('https://api.dexscreener.com/latest/dex/search/?q=chainId:solana', {
+          method: 'GET',
+          headers: {
+            'Accept': '*/*',
+            'User-Agent': 'CaesarBot/1.0'
+          }
+        })
+        
+        if (fallbackResponse.ok) {
+          const fallbackData = await fallbackResponse.json()
+          if (fallbackData.pairs && Array.isArray(fallbackData.pairs) && fallbackData.pairs.length > 0) {
+            const solanaTokens = fallbackData.pairs.filter((pair: any) => 
+              pair.chainId === 'solana' && 
+              pair.baseToken && 
+              pair.quoteToken
+            )
+            
+            // Sort based on selected criteria
+            let sortedTokens = [...solanaTokens]
+            switch (sortBy) {
+              case 'volume':
+                sortedTokens.sort((a, b) => (b.volume?.h24 || 0) - (a.volume?.h24 || 0))
+                break
+              case 'marketCap':
+                sortedTokens.sort((a, b) => (b.marketCap || 0) - (a.marketCap || 0))
+                break
+              case 'new':
+              default:
+                sortedTokens.sort((a, b) => (b.pairCreatedAt || 0) - (a.pairCreatedAt || 0))
+                break
+            }
+            
+            data = sortedTokens.slice(0, 20) // Limit to 20 tokens
+            console.log(`Refreshed ${data.length} Solana DEX tokens from fallback`)
+          } else {
+            throw new Error('No Solana pairs found in DexScreener API')
+          }
+        } else {
+          throw new Error('DexScreener API fallback failed')
+        }
       }
       
       setTokens(data)
@@ -133,97 +304,7 @@ export function DexTokensSection() {
 
   return (
     <div className="w-full">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center shadow-lg">
-            <BarChart3 className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-white">DEX TOKENS</h2>
-            <p className="text-sm text-gray-400">Solana DEX trading pairs</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg">
-            <div className="w-4 h-4 border-2 border-gray-400 rounded"></div>
-          </Button>
-          <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg">
-            <div className="w-4 h-4 flex flex-col gap-1">
-              <div className="w-full h-0.5 bg-gray-400 rounded"></div>
-              <div className="w-full h-0.5 bg-gray-400 rounded"></div>
-              <div className="w-full h-0.5 bg-gray-400 rounded"></div>
-            </div>
-          </Button>
-        </div>
-      </div>
 
-      {/* Controls Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4 bg-[#111111] border border-[#282828] rounded-xl p-4">
-        {/* Sort Controls */}
-        <div className="flex items-center gap-3">
-          <span className="text-gray-400 text-sm font-medium">Sort by:</span>
-          <div className="flex items-center gap-2">
-            <Button 
-              variant={sortBy === 'new' ? 'default' : 'outline'} 
-              size="sm" 
-              onClick={() => setSortBy('new')}
-              className={`${
-                sortBy === 'new'
-                  ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:from-blue-400 hover:to-purple-400 shadow-lg"
-                  : "border-[#282828] text-gray-400 hover:text-white hover:border-blue-500 hover:bg-gray-800"
-              }`}
-            >
-              New
-            </Button>
-            <Button 
-              variant={sortBy === 'volume' ? 'default' : 'outline'} 
-              size="sm" 
-              onClick={() => setSortBy('volume')}
-              className={`${
-                sortBy === 'volume'
-                  ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:from-blue-400 hover:to-purple-400 shadow-lg"
-                  : "border-[#282828] text-gray-400 hover:text-white hover:border-blue-500 hover:bg-gray-800"
-              }`}
-            >
-              Volume
-            </Button>
-            <Button 
-              variant={sortBy === 'marketCap' ? 'default' : 'outline'} 
-              size="sm" 
-              onClick={() => setSortBy('marketCap')}
-              className={`${
-                sortBy === 'marketCap'
-                  ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:from-blue-400 hover:to-purple-400 shadow-lg"
-                  : "border-[#282828] text-gray-400 hover:text-white hover:border-blue-500 hover:bg-gray-800"
-              }`}
-            >
-              Market Cap
-            </Button>
-          </div>
-        </div>
-
-        {/* Status and Refresh */}
-        <div className="flex items-center gap-3">
-          <Badge variant="default" className="bg-blue-500 text-white shadow-lg">
-            <Wifi className="w-3 h-3 mr-1" />
-            LIVE
-          </Badge>
-          <span className="text-sm text-gray-400">
-            {tokens.length} tokens
-          </span>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleRefresh} 
-            className="border-[#282828] text-gray-400 hover:text-white hover:border-blue-500 hover:bg-gray-800"
-            disabled={isLoading}
-          >
-            <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-        </div>
-      </div>
 
       {/* Tokens Table */}
       {isLoading ? (
@@ -269,131 +350,134 @@ export function DexTokensSection() {
           </Button>
         </div>
       ) : (
-        <div className="bg-[#111111] border border-[#282828] rounded-xl overflow-hidden shadow-lg">
-          <div className="p-4 border-b border-[#282828] bg-gradient-to-r from-blue-500/10 to-purple-500/10">
-            <h2 className="text-white text-lg font-semibold">DEX Tokens</h2>
-            <p className="text-sm text-gray-400">Solana trading pairs from various DEXs</p>
+        <div className="bg-black border border-gray-800 rounded-lg overflow-hidden">
+          {/* Table Header - Fixed */}
+          <div className="grid grid-cols-6 gap-4 px-4 py-3 bg-gray-900 border-b border-gray-800 sticky top-0 z-10">
+            <div className="text-xs font-medium text-gray-400 uppercase tracking-wide">Pair info</div>
+            <div className="text-xs font-medium text-gray-400 uppercase tracking-wide">Price</div>
+            <div className="text-xs font-medium text-gray-400 uppercase tracking-wide">Market Cap</div>
+            <div className="text-xs font-medium text-gray-400 uppercase tracking-wide">Volume</div>
+            <div className="text-xs font-medium text-gray-400 uppercase tracking-wide">TXNS</div>
+            <div className="text-xs font-medium text-gray-400 uppercase tracking-wide">Token info</div>
           </div>
-          
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[800px]">
-              <thead className="bg-[#0a0a0a]">
-                <tr className="border-b border-[#282828]">
-                  <th className="text-left py-4 px-6 text-gray-400 text-xs font-semibold uppercase tracking-wider">Pair info</th>
-                  <th className="text-left py-4 px-6 text-gray-400 text-xs font-semibold uppercase tracking-wider">Price</th>
-                  <th className="text-left py-4 px-6 text-gray-400 text-xs font-semibold uppercase tracking-wider">Market Cap</th>
-                  <th className="text-left py-4 px-6 text-gray-400 text-xs font-semibold uppercase tracking-wider">Volume (24h)</th>
-                  <th className="text-left py-4 px-6 text-gray-400 text-xs font-semibold uppercase tracking-wider">Txns</th>
-                  <th className="text-left py-4 px-6 text-gray-400 text-xs font-semibold uppercase tracking-wider">Token info</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tokens.map((token) => (
-                  <tr key={token.pairAddress} className="border-b border-[#282828] hover:bg-gradient-to-r hover:from-blue-500/5 hover:to-purple-500/5 transition-all duration-200 group">
-                    {/* Pair info */}
-                    <td className="py-4 px-6">
-                      <div className="flex items-center gap-4">
-                        <div className="relative flex-shrink-0">
-                          {token.info.imageUrl ? (
-                            <img 
-                              src={token.info.imageUrl} 
-                              alt={token.baseToken.name} 
-                              className="w-10 h-10 rounded-lg object-cover ring-2 ring-gray-700 group-hover:ring-blue-500/50 transition-all"
-                              onError={(e) => {
-                                const target = e.target as HTMLImageElement
-                                target.style.display = 'none'
-                                target.nextElementSibling?.classList.remove('hidden')
-                              }}
-                            />
-                          ) : null}
-                          <div className={`w-10 h-10 rounded-lg bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center text-white text-sm font-bold ring-2 ring-gray-700 group-hover:ring-blue-500/50 transition-all ${token.info.imageUrl ? 'hidden' : ''}`}>
-                            {token.baseToken.symbol.charAt(0)}
-                          </div>
-                          <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
-                            <span className="text-white text-[10px] font-bold">D</span>
-                          </div>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-white font-semibold text-sm">{token.baseToken.symbol}</span>
-                            <span className="text-gray-400 text-xs truncate">{token.baseToken.name}</span>
-                          </div>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-blue-400 text-xs font-medium">{formatTimeAgo(token.pairCreatedAt)}</span>
-                            <div className="flex items-center gap-1">
-                              <Link className="w-3 h-3 text-gray-500 hover:text-blue-400 transition-colors" />
-                              <Eye className="w-3 h-3 text-gray-500 hover:text-blue-400 transition-colors" />
-                              <Search className="w-3 h-3 text-gray-500 hover:text-blue-400 transition-colors" />
-                              <Star className="w-3 h-3 text-gray-500 hover:text-blue-400 transition-colors" />
-                            </div>
-                          </div>
-                        </div>
+
+          {/* Scrollable Table Body */}
+          <div className="max-h-[60vh] overflow-y-auto">
+            <div className="divide-y divide-gray-800">
+              {tokens.length > 0 ? tokens.map((token, index) => (
+                <div 
+                  key={token.pairAddress} 
+                  className="grid grid-cols-6 gap-4 px-4 py-3 hover:bg-gray-900/50 transition-colors cursor-pointer"
+                  onClick={() => {
+                    console.log('Clicking dex token:', token.baseToken.address)
+                    router.push(`/trade/${token.baseToken.address}`)
+                  }}
+                >
+                  {/* Pair info */}
+                  <div className="flex items-center gap-3">
+                    <div className="relative">
+                      {token.info?.imageUrl ? (
+                        <img 
+                          src={token.info.imageUrl} 
+                          alt={token.baseToken.name} 
+                          className="w-10 h-10 rounded-lg object-cover ring-2 ring-gray-700 group-hover:ring-blue-500/50 transition-all"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement
+                            target.style.display = 'none'
+                            target.nextElementSibling?.classList.remove('hidden')
+                          }}
+                        />
+                      ) : null}
+                      <div className={`w-10 h-10 rounded-lg bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center text-white text-sm font-bold ring-2 ring-gray-700 group-hover:ring-blue-500/50 transition-all ${token.info?.imageUrl ? 'hidden' : ''}`}>
+                        {token.baseToken.symbol.charAt(0)}
                       </div>
-                    </td>
-                    
-                    {/* Price */}
-                    <td className="py-4 px-6">
-                      <div>
-                        <div className="text-white font-semibold text-sm">${parseFloat(token.priceUsd).toFixed(6)}</div>
-                        <div className={`text-xs flex items-center gap-1 font-medium ${getPriceChangeColor(token.priceChange.h24)}`}>
-                          {getPriceChangeIcon(token.priceChange.h24)}
-                          {token.priceChange.h24 > 0 ? '+' : ''}{token.priceChange.h24.toFixed(2)}%
-                        </div>
+                      <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
+                        <span className="text-white text-[10px] font-bold">D</span>
                       </div>
-                    </td>
-                    
-                    {/* Market Cap */}
-                    <td className="py-4 px-6">
-                      <div className="text-white font-semibold text-sm">${formatNumber(token.marketCap)}</div>
-                    </td>
-                    
-                    {/* Volume */}
-                    <td className="py-4 px-6">
-                      <div className="text-white font-semibold text-sm">${formatNumber(token.volume.h24)}</div>
-                    </td>
-                    
-                    {/* Transactions */}
-                    <td className="py-4 px-6">
-                      <div>
-                        <div className="text-white font-semibold text-sm">{token.txns.h24.buys + token.txns.h24.sells}</div>
-                        <div className="text-xs flex items-center gap-1">
-                          <span className="text-green-400 font-medium">{token.txns.h24.buys}</span>
-                          <span className="text-gray-500">/</span>
-                          <span className="text-red-400 font-medium">{token.txns.h24.sells}</span>
-                        </div>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-white font-semibold text-sm">{token.baseToken.symbol}</span>
+                        <span className="text-gray-400 text-xs truncate">{token.baseToken.name}</span>
                       </div>
-                    </td>
-                    
-                    {/* Token info */}
-                    <td className="py-4 px-6">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-blue-400 text-xs font-medium">{formatTimeAgo(token.pairCreatedAt)}</span>
                         <div className="flex items-center gap-1">
-                          <Users className="w-4 h-4 text-gray-400" />
-                          <span className="text-white text-xs font-medium">{formatNumber(token.liquidity.usd)}</span>
+                          <Link className="w-3 h-3 text-white hover:text-blue-400 transition-colors" />
+                          <Eye className="w-3 h-3 text-white hover:text-blue-400 transition-colors" />
+                          <Search className="w-3 h-3 text-white hover:text-blue-400 transition-colors" />
+                          <Star className="w-3 h-3 text-white hover:text-blue-400 transition-colors" />
                         </div>
-                        <div className="flex items-center gap-1">
-                          <Shield className="w-4 h-4 text-green-400" />
-                          <span className="text-white text-xs font-medium">Verified</span>
-                        </div>
-                        <Button
-                          size="sm"
-                          className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-3 py-1 text-xs h-7 shadow-lg"
-                          onClick={() => handleBuy(token)}
-                        >
-                          <Zap className="w-3 h-3 mr-1" />
-                          Trade
-                        </Button>
                       </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                  </div>
+                  
+                  {/* Price */}
+                  <div>
+                    <div className="text-white font-semibold text-sm">${parseFloat(token.priceUsd).toFixed(6)}</div>
+                    <div className={`text-xs flex items-center gap-1 font-medium ${getPriceChangeColor(token.priceChange.h24)}`}>
+                      {getPriceChangeIcon(token.priceChange.h24)}
+                      {token.priceChange.h24 > 0 ? '+' : ''}{token.priceChange.h24.toFixed(2)}%
+                    </div>
+                  </div>
+                  
+                  {/* Market Cap */}
+                  <div>
+                    <div className="text-white font-semibold text-sm">${formatNumber(token.marketCap)}</div>
+                  </div>
+                  
+                  {/* Volume */}
+                  <div>
+                    <div className="text-white font-semibold text-sm">${formatNumber(token.volume.h24)}</div>
+                  </div>
+                  
+                  {/* Transactions */}
+                  <div>
+                    <div className="text-white font-semibold text-sm">{token.txns.h24.buys + token.txns.h24.sells}</div>
+                    <div className="text-xs flex items-center gap-1">
+                      <span className="text-green-400 font-medium">{token.txns.h24.buys}</span>
+                      <span className="text-gray-500">/</span>
+                      <span className="text-red-400 font-medium">{token.txns.h24.sells}</span>
+                    </div>
+                  </div>
+                  
+                  {/* Token info */}
+                  <div>
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1">
+                        <Users className="w-4 h-4 text-white" />
+                        <span className="text-white text-xs font-medium">{formatNumber(token.liquidity.usd)}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Shield className="w-4 h-4 text-green-400" />
+                        <span className="text-white text-xs font-medium">Verified</span>
+                      </div>
+                      <Button
+                        size="sm"
+                        className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-3 py-1 text-xs h-7 shadow-lg"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleBuy(token)
+                        }}
+                      >
+                        <Zap className="w-3 h-3 mr-1" />
+                        Trade
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )) : (
+                <div className="text-center py-8 text-gray-400">
+                  No tokens available
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
     </div>
   )
 }
+
 
 

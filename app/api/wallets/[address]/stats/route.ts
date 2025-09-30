@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { SniperMockData } from '@/lib/mock-data/sniper-mock-data';
 
 export async function GET(
   request: NextRequest,
@@ -8,13 +7,8 @@ export async function GET(
   try {
     const { address } = await params;
     
-    // Generate mock wallet stats
-    const mockStats = SniperMockData.generateTargetWalletStats(address);
-    
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    return NextResponse.json(mockStats);
+    // Return error until real API integration is implemented
+    return NextResponse.json({ error: 'Wallet stats not yet implemented' }, { status: 501 });
   } catch (error) {
     console.error('Error in wallet stats API:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

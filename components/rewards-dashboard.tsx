@@ -197,7 +197,7 @@ export function RewardsDashboard() {
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-2 mb-4">
-                <Users className="w-4 h-4 text-gray-400" />
+                <Users className="w-4 h-4 text-white" />
                 <span className="text-gray-400">Referrals</span>
                 <Badge variant="INFO">0</Badge>
               </div>

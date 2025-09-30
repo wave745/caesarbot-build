@@ -1,327 +1,279 @@
-// PumpPortal WebSocket service for real-time pump.fun data
-export interface PumpToken {
+// lib/services/pumpportal-api.ts
+export interface PumpPortalToken {
   address: string
-  name: string
   symbol: string
-  logo?: string
-  marketCap: number
-  marketCapChange: number
-  liquidity: number
-  volume: number
-  transactions: number
-  buyTxns: number
-  sellTxns: number
-  holderChange: number
-  createdAt: string
-  isPaid: boolean
+  name: string
+  image?: string
+  decimals: number
   price: number
-  priceChange: number
+  priceChange24h: number
+  volume24h: number
+  marketCap: number
+  liquidity: number
+  createdAt: string
+  isVerified: boolean
+  socialLinks?: {
+    website?: string
+    twitter?: string
+    telegram?: string
+  }
+  holders: number
+  transactions: number
+  age?: number
+  risk?: 'low' | 'med' | 'high'
+  isPaid?: boolean
 }
 
-export interface PumpLiveEvent {
-  type: 'new_token' | 'trade' | 'update'
-  payload: PumpToken | any
-  timestamp: string
+export interface PumpPortalResponse {
+  success: boolean
+  data: PumpPortalToken[]
+  meta: {
+    count: number
+    timestamp: number
+    source: 'pumpportal'
+  }
 }
 
-export function listenPumpLive(onEvent: (token: PumpToken) => void) {
-  const ws = new WebSocket("wss://pumpportal.fun/api/data")
-  
-  ws.onopen = () => {
-    console.log('PumpPortal WebSocket connected')
-    // Try different subscription methods
-    try {
-      // Method 1: Try the documented approach
-      ws.send(JSON.stringify({ 
-        action: "subscribe", 
-        channel: "pump_live" 
-      }))
-      
-      // Method 2: Try alternative subscription
-      setTimeout(() => {
-        ws.send(JSON.stringify({ 
-          method: "subscribeNewToken",
-          params: []
-        }))
-      }, 1000)
-      
-      // Method 3: Try general subscription
-      setTimeout(() => {
-        ws.send(JSON.stringify({ 
-          method: "subscribe",
-          params: ["pump_live"]
-        }))
-      }, 2000)
-    } catch (error) {
-      console.error('Error sending subscription:', error)
-    }
-  }
-  
-  ws.onmessage = (msg) => {
-    try {
-      const data = JSON.parse(msg.toString())
-      console.log('PumpPortal message received:', data)
-      
-      // Handle different message formats
-      if (data.type === "new_token" || data.method === "new_token") {
-        const payload = data.payload || data
-        const token: PumpToken = {
-          address: payload.address || payload.mint || Math.random().toString(36),
-          name: payload.name || 'Unknown Token',
-          symbol: payload.symbol || 'UNK',
-          logo: payload.logo || payload.image,
-          marketCap: payload.marketCap || Math.random() * 1000000,
-          marketCapChange: payload.marketCapChange || (Math.random() - 0.5) * 100,
-          liquidity: payload.liquidity || Math.random() * 100000,
-          volume: payload.volume || Math.random() * 500000,
-          transactions: payload.transactions || Math.floor(Math.random() * 1000),
-          buyTxns: payload.buyTxns || Math.floor(Math.random() * 500),
-          sellTxns: payload.sellTxns || Math.floor(Math.random() * 500),
-          holderChange: payload.holderChange || Math.random() * 20,
-          createdAt: payload.createdAt || new Date().toISOString(),
-          isPaid: payload.isPaid || Math.random() > 0.7,
-          price: payload.price || Math.random() * 0.001,
-          priceChange: payload.priceChange || (Math.random() - 0.5) * 50
-        }
-        onEvent(token)
-      } else if (data.type === "token" || data.method === "token") {
-        // Handle direct token data
-        const token: PumpToken = {
-          address: data.address || data.mint || Math.random().toString(36),
-          name: data.name || 'Unknown Token',
-          symbol: data.symbol || 'UNK',
-          logo: data.logo || data.image,
-          marketCap: data.marketCap || Math.random() * 1000000,
-          marketCapChange: data.marketCapChange || (Math.random() - 0.5) * 100,
-          liquidity: data.liquidity || Math.random() * 100000,
-          volume: data.volume || Math.random() * 500000,
-          transactions: data.transactions || Math.floor(Math.random() * 1000),
-          buyTxns: data.buyTxns || Math.floor(Math.random() * 500),
-          sellTxns: data.sellTxns || Math.floor(Math.random() * 500),
-          holderChange: data.holderChange || Math.random() * 20,
-          createdAt: data.createdAt || new Date().toISOString(),
-          isPaid: data.isPaid || Math.random() > 0.7,
-          price: data.price || Math.random() * 0.001,
-          priceChange: data.priceChange || (Math.random() - 0.5) * 50
-        }
-        onEvent(token)
-      }
-    } catch (error) {
-      console.error('Error parsing PumpPortal message:', error)
-    }
-  }
-  
-  ws.onerror = (error) => {
-    console.error('PumpPortal WebSocket error:', error)
-  }
-  
-  ws.onclose = (event) => {
-    console.log('PumpPortal WebSocket disconnected:', event.code, event.reason)
-  }
-  
-  return ws
-}
-
-// Legacy API class for backward compatibility
 export class PumpPortalAPI {
   private static instance: PumpPortalAPI
-  private ws: WebSocket | null = null
-  private reconnectAttempts = 0
-  private maxReconnectAttempts = 5
-  private reconnectDelay = 1000
-  private isConnected = false
-  private subscribers: Set<(data: PumpToken[]) => void> = new Set()
-  private tokens: PumpToken[] = []
+  private baseUrl = 'https://api.pumpportal.io'
+  private apiKey: string | null = null
 
-  static getInstance(): PumpPortalAPI {
+  private constructor() {
+    // Initialize with API key if available
+    this.apiKey = process.env.PUMPPORTAL_API_KEY || null
+  }
+
+  public static getInstance(): PumpPortalAPI {
     if (!PumpPortalAPI.instance) {
       PumpPortalAPI.instance = new PumpPortalAPI()
     }
     return PumpPortalAPI.instance
   }
 
-  connect(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      try {
-        this.ws = listenPumpLive((token) => {
-          this.tokens.unshift(token)
-          // Keep only last 100 tokens
-          if (this.tokens.length > 100) {
-            this.tokens = this.tokens.slice(0, 100)
-          }
-          this.notifySubscribers()
-        })
-        
-        this.ws.onopen = () => {
-          this.isConnected = true
-          this.reconnectAttempts = 0
-          resolve()
-        }
-        
-        this.ws.onerror = (error) => {
-          console.error('WebSocket connection failed, using demo data')
-          this.isConnected = false
-          this.generateDemoData()
-          resolve() // Don't reject, just use demo data
-        }
-        
-        this.ws.onclose = () => {
-          this.isConnected = false
-          this.handleReconnect()
-        }
-        
-        // Fallback: if no connection after 5 seconds, use demo data
-        setTimeout(() => {
-          if (!this.isConnected) {
-            console.log('WebSocket timeout, using demo data')
-            this.generateDemoData()
-            resolve()
-          }
-        }, 5000)
-      } catch (error) {
-        console.error('WebSocket setup failed, using demo data:', error)
-        this.generateDemoData()
-        resolve() // Don't reject, just use demo data
-      }
-    })
-  }
-
-  private generateDemoData() {
-    const demoTokens: PumpToken[] = [
-      {
-        address: 'demo1',
-        name: 'Demo Token 1',
-        symbol: 'DEMO1',
-        marketCap: 1250000,
-        marketCapChange: 15.4,
-        liquidity: 85000,
-        volume: 234000,
-        transactions: 456,
-        buyTxns: 234,
-        sellTxns: 222,
-        holderChange: 12,
-        createdAt: new Date().toISOString(),
-        isPaid: true,
-        price: 0.000123,
-        priceChange: 15.4
-      },
-      {
-        address: 'demo2',
-        name: 'Demo Token 2',
-        symbol: 'DEMO2',
-        marketCap: 890000,
-        marketCapChange: -8.2,
-        liquidity: 67000,
-        volume: 189000,
-        transactions: 321,
-        buyTxns: 156,
-        sellTxns: 165,
-        holderChange: 8,
-        createdAt: new Date(Date.now() - 300000).toISOString(),
-        isPaid: false,
-        price: 0.000089,
-        priceChange: -8.2
-      },
-      {
-        address: 'demo3',
-        name: 'Demo Token 3',
-        symbol: 'DEMO3',
-        marketCap: 2100000,
-        marketCapChange: 45.7,
-        liquidity: 156000,
-        volume: 567000,
-        transactions: 789,
-        buyTxns: 445,
-        sellTxns: 344,
-        holderChange: 23,
-        createdAt: new Date(Date.now() - 600000).toISOString(),
-        isPaid: true,
-        price: 0.000210,
-        priceChange: 45.7
-      }
-    ]
-    
-    this.tokens = demoTokens
-    this.notifySubscribers()
-    
-    // Generate more demo data periodically
-    setInterval(() => {
-      const newToken: PumpToken = {
-        address: `demo${Date.now()}`,
-        name: `Demo Token ${Math.floor(Math.random() * 1000)}`,
-        symbol: `DEMO${Math.floor(Math.random() * 100)}`,
-        marketCap: Math.random() * 2000000,
-        marketCapChange: (Math.random() - 0.5) * 100,
-        liquidity: Math.random() * 200000,
-        volume: Math.random() * 800000,
-        transactions: Math.floor(Math.random() * 1000),
-        buyTxns: Math.floor(Math.random() * 500),
-        sellTxns: Math.floor(Math.random() * 500),
-        holderChange: Math.random() * 30,
-        createdAt: new Date().toISOString(),
-        isPaid: Math.random() > 0.5,
-        price: Math.random() * 0.001,
-        priceChange: (Math.random() - 0.5) * 100
-      }
+  // Get BONK tokens from PumpPortal
+  async getBonkTokens(limit: number = 25, timeframe: string = '1h'): Promise<PumpPortalToken[]> {
+    try {
+      console.log(`PumpPortal: Fetching BONK tokens (limit: ${limit}, timeframe: ${timeframe})`)
       
-      this.tokens.unshift(newToken)
-      if (this.tokens.length > 50) {
-        this.tokens = this.tokens.slice(0, 50)
+      // Try to fetch real BONK.fun tokens from their API
+      const url = `${this.baseUrl}/api/v1/tokens/bonk/new`
+      const params = new URLSearchParams({
+        limit: limit.toString(),
+        timeframe,
+        sort: 'created_at',
+        order: 'desc'
+      })
+
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'User-Agent': 'CaesarX/1.0'
       }
-      this.notifySubscribers()
-    }, 10000) // Add new token every 10 seconds
-  }
 
-  private handleReconnect() {
-    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error('Max reconnection attempts reached')
-      return
-    }
+      if (this.apiKey) {
+        headers['Authorization'] = `Bearer ${this.apiKey}`
+      }
 
-    this.reconnectAttempts++
-    const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1)
-    
-    setTimeout(() => {
-      console.log(`Attempting to reconnect to PumpPortal (${this.reconnectAttempts}/${this.maxReconnectAttempts})`)
-      this.connect().catch(console.error)
-    }, delay)
-  }
+      const response = await fetch(`${url}?${params}`, {
+        method: 'GET',
+        headers,
+        signal: AbortSignal.timeout(5000)
+      })
 
-  subscribe(callback: (data: PumpToken[]) => void) {
-    this.subscribers.add(callback)
-    // Immediately call with current data
-    callback(this.tokens)
-  }
+      if (!response.ok) {
+        throw new Error(`BONK.fun API error: ${response.status} ${response.statusText}`)
+      }
 
-  unsubscribe(callback: (data: PumpToken[]) => void) {
-    this.subscribers.delete(callback)
-  }
+      const data = await response.json()
+      
+      const tokens: PumpPortalToken[] = (data.data || data.tokens || []).map((token: any) => ({
+        address: token.address || token.contract_address,
+        symbol: token.symbol || 'UNKNOWN',
+        name: token.name || token.symbol || 'Unknown Token',
+        image: token.image || token.logo,
+        decimals: token.decimals || 9,
+        price: parseFloat(token.price || token.price_usd || '0'),
+        priceChange24h: parseFloat(token.price_change_24h || '0'),
+        volume24h: parseFloat(token.volume_24h || '0'),
+        marketCap: parseFloat(token.market_cap || '0'),
+        liquidity: parseFloat(token.liquidity || '0'),
+        createdAt: token.created_at || token.launch_time || new Date().toISOString(),
+        isVerified: token.is_verified || false,
+        socialLinks: {
+          website: token.website,
+          twitter: token.twitter,
+          telegram: token.telegram
+        },
+        holders: parseInt(token.holders || '0'),
+        transactions: parseInt(token.transactions || '0'),
+        age: this.calculateAge(token.created_at || token.launch_time),
+        risk: this.calculateRisk(token),
+        isPaid: token.is_paid || false
+      }))
 
-  private notifySubscribers() {
-    this.subscribers.forEach(callback => {
-      try {
-        callback(this.tokens)
+      console.log(`PumpPortal: Successfully fetched ${tokens.length} BONK tokens`)
+      return tokens
+
       } catch (error) {
-        console.error('Error notifying subscriber:', error)
-      }
-    })
-  }
-
-  disconnect() {
-    if (this.ws) {
-      this.ws.close()
-      this.ws = null
+      console.error('PumpPortal API Error:', error)
+      
+      // Fallback: Return empty array instead of throwing
+      // This ensures the app continues to work even if PumpPortal is down
+      return []
     }
-    this.isConnected = false
-    this.subscribers.clear()
   }
 
-  getConnectionStatus(): boolean {
-    return this.isConnected
+  // Get trending BONK tokens
+  async getTrendingBonkTokens(limit: number = 25): Promise<PumpPortalToken[]> {
+    try {
+      console.log(`PumpPortal: Fetching trending BONK tokens (limit: ${limit})`)
+      
+      const url = `${this.baseUrl}/api/v1/tokens/bonk/trending`
+      const params = new URLSearchParams({
+        limit: limit.toString(),
+        sort: 'volume_24h',
+        order: 'desc'
+      })
+
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'User-Agent': 'CaesarX/1.0'
+      }
+
+      if (this.apiKey) {
+        headers['Authorization'] = `Bearer ${this.apiKey}`
+      }
+
+      const response = await fetch(`${url}?${params}`, {
+        method: 'GET',
+        headers,
+        signal: AbortSignal.timeout(2000)
+      })
+
+      if (!response.ok) {
+        throw new Error(`PumpPortal API error: ${response.status} ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      
+      const tokens: PumpPortalToken[] = (data.data || data.tokens || []).map((token: any) => ({
+        address: token.address || token.contract_address,
+        symbol: token.symbol || 'UNKNOWN',
+        name: token.name || token.symbol || 'Unknown Token',
+        image: token.image || token.logo,
+        decimals: token.decimals || 9,
+        price: parseFloat(token.price || token.price_usd || '0'),
+        priceChange24h: parseFloat(token.price_change_24h || '0'),
+        volume24h: parseFloat(token.volume_24h || '0'),
+        marketCap: parseFloat(token.market_cap || '0'),
+        liquidity: parseFloat(token.liquidity || '0'),
+        createdAt: token.created_at || token.launch_time || new Date().toISOString(),
+        isVerified: token.is_verified || false,
+        socialLinks: {
+          website: token.website,
+          twitter: token.twitter,
+          telegram: token.telegram
+        },
+        holders: parseInt(token.holders || '0'),
+        transactions: parseInt(token.transactions || '0'),
+        age: this.calculateAge(token.created_at || token.launch_time),
+        risk: this.calculateRisk(token),
+        isPaid: token.is_paid || false
+      }))
+
+      console.log(`PumpPortal: Successfully fetched ${tokens.length} trending BONK tokens`)
+      return tokens
+
+    } catch (error) {
+      console.error('PumpPortal API Error:', error)
+      return []
+    }
   }
 
-  getCurrentData(): PumpToken[] {
-    return this.tokens
+  // Calculate token age in minutes
+  private calculateAge(createdAt: string): number {
+    if (!createdAt) return 0
+    
+    const created = new Date(createdAt)
+    const now = new Date()
+    const diffMs = now.getTime() - created.getTime()
+    return Math.floor(diffMs / (1000 * 60)) // Return minutes
+  }
+
+  // Calculate risk level based on token metrics
+  private calculateRisk(token: any): 'low' | 'med' | 'high' {
+    const liquidity = parseFloat(token.liquidity || '0')
+    const holders = parseInt(token.holders || '0')
+    const marketCap = parseFloat(token.market_cap || '0')
+    
+    // High risk: Low liquidity, few holders, small market cap
+    if (liquidity < 1000 || holders < 10 || marketCap < 10000) {
+      return 'high'
+    }
+    
+    // Medium risk: Moderate metrics
+    if (liquidity < 10000 || holders < 100 || marketCap < 100000) {
+      return 'med'
+    }
+    
+    // Low risk: Good metrics
+    return 'low'
+  }
+
+  // Get combined new tokens (Pump.fun + BONK)
+  async getCombinedNewTokens(limit: number = 25, timeframe: string = '1h'): Promise<{
+    pumpfun: any[]
+    bonk: PumpPortalToken[]
+    combined: any[]
+  }> {
+    try {
+      console.log(`PumpPortal: Fetching combined new tokens (limit: ${limit})`)
+      
+      // Fetch both Pump.fun and BONK tokens in parallel
+      const [pumpfunTokens, bonkTokens] = await Promise.allSettled([
+        this.getPumpfunTokens(limit),
+        this.getBonkTokens(limit, timeframe)
+      ])
+
+      const pumpfun = pumpfunTokens.status === 'fulfilled' ? pumpfunTokens.value : []
+      const bonk = bonkTokens.status === 'fulfilled' ? bonkTokens.value : []
+
+      // Combine and sort by creation time
+      const combined = [...pumpfun, ...bonk].sort((a, b) => {
+        const timeA = new Date(a.createdAt || a.created_at || 0).getTime()
+        const timeB = new Date(b.createdAt || b.created_at || 0).getTime()
+        return timeB - timeA
+      })
+
+      console.log(`PumpPortal: Combined ${pumpfun.length} Pump.fun + ${bonk.length} BONK tokens = ${combined.length} total`)
+      
+      return {
+        pumpfun,
+        bonk,
+        combined: combined.slice(0, limit)
+      }
+
+    } catch (error) {
+      console.error('PumpPortal: Error fetching combined tokens:', error)
+      return {
+        pumpfun: [],
+        bonk: [],
+        combined: []
+      }
+    }
+  }
+
+  // Fallback method to get Pump.fun tokens (if Moralis is not available)
+  private async getPumpfunTokens(limit: number): Promise<any[]> {
+    try {
+      // This would be a fallback to get Pump.fun tokens directly
+      // For now, return empty array as we're using Moralis for Pump.fun
+      return []
+    } catch (error) {
+      console.error('PumpPortal: Error fetching Pump.fun tokens:', error)
+      return []
+    }
   }
 }
 
+export const pumpPortalAPI = PumpPortalAPI.getInstance()

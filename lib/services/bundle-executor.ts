@@ -155,23 +155,11 @@ export class BundleExecutor {
     context: Record<string, any>
   }): Promise<{ success: boolean; data?: PreparedBundle; error?: string }> {
     try {
-      // In real implementation, this would call the backend /prepare endpoint
-      // For now, we'll mock the response
-      const mockTxs = params.recipe.map((step, index) => {
-        // Generate mock transaction data based on step type
-        const mockTxData = this.generateMockTxData(step, params.context)
-        return Buffer.from(mockTxData).toString('base64')
-      })
-
+      // Real implementation would call the backend /prepare endpoint
+      // For now, return an error indicating the feature is not yet implemented
       return {
-        success: true,
-        data: {
-          txsBase58: mockTxs,
-          routeMeta: {
-            totalSteps: params.recipe.length,
-            estimatedGas: params.recipe.length * 5000
-          }
-        }
+        success: false,
+        error: 'Bundle preparation not yet implemented - requires backend integration'
       }
     } catch (error) {
       return {
@@ -220,17 +208,6 @@ export class BundleExecutor {
     }
   }
 
-  /**
-   * Generate mock transaction data for a bundle step
-   */
-  private generateMockTxData(step: BundleStep, context: Record<string, any>): string {
-          const stepData = {
-        timestamp: Date.now(),
-        ...step,
-        ...context
-      }
-    return JSON.stringify(stepData)
-  }
 
   /**
    * Estimate fees for a transaction chunk

@@ -1,5 +1,4 @@
 import { Automation, AutomationLog, WalletInfo, TargetWalletStats } from "@/lib/types/automation"
-import { SniperMockData } from "@/lib/mock-data/sniper-mock-data"
 
 // API service for automations
 export class AutomationAPI {
@@ -8,14 +7,11 @@ export class AutomationAPI {
   // CRUD Operations
   static async getAutomations(): Promise<Automation[]> {
     try {
-      // For now, return mock data instead of making API calls
-      // TODO: Replace with real API calls when backend is ready
-      const mockAutomations = SniperMockData.generateAutomations(8);
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 400));
-      
-      return mockAutomations;
+      const response = await fetch(`${this.baseUrl}`)
+      if (!response.ok) {
+        throw new Error(`Failed to fetch automations: ${response.statusText}`)
+      }
+      return await response.json()
     } catch (error) {
       console.error("Error fetching automations:", error)
       return []
@@ -129,14 +125,11 @@ export class AutomationAPI {
   // Wallets
   static async getWallets(): Promise<WalletInfo[]> {
     try {
-      // For now, return mock data instead of making API calls
-      // TODO: Replace with real API calls when backend is ready
-      const mockWallets = SniperMockData.generateWallets(5);
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 200));
-      
-      return mockWallets;
+      const response = await fetch("/api/wallets")
+      if (!response.ok) {
+        throw new Error(`Failed to fetch wallets: ${response.statusText}`)
+      }
+      return await response.json()
     } catch (error) {
       console.error("Error fetching wallets:", error)
       return []
@@ -146,14 +139,11 @@ export class AutomationAPI {
   // Target wallet stats
   static async getTargetWalletStats(address: string): Promise<TargetWalletStats> {
     try {
-      // For now, return mock data instead of making API calls
-      // TODO: Replace with real API calls when backend is ready
-      const mockStats = SniperMockData.generateTargetWalletStats(address);
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      return mockStats;
+      const response = await fetch(`/api/wallets/${address}/stats`)
+      if (!response.ok) {
+        throw new Error(`Failed to fetch wallet stats: ${response.statusText}`)
+      }
+      return await response.json()
     } catch (error) {
       console.error("Error fetching wallet stats:", error)
       throw error

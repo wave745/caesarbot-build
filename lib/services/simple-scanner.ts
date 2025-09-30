@@ -26,7 +26,7 @@ export class SimpleScannerService {
         price: 150.23,
         vol24h: 2500000000,
         lp: 1000000000,
-        spark: this.generateMockSparkline(150.23),
+        spark: [],
         risk: "low",
         flags: { bundled: false, devSold: false, siteReused: false, dexUpdated: true },
         tags: ["whale-in", "early"],
@@ -45,7 +45,7 @@ export class SimpleScannerService {
         price: 1.00,
         vol24h: 5000000000,
         lp: 2000000000,
-        spark: this.generateMockSparkline(1.00),
+        spark: [],
         risk: "low",
         flags: { bundled: false, devSold: false, siteReused: false, dexUpdated: true },
         tags: [],
@@ -65,7 +65,7 @@ export class SimpleScannerService {
       price: 0.00123,
       vol24h: 50000,
       lp: 10000,
-      spark: this.generateMockSparkline(0.00123),
+      spark: [],
       risk: "med",
       flags: { bundled: true, devSold: false, siteReused: true, dexUpdated: false },
       tags: ["early"],
@@ -143,19 +143,10 @@ export class SimpleScannerService {
     ];
   }
 
-  private generateMockSparkline(basePrice: number): number[] {
-    const points = 24;
-    const data: number[] = [];
-    let price = basePrice;
-    for (let i = 0; i < points; i++) {
-      const change = (Math.random() - 0.5) * 0.05 * price; // +/- 5% volatility
-      price += change;
-      price = Math.max(price, basePrice * 0.8); // Don't go too low
-      data.push(Number(price.toFixed(6)));
-    }
-    return data;
-  }
 }
+
+
+
 
 
 

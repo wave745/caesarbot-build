@@ -1,54 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { listenPumpLive } from '@/lib/services/pumpportal-api'
+import { MoralisComprehensiveService } from '@/lib/services/moralis-comprehensive-service'
+
+const moralisService = MoralisComprehensiveService.getInstance()
 
 export async function GET(request: NextRequest) {
-  // Set up Server-Sent Events headers
-  const headers = new Headers({
-    'Content-Type': 'text/event-stream',
-    'Cache-Control': 'no-cache',
-    'Connection': 'keep-alive',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET',
-    'Access-Control-Allow-Headers': 'Cache-Control',
-  })
-
-  // Create a readable stream
-  const stream = new ReadableStream({
-    start(controller) {
-      // Set up PumpPortal WebSocket connection
-      const ws = listenPumpLive((token) => {
-        try {
-          // Send token data as SSE
-          const data = `data: ${JSON.stringify(token)}\n\n`
-          controller.enqueue(new TextEncoder().encode(data))
-        } catch (error) {
-          console.error('Error sending SSE data:', error)
-        }
-      })
-
-      // Handle connection errors
-      ws.onerror = (error) => {
-        console.error('PumpPortal WebSocket error:', error)
-        const errorData = `data: ${JSON.stringify({ error: 'Connection error' })}\n\n`
-        controller.enqueue(new TextEncoder().encode(errorData))
-      }
-
-      // Handle connection close
-      ws.onclose = () => {
-        console.log('PumpPortal WebSocket closed')
-        controller.close()
-      }
-
-      // Handle client disconnect
-      request.signal.addEventListener('abort', () => {
-        console.log('Client disconnected, closing WebSocket')
-        ws.close()
-        controller.close()
-      })
-    }
-  })
-
-  return new Response(stream, { headers })
+  try {
+    const { searchParams } = new URL(request.url)
+    const limit = parseInt(searchParams.get('limit') || '100')
+    const timeframe = searchParams.get('timeframe') || '1h'
+    
+    console.log(`API: Fetching new tokens via SSE (limit: ${limit}, timeframe: ${timeframe})`)
+    
+    const tokens = await moralisService.getNewTokens(limit, timeframe)
+    
+    return NextResponse.json({
+      success: true,
+      tokens,
+      isConnected: true,
+      timestamp: Date.now()
+    })
+  } catch (error) {
+    console.error('Error fetching new tokens:', error)
+    return NextResponse.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      tokens: [],
+      isConnected: false
+    }, { status: 500 })
+  }
 }
 
 
