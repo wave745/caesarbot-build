@@ -58,8 +58,8 @@ export default function TradePage() {
         
         console.log('🔍 Fetching token data for:', contractAddress)
         
-        // Fetch both metadata and trading data in parallel
-        const [metadataResponse, tradingDataResponse] = await Promise.all([
+        // Fetch metadata, trading data, and pump.fun data in parallel
+        const [metadataResponse, tradingDataResponse, pumpFunResponse] = await Promise.all([
           // Get token metadata (logo, name, symbol, social links)
           fetch('/api/moralis/token-metadata', {
             method: 'POST',
@@ -72,14 +72,18 @@ export default function TradePage() {
             })
           }),
           // Get trading data (price, market cap, volume, etc.)
-          fetch(`/api/dexscreener/token/${contractAddress}`)
+          fetch(`/api/dexscreener/token/${contractAddress}`),
+          // Get pump.fun data (for new tokens with social links)
+          fetch(`/api/pump-fun/token/${contractAddress}`)
         ])
 
         console.log('📡 Metadata API response status:', metadataResponse.status)
         console.log('📡 Trading data API response status:', tradingDataResponse.status)
+        console.log('📡 Pump.fun API response status:', pumpFunResponse.status)
 
         let metadata = null
         let tradingData = null
+        let pumpFunData = null
 
         // Process metadata response
         if (metadataResponse.ok) {
@@ -103,18 +107,29 @@ export default function TradePage() {
           }
         }
 
+        // Process pump.fun data response
+        if (pumpFunResponse.ok) {
+          const pumpFunResult = await pumpFunResponse.json()
+          console.log('✅ Pump.fun API response:', pumpFunResult)
+          
+          if (pumpFunResult.success && pumpFunResult.data) {
+            pumpFunData = pumpFunResult.data
+            console.log('🎯 Pump.fun data received:', pumpFunData)
+          }
+        }
+
         // Create a better fallback symbol from contract address
         const fallbackSymbol = contractAddress.slice(0, 4).toUpperCase()
         const fallbackName = `Token ${contractAddress.slice(0, 8)}`
         
         // Transform the data to match our TokenData interface
         const tokenData: TokenData = {
-          symbol: metadata?.symbol && metadata.symbol !== "UNKNOWN" ? metadata.symbol : fallbackSymbol,
-          name: metadata?.name && metadata.name !== "Unknown Token" ? metadata.name : fallbackName,
-          price: tradingData?.price ? `$${tradingData.price}` : "$0.00",
-          marketCap: tradingData?.marketCap ? `$${tradingData.marketCap}` : "$0",
-          liquidity: tradingData?.liquidity ? `$${tradingData.liquidity}` : "$0",
-          volume24h: tradingData?.volume24h ? `$${tradingData.volume24h}` : "$0",
+          symbol: metadata?.symbol && metadata.symbol !== "UNKNOWN" ? metadata.symbol : (pumpFunData?.symbol || fallbackSymbol),
+          name: metadata?.name && metadata.name !== "Unknown Token" ? metadata.name : (pumpFunData?.name || fallbackName),
+          price: tradingData?.price ? `$${tradingData.price}` : (pumpFunData?.priceUsd ? `$${pumpFunData.priceUsd}` : "$0.00"),
+          marketCap: tradingData?.marketCap ? `$${tradingData.marketCap}` : (pumpFunData?.marketCap ? `$${pumpFunData.marketCap}` : "$0"),
+          liquidity: tradingData?.liquidity ? `$${tradingData.liquidity}` : (pumpFunData?.liquidity ? `$${pumpFunData.liquidity}` : "$0"),
+          volume24h: tradingData?.volume24h ? `$${tradingData.volume24h}` : (pumpFunData?.volume24h ? `$${pumpFunData.volume24h}` : "$0"),
           totalFees: tradingData?.totalFees || "0",
           supply: tradingData?.supply || "0",
           taxes: tradingData?.taxes || "Unknown",
@@ -122,11 +137,11 @@ export default function TradePage() {
           isFavorited: false,
           priceChange24h: tradingData?.priceChange24h || 0,
           fullContractAddress: contractAddress,
-          // Token metadata from Moralis
-          logo: metadata?.logo,
-          website: metadata?.socialLinks?.website,
-          twitter: metadata?.socialLinks?.twitter,
-          telegram: metadata?.socialLinks?.telegram,
+          // Token metadata - prioritize pump.fun data for new tokens, fallback to Moralis
+          logo: pumpFunData?.logo || metadata?.logo,
+          website: pumpFunData?.website || metadata?.socialLinks?.website,
+          twitter: pumpFunData?.twitter || metadata?.socialLinks?.twitter,
+          telegram: pumpFunData?.telegram || metadata?.socialLinks?.telegram,
           discord: metadata?.socialLinks?.discord,
           github: metadata?.socialLinks?.github,
           reddit: metadata?.socialLinks?.reddit,

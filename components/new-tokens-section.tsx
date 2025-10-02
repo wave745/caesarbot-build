@@ -34,6 +34,14 @@ interface LiveToken {
   // New fields for combined tokens
   source?: 'pumpfun' | 'bonk'
   platform?: 'Pump.fun' | 'BONK.fun'
+  // Social links from pump.fun API
+  website?: string
+  twitter?: string
+  telegram?: string
+  hasTwitter?: boolean
+  hasTelegram?: boolean
+  hasWebsite?: boolean
+  hasSocial?: boolean
 }
 
 interface NewTokensSectionProps {
@@ -47,7 +55,6 @@ export function NewTokensSection({ onHoverChange }: NewTokensSectionProps) {
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date())
   const [dexPaidStatus, setDexPaidStatus] = useState<Map<string, boolean>>(new Map())
   const [tokenMetadata, setTokenMetadata] = useState<Map<string, any>>(new Map())
-  const [eventSource, setEventSource] = useState<EventSource | null>(null)
   const router = useRouter()
 
   const fetchDexPaidStatus = async (tokens: LiveToken[]) => {
@@ -125,8 +132,8 @@ export function NewTokensSection({ onHoverChange }: NewTokensSectionProps) {
   }
 
   const formatTimeAgo = (timeAgo: number | undefined) => {
-    if (timeAgo === undefined || timeAgo === null || isNaN(timeAgo)) {
-      return '0s'
+    if (timeAgo === undefined || timeAgo === null || isNaN(timeAgo) || timeAgo < 0) {
+      return 'now'
     }
     if (timeAgo < 60) {
       return `${timeAgo}s`
@@ -143,87 +150,103 @@ export function NewTokensSection({ onHoverChange }: NewTokensSectionProps) {
     const now = new Date().getTime()
     const created = new Date(createdAt).getTime()
     const diffInSeconds = Math.floor((now - created) / 1000)
-    return diffInSeconds
+    
+    // Debug logging for time calculation
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Time calculation:', {
+        now: new Date(now).toISOString(),
+        created: new Date(created).toISOString(),
+        diffInSeconds,
+        createdAt
+      })
+    }
+    
+    // Ensure we don't return negative values
+    return Math.max(0, diffInSeconds)
   }
 
   const handleBuy = (token: LiveToken) => {
     console.log(`Buying ${token.symbol} (${token.tokenAddress || token.mint})`)
   }
 
-  // Real-time streaming with EventSource
+  // Fetch new tokens from pump.fun API with polling
   useEffect(() => {
-    console.log('🚀 NewTokensSection: Starting real-time token stream...')
-    
-    // Skip cache check - use SSE stream directly for instant updates
-    console.log('📦 NewTokensSection: Skipping cache, using SSE stream for instant updates')
-    
-    // Create EventSource for real-time streaming
-    const es = new EventSource('/api/live-tokens?limit=30')
-    setEventSource(es)
-    
-    es.onopen = () => {
-      console.log('✅ NewTokensSection: EventSource connected')
-      setIsConnected(true)
-      setIsLoading(false)
-    }
-    
-    es.onmessage = (event) => {
+    const fetchNewTokens = async () => {
       try {
-        const parseStart = Date.now()
-        console.log('📡 NewTokensSection: Received live update at', parseStart)
+        console.log('🚀 NewTokensSection: Fetching new tokens from pump.fun...')
+        // Don't set loading state to show tokens immediately
         
-        const data = JSON.parse(event.data)
-        const parseEnd = Date.now()
-        console.log('📊 NewTokensSection: JSON parsed in', parseEnd - parseStart, 'ms')
-        console.log('📡 NewTokensSection: Received live update:', data.data?.length || 0, 'tokens')
+        const response = await fetch('/api/pump-fun/new-tokens?limit=25')
         
-        if (data.success && data.data) {
-          const setStateStart = Date.now()
-          console.log('🔄 NewTokensSection: Setting tokens at', setStateStart)
+        if (response.ok) {
+          const data = await response.json()
+          console.log('✅ NewTokensSection: Success from pump.fun API:', data)
           
-          // Update tokens with live data
-          setTokens(data.data)
-          setLastUpdate(new Date())
-          
-          const setStateEnd = Date.now()
-          console.log('✅ NewTokensSection: State updated in', setStateEnd - setStateStart, 'ms')
-          console.log('⏱️ NewTokensSection: TOTAL TIME from message to state:', setStateEnd - parseStart, 'ms')
-          
-          // Fetch Dex paid status and metadata for new tokens
-          fetchDexPaidStatus(data.data)
-          fetchTokenMetadata(data.data)
-          
-          // Skip cache - we're using SSE for instant updates
+          if (data.success && data.data && Array.isArray(data.data)) {
+            console.log('✅ NewTokensSection: Processing', data.data.length, 'tokens from pump.fun')
+            
+            // Process tokens - pump.fun API already provides social links
+            const processedTokens = data.data.map((token: any) => ({
+              ...token,
+              tokenAddress: token.tokenAddress || token.coinMint,
+              symbol: token.symbol || token.ticker || 'UNKNOWN',
+              name: token.name || 'Unknown Token',
+              price: token.priceUsd || '$0.00',
+              priceUsd: token.priceUsd || '0',
+              marketCap: token.marketCap || token.fullyDilutedValuation || '$0',
+              liquidity: token.liquidity || '$0',
+              volume24h: token.volume24h || '$0',
+              priceChange24h: 0, // Pump.fun doesn't provide this
+              isFavorited: false,
+              // Social links are already included from pump.fun API
+              website: token.website,
+              twitter: token.twitter,
+              telegram: token.telegram,
+              hasTwitter: token.hasTwitter || false,
+              hasTelegram: token.hasTelegram || false,
+              hasWebsite: token.hasWebsite || false,
+              hasSocial: token.hasSocial || false
+            }))
+            
+            setTokens(processedTokens)
+            setLastUpdate(new Date())
+            setIsConnected(true)
+            
+            // Fetch Dex paid status for new tokens (metadata already included from pump.fun)
+            fetchDexPaidStatus(processedTokens)
+            
+            console.log('✅ NewTokensSection: Successfully loaded', processedTokens.length, 'tokens from pump.fun')
+          } else {
+            console.log('❌ NewTokensSection: No tokens found from pump.fun API')
+            setTokens([])
+            setIsConnected(false)
+          }
         } else {
-          console.error('❌ NewTokensSection: Live stream error:', data.error)
+          console.error('❌ NewTokensSection: Pump.fun API error:', response.status)
+          setTokens([])
+          setIsConnected(false)
         }
       } catch (error) {
-        console.error('❌ NewTokensSection: Error parsing live data:', error)
+        console.error('❌ NewTokensSection: Error fetching tokens from pump.fun:', error)
+        setTokens([])
+        setIsConnected(false)
+      } finally {
+        // Keep loading state false for immediate display
+        setIsLoading(false)
       }
     }
     
-    es.onerror = (error) => {
-      console.error('❌ NewTokensSection: EventSource error:', error)
-      setIsConnected(false)
-      setIsLoading(false)
-    }
+    // Initial fetch
+    fetchNewTokens()
     
-    // Cleanup on unmount
+    // Set up polling every 10 seconds for fresh data
+    const interval = setInterval(fetchNewTokens, 10000)
+    
     return () => {
-      console.log('🧹 NewTokensSection: Cleaning up EventSource')
-      es.close()
+      clearInterval(interval)
     }
   }, [])
 
-  // Cleanup EventSource on unmount
-  useEffect(() => {
-    return () => {
-      if (eventSource) {
-        console.log('🧹 NewTokensSection: Cleaning up EventSource on unmount')
-        eventSource.close()
-      }
-    }
-  }, [eventSource])
 
   return (
     <div className="w-full">
@@ -244,7 +267,7 @@ export function NewTokensSection({ onHoverChange }: NewTokensSectionProps) {
           {/* Scrollable Table Body */}
           <div className="max-h-[60vh] overflow-y-auto">
             <div className="divide-y divide-gray-800">
-              {tokens.slice(0, 10).map((token) => (
+              {tokens.slice(0, 25).map((token) => (
                 <div 
                   key={token.tokenAddress || token.mint} 
                   className="grid grid-cols-7 gap-4 px-4 py-3 hover:bg-gray-900/50 transition-colors cursor-pointer"
@@ -322,32 +345,24 @@ export function NewTokensSection({ onHoverChange }: NewTokensSectionProps) {
                   <div className="flex items-center gap-1 mt-2">
                     {(() => {
                       const tokenAddress = token.tokenAddress || token.mint
-                      const metadata = tokenAddress ? tokenMetadata.get(tokenAddress) : null
-                      const socialLinks = metadata?.socialLinks || {}
                       
                       return (
                         <>
-                          {/* Reddit - only show if token has reddit link */}
-                          {socialLinks.reddit && (
-                            <a href={socialLinks.reddit} target="_blank" rel="noopener noreferrer" className="w-3 h-3 text-white hover:text-gray-300">
-                              <img src="/icons/social/reddit-icon.svg" alt="Reddit" className="w-full h-full object-cover brightness-0 invert" />
-                            </a>
-                          )}
                           {/* Twitter/X - only show if token has twitter link */}
-                          {socialLinks.twitter && (
-                            <a href={socialLinks.twitter} target="_blank" rel="noopener noreferrer" className="w-3 h-3 text-white hover:text-gray-300">
+                          {token.twitter && (
+                            <a href={token.twitter} target="_blank" rel="noopener noreferrer" className="w-3 h-3 text-white hover:text-gray-300">
                               <img src="/icons/social/x-logo.svg" alt="Twitter" className="w-full h-full object-cover brightness-0 invert" />
                             </a>
                           )}
                           {/* Telegram - only show if token has telegram link */}
-                          {socialLinks.telegram && (
-                            <a href={socialLinks.telegram} target="_blank" rel="noopener noreferrer" className="w-3 h-3 text-white hover:text-gray-300">
+                          {token.telegram && (
+                            <a href={token.telegram} target="_blank" rel="noopener noreferrer" className="w-3 h-3 text-white hover:text-gray-300">
                               <img src="/icons/social/telegram-logo.svg" alt="Telegram" className="w-full h-full object-cover brightness-0 invert" />
                             </a>
                           )}
                           {/* Website - only show if token has website link */}
-                          {socialLinks.website && (
-                            <a href={socialLinks.website} target="_blank" rel="noopener noreferrer" className="w-3 h-3 text-white hover:text-gray-300">
+                          {token.website && (
+                            <a href={token.website} target="_blank" rel="noopener noreferrer" className="w-3 h-3 text-white hover:text-gray-300">
                               <img src="/icons/ui/web-icon.svg" alt="Website" className="w-full h-full object-cover brightness-0 invert" />
                             </a>
                           )}
