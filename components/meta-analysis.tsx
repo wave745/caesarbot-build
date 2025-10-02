@@ -135,7 +135,7 @@ export function MetaAnalysis() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          {error && (
+          {error && metaData.length === 0 && (
             <Card className="bg-red-900/20 border-red-500">
               <CardContent className="p-6">
                 <div className="flex items-center gap-3">
@@ -143,6 +143,20 @@ export function MetaAnalysis() {
                   <div>
                     <h3 className="text-red-500 font-semibold">Error Loading Data</h3>
                     <p className="text-red-400 text-sm">{error}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          
+          {error && metaData.length > 0 && (
+            <Card className="bg-yellow-900/20 border-yellow-500">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <AlertTriangle className="w-5 h-5 text-yellow-500" />
+                  <div>
+                    <h3 className="text-yellow-500 font-semibold text-sm">Sample Data</h3>
+                    <p className="text-yellow-400 text-xs">Showing sample data. Real-time updates unavailable.</p>
                   </div>
                 </div>
               </CardContent>
