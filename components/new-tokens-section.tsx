@@ -5,7 +5,6 @@ import {
   Eye,
   Zap
 } from "lucide-react"
-import { tokenCache } from "@/lib/services/token-cache"
 import { useRouter } from "next/navigation"
 
 // Define LiveToken interface for combined Pump.fun + BONK tokens

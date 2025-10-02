@@ -11,7 +11,6 @@ import {
   Eye,
   Zap
 } from "lucide-react"
-import { tokenCache } from "@/lib/services/token-cache"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 // Define the Moralis trending token interface
@@ -240,15 +239,7 @@ export function TrendingTokensSection({ sortBy: propSortBy }: TrendingTokensSect
     console.log('TrendingTokensSection: useEffect triggered - INSTANT LOADING')
     let abortController: AbortController | null = null
 
-    // Check cache first for INSTANT display
-    if (tokenCache.isDataAvailable()) {
-      const cachedTokens = tokenCache.getTrendingTokens()
-      if (cachedTokens.length > 0) {
-        setTokens(cachedTokens)
-        setIsLoading(false)
-        console.log('INSTANT: Using cached trending tokens:', cachedTokens.length)
-      }
-    }
+    // Cache disabled for now - fetch directly
 
     // INSTANT fetch on mount
     fetchTrendingTokens()

@@ -40,27 +40,28 @@ class TokenCache {
 
   private async fetchNewTokens() {
     try {
-      const response = await fetch('/api/combined/new-tokens?realtime=true&limit=25')
+      const response = await fetch('/api/pump-fun/new-tokens?limit=25')
       const data = await response.json()
       
       if (data.success) {
         this.cache.newTokens = data.data || []
         this.cache.lastFetch = Date.now()
-        console.log(`Cache: Fetched ${data.data?.length || 0} combined tokens (${data.meta?.pumpfunCount || 0} Pump.fun + ${data.meta?.bonkCount || 0} BONK)`)
+        console.log(`Cache: Fetched ${data.data?.length || 0} new tokens from pump.fun`)
       }
     } catch (error) {
-      console.error('Cache: Error fetching combined new tokens:', error)
+      console.error('Cache: Error fetching new tokens:', error)
     }
   }
 
   private async fetchTrendingTokens() {
     try {
-      const response = await fetch('/api/trending')
+      const response = await fetch('/api/moralis/trending-tokens')
       const data = await response.json()
       
       if (data.success) {
         this.cache.trendingTokens = data.data || []
         this.cache.lastFetch = Date.now()
+        console.log(`Cache: Fetched ${data.data?.length || 0} trending tokens from Moralis`)
       }
     } catch (error) {
       console.error('Cache: Error fetching trending tokens:', error)
@@ -88,8 +89,9 @@ class TokenCache {
 export const tokenCache = new TokenCache()
 
 // Start preloading immediately when module loads
-if (typeof window !== 'undefined') {
-  tokenCache.startPreloading()
-}
+// Disabled for now to prevent conflicts with individual component fetching
+// if (typeof window !== 'undefined') {
+//   tokenCache.startPreloading()
+// }
 
 
