@@ -249,8 +249,12 @@ export function NewTokensSection({ onHoverChange }: NewTokensSectionProps) {
                   key={token.tokenAddress || token.address || token.mint} 
                   className="grid grid-cols-7 gap-4 px-4 py-3 hover:bg-gray-900/50 transition-colors cursor-pointer"
                   onClick={() => {
-                    console.log('Clicking new token:', token.tokenAddress || token.address || token.mint)
-                    router.push(`/trade/${token.tokenAddress || token.address || token.mint}`)
+                    const tokenAddress = token.tokenAddress || token.address || token.mint
+                    try {
+                      window.location.href = `/trade/${tokenAddress}`
+                    } catch (error) {
+                      console.error('Navigation failed:', error)
+                    }
                   }}
                 >
                   {/* Pair info */}

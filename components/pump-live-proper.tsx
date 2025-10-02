@@ -206,8 +206,12 @@ export function PumpLiveProper() {
               key={token.mint} 
               className="bg-[#0b0d0e] border-zinc-800 hover:border-yellow-500/50 transition-colors group cursor-pointer"
               onClick={() => {
-                console.log('Clicking pump token:', token.tokenAddress || token.mint || '')
-                router.push(`/trade/${token.tokenAddress || token.mint || ''}`)
+                const tokenAddress = token.tokenAddress || token.mint || ''
+                try {
+                  window.location.href = `/trade/${tokenAddress}`
+                } catch (error) {
+                  console.error('Navigation failed:', error)
+                }
               }}
             >
               <CardContent className="p-4">

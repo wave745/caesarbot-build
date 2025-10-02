@@ -181,6 +181,23 @@ export class SolanaDataService {
     }
   }
 
+  async getTokenFromJupiterList(mintAddress: string) {
+    try {
+      const response = await fetch('https://token.jup.ag/strict');
+      const tokens = await response.json();
+      const token = tokens.find((t: any) => t.address === mintAddress);
+      return token ? {
+        name: token.name,
+        symbol: token.symbol,
+        logo: token.logoURI,
+        decimals: token.decimals
+      } : null;
+    } catch (error) {
+      console.error('Error fetching token from Jupiter list:', error);
+      return null;
+    }
+  }
+
   async getTokenInfo(mintAddress: string) {
     try {
       const response = await fetch(`${this.dexScreenerUrl}/dex/tokens/${mintAddress}`);
@@ -194,7 +211,11 @@ export class SolanaDataService {
           marketCap: parseFloat(pair.marketCap) || 0,
           volume24h: parseFloat(pair.volume?.h24) || 0,
           liquidity: parseFloat(pair.liquidity?.usd) || 0,
-          dexId: pair.dexId
+          dexId: pair.dexId,
+          // Try to get token info from DexScreener
+          name: pair.baseToken?.name,
+          symbol: pair.baseToken?.symbol,
+          logo: pair.baseToken?.image
         };
       }
       return null;
@@ -206,24 +227,90 @@ export class SolanaDataService {
 
   async getTokenData(mintAddress: string) {
     try {
-      const [price, info] = await Promise.all([
+      const [price, info, metadata, jupiterToken] = await Promise.all([
         this.getTokenPrice(mintAddress),
-        this.getTokenInfo(mintAddress)
+        this.getTokenInfo(mintAddress),
+        this.getTokenMetadata(mintAddress),
+        this.getTokenFromJupiterList(mintAddress)
       ]);
 
       if (!info) return null;
 
+      // Try to get token metadata from multiple sources
+      let tokenName = `Token ${mintAddress.slice(0, 8)}`;
+      let tokenSymbol = mintAddress.slice(0, 4).toUpperCase();
+      let tokenLogo = null;
+      let socialLinks = {};
+
+      // First try Jupiter token list (most reliable for known tokens)
+      if (jupiterToken) {
+        tokenName = jupiterToken.name || tokenName;
+        tokenSymbol = jupiterToken.symbol || tokenSymbol;
+        tokenLogo = jupiterToken.logo || null;
+      }
+
+      // Then try DexScreener data
+      if (info && (info.name || info.symbol)) {
+        tokenName = info.name || tokenName;
+        tokenSymbol = info.symbol || tokenSymbol;
+        tokenLogo = info.logo || tokenLogo;
+      }
+
+      // Then try on-chain metadata
+      if (metadata && metadata.result && metadata.result.value) {
+        const accountData = metadata.result.value.data;
+        if (accountData && accountData.parsed && accountData.parsed.info) {
+          const tokenInfo = accountData.parsed.info;
+          tokenName = tokenInfo.name || tokenName;
+          tokenSymbol = tokenInfo.symbol || tokenSymbol;
+          tokenLogo = tokenInfo.logo || tokenLogo;
+          
+          // Extract social links if available in metadata
+          if (tokenInfo.uri) {
+            try {
+              const metadataResponse = await fetch(tokenInfo.uri);
+              const metadataJson = await metadataResponse.json();
+              if (metadataJson) {
+                socialLinks = {
+                  website: metadataJson.website || metadataJson.external_url,
+                  twitter: metadataJson.twitter || metadataJson.twitter_url,
+                  telegram: metadataJson.telegram || metadataJson.telegram_url,
+                  discord: metadataJson.discord || metadataJson.discord_url,
+                  github: metadataJson.github || metadataJson.github_url,
+                  reddit: metadataJson.reddit || metadataJson.reddit_url,
+                  instagram: metadataJson.instagram || metadataJson.instagram_url,
+                  youtube: metadataJson.youtube || metadataJson.youtube_url,
+                  tiktok: metadataJson.tiktok || metadataJson.tiktok_url,
+                  twitch: metadataJson.twitch || metadataJson.twitch_url,
+                  facebook: metadataJson.facebook || metadataJson.facebook_url
+                };
+              }
+            } catch (error) {
+              console.warn('Could not fetch token metadata URI:', error);
+            }
+          }
+        }
+      }
+
+      // Calculate token age from first transaction
+      const age = await this.getTokenAge(mintAddress);
+
       return {
         mint: mintAddress,
-        name: `Token ${mintAddress.slice(0, 8)}`,
-        symbol: 'UNKNOWN',
+        name: tokenName,
+        symbol: tokenSymbol,
+        logo: tokenLogo,
         price: price || info.price,
         priceChange24h: info.priceChange24h,
         marketCap: info.marketCap,
         volume24h: info.volume24h,
         liquidity: info.liquidity,
         supply: 1000000000, // Default supply
-        decimals: 9
+        decimals: 9,
+        age: age,
+        community: this.formatCommunityInfo(age, mintAddress),
+        // Social links
+        ...socialLinks
       };
     } catch (error) {
       console.error('Error getting token data:', error);
@@ -322,6 +409,53 @@ export class SolanaDataService {
       console.error('Error fetching holders:', error);
       return { topHolders: [], totalHolders: 0 };
     }
+  }
+
+  // Get token age in hours
+  async getTokenAge(mintAddress: string): Promise<number> {
+    try {
+      const response = await fetch(`${this.heliusRpcUrl}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'getSignaturesForAddress',
+          params: [mintAddress, { limit: 1 }]
+        })
+      });
+      const data = await response.json();
+      
+      if (data.result && data.result.length > 0) {
+        const firstTx = data.result[data.result.length - 1]; // Get oldest transaction
+        const txTime = firstTx.blockTime * 1000; // Convert to milliseconds
+        const now = Date.now();
+        const ageInHours = Math.floor((now - txTime) / (1000 * 60 * 60));
+        return ageInHours;
+      }
+      
+      return 0;
+    } catch (error) {
+      console.error('Error fetching token age:', error);
+      return 0;
+    }
+  }
+
+  // Format community info with age and shortened address
+  formatCommunityInfo(ageInHours: number, mintAddress: string): string {
+    let ageText = '';
+    if (ageInHours < 24) {
+      ageText = `${ageInHours}h`;
+    } else if (ageInHours < 168) { // 7 days
+      ageText = `${Math.floor(ageInHours / 24)}d`;
+    } else if (ageInHours < 720) { // 30 days
+      ageText = `${Math.floor(ageInHours / 168)}w`;
+    } else {
+      ageText = `${Math.floor(ageInHours / 720)}m`;
+    }
+    
+    const shortenedAddress = `${mintAddress.slice(0, 4)}...${mintAddress.slice(-4)}`;
+    return `${ageText} ${shortenedAddress}`;
   }
 }
 

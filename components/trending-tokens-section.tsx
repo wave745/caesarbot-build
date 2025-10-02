@@ -13,6 +13,7 @@ import {
 } from "lucide-react"
 import { tokenCache } from "@/lib/services/token-cache"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 // Define the Moralis trending token interface
 interface MoralisTrendingToken {
   chainId: string
@@ -84,6 +85,7 @@ export function TrendingTokensSection({ sortBy: propSortBy }: TrendingTokensSect
   const [sortBy, setSortBy] = useState<'volume' | 'marketCap' | 'change' | 'new'>(propSortBy || 'new')
   const [dexPaidStatus, setDexPaidStatus] = useState<Map<string, boolean>>(new Map())
   const [tokenMetadata, setTokenMetadata] = useState<Map<string, any>>(new Map())
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
   const router = useRouter()
 
   // Update local sortBy when prop changes
@@ -210,6 +212,7 @@ export function TrendingTokensSection({ sortBy: propSortBy }: TrendingTokensSect
       if (data.success && data.data.length > 0) {
         console.log('TrendingTokensSection: Setting tokens INSTANTLY:', data.data.length)
         setTokens(data.data)
+        setLastUpdate(new Date())
         setIsLoading(false) // Never show loading - always show tokens immediately
         
         // Fetch Dex paid status and metadata for the tokens
@@ -264,6 +267,27 @@ export function TrendingTokensSection({ sortBy: propSortBy }: TrendingTokensSect
       console.log('TrendingTokensSection: Cleaning up on unmount')
     }
   }, [])
+
+  // Live data updates - refresh trending tokens every 30 seconds
+  useEffect(() => {
+    if (tokens.length === 0) return
+
+    const interval = setInterval(async () => {
+      try {
+        const response = await fetch('/api/moralis/trending-tokens')
+        const data = await response.json()
+        
+        if (data.success && data.data.length > 0) {
+          setTokens(data.data)
+          setLastUpdate(new Date())
+        }
+      } catch (error) {
+        console.error('Live trending data update failed:', error)
+      }
+    }, 30000) // Update every 30 seconds
+
+    return () => clearInterval(interval)
+  }, [tokens.length])
 
   const sortedTokens = useMemo(() => {
     let sorted = [...tokens]
@@ -339,6 +363,7 @@ export function TrendingTokensSection({ sortBy: propSortBy }: TrendingTokensSect
 
 
 
+
       {/* Tokens Table */}
       {!isLoading && (
         <div className="bg-black border border-gray-800 rounded-lg overflow-hidden">
@@ -361,8 +386,11 @@ export function TrendingTokensSection({ sortBy: propSortBy }: TrendingTokensSect
                   key={token.tokenAddress} 
                   className="grid grid-cols-7 gap-4 px-4 py-3 hover:bg-gray-900/50 transition-colors cursor-pointer"
                   onClick={() => {
-                    console.log('Clicking token:', token.tokenAddress)
-                    router.push(`/trade/${token.tokenAddress}`)
+                    try {
+                      window.location.href = `/trade/${token.tokenAddress}`
+                    } catch (error) {
+                      console.error('Navigation failed:', error)
+                    }
                   }}
                 >
                   {/* Pair info */}

@@ -369,8 +369,11 @@ export function DexTokensSection({ sortBy: propSortBy }: DexTokensSectionProps =
                   key={token.pairAddress} 
                   className="grid grid-cols-6 gap-4 px-4 py-3 hover:bg-gray-900/50 transition-colors cursor-pointer"
                   onClick={() => {
-                    console.log('Clicking dex token:', token.baseToken.address)
-                    router.push(`/trade/${token.baseToken.address}`)
+                    try {
+                      window.location.href = `/trade/${token.baseToken.address}`
+                    } catch (error) {
+                      console.error('Navigation failed:', error)
+                    }
                   }}
                 >
                   {/* Pair info */}
