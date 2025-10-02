@@ -29,45 +29,38 @@ export class PumpApiService {
         return { data: this.cache.data }
       }
 
-      // Try with a shorter timeout first
-      let response
-      try {
-        response = await fetch(`${this.BASE_URL}/metas/current`, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-          },
-          signal: AbortSignal.timeout(8000) // Shorter timeout
-        })
-      } catch (timeoutError) {
-        console.log('First attempt timed out, trying with longer timeout...')
-        // If first attempt times out, try with longer timeout
-        response = await fetch(`${this.BASE_URL}/metas/current`, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-          },
-          signal: AbortSignal.timeout(20000) // Longer timeout for retry
-        })
-      }
+      // Use our server-side API route instead of direct external API call
+      const response = await fetch('/api/pump-metas', {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        signal: AbortSignal.timeout(15000) // 15 second timeout
+      })
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
 
-      const data: MetaData[] = await response.json()
+      const result = await response.json()
       
-      // Update cache
-      this.cache = {
-        data,
-        timestamp: now
-      }
+      if (result.success && result.data) {
+        // Update cache
+        this.cache = {
+          data: result.data,
+          timestamp: now
+        }
 
-      return { data }
+        return { 
+          data: result.data,
+          error: result.error // Include any error message from server
+        }
+      } else {
+        throw new Error('Invalid response from server')
+      }
     } catch (error) {
-      console.error('Error fetching metas from pump.fun API:', error)
+      console.error('Error fetching metas from server API:', error)
       
       // Return cached data if available, even if stale
       if (this.cache.data) {
@@ -75,50 +68,20 @@ export class PumpApiService {
         return { data: this.cache.data }
       }
       
-      // Handle specific timeout errors
-      if (error instanceof Error && (error.name === 'TimeoutError' || error.message.includes('timeout'))) {
-        // Return sample data as fallback when API consistently times out
-        const fallbackData: MetaData[] = [
-          { word: "Quarter Flip", word_with_strength: "🔥🔥Quarter Flip🪙", score: 120 },
-          { word: "Edgy Trolling", word_with_strength: "🔥Edgy Trolling🃏", score: 105 },
-          { word: "Animal Antics", word_with_strength: "🔥Animal Antics🐾", score: 95 },
-          { word: "Streaming Parody", word_with_strength: "🔥Streaming Parody🍿", score: 70 },
-          { word: "Spirit World", word_with_strength: "🔥Spirit World👻", score: 58 },
-          { word: "AI Rush", word_with_strength: "🔥AI Rush🤖", score: 46 },
-          { word: "Justice Calls", word_with_strength: "Justice Calls⚖️", score: 41 },
-          { word: "Market Antics", word_with_strength: "Market Antics📉", score: 37 },
-          { word: "Meta Mashups", word_with_strength: "Meta Mashups🌀", score: 28 },
-          { word: "Political Insiders", word_with_strength: "Political Insiders🏛️", score: 18 },
-          { word: "Wealth Dreamers", word_with_strength: "Wealth Dreamers💰", score: 16 },
-          { word: "Cat Craze", word_with_strength: "Cat Craze🐱", score: 13 }
-        ]
-        
-        // Cache the fallback data
-        this.cache = {
-          data: fallbackData,
-          timestamp: now
-        }
-        
-        return { 
-          data: fallbackData, 
-          error: 'Using sample data due to API timeout. Real-time updates unavailable.'
-        }
-      }
-      
       // Return fallback data when API fails
       const fallbackData: MetaData[] = [
-        { word: "Quarter Flip", word_with_strength: "🔥🔥Quarter Flip🪙", score: 120 },
-        { word: "Edgy Trolling", word_with_strength: "🔥Edgy Trolling🃏", score: 105 },
-        { word: "Animal Antics", word_with_strength: "🔥Animal Antics🐾", score: 95 },
-        { word: "Streaming Parody", word_with_strength: "🔥Streaming Parody🍿", score: 70 },
-        { word: "Spirit World", word_with_strength: "🔥Spirit World👻", score: 58 },
-        { word: "AI Rush", word_with_strength: "🔥AI Rush🤖", score: 46 },
-        { word: "Justice Calls", word_with_strength: "Justice Calls⚖️", score: 41 },
-        { word: "Market Antics", word_with_strength: "Market Antics📉", score: 37 },
-        { word: "Meta Mashups", word_with_strength: "Meta Mashups🌀", score: 28 },
-        { word: "Political Insiders", word_with_strength: "Political Insiders🏛️", score: 18 },
-        { word: "Wealth Dreamers", word_with_strength: "Wealth Dreamers💰", score: 16 },
-        { word: "Cat Craze", word_with_strength: "Cat Craze🐱", score: 13 }
+        { word: "Halloween Fever", word_with_strength: "🔥🔥Halloween Fever🎃", score: 115 },
+        { word: "Cat Craze", word_with_strength: "🔥Cat Craze🐱", score: 82 },
+        { word: "Market Antics", word_with_strength: "🔥Market Antics📉", score: 70 },
+        { word: "Justice Rally", word_with_strength: "🔥Justice Rally⚖️", score: 60 },
+        { word: "AI Rush", word_with_strength: "🔥AI Rush🤖", score: 56 },
+        { word: "Streaming Parody", word_with_strength: "🔥Streaming Parody🍿", score: 39 },
+        { word: "Political Heat", word_with_strength: "🔥Political Heat🏛️", score: 36 },
+        { word: "Dog Hype", word_with_strength: "Dog Hype🐶", score: 27 },
+        { word: "Number Mania", word_with_strength: "Number Mania🔢", score: 26 },
+        { word: "Paranormal Crew", word_with_strength: "Paranormal Crew👻", score: 20 },
+        { word: "Wealth Dreamers", word_with_strength: "Wealth Dreamers💰", score: 14 },
+        { word: "Meta Mashups", word_with_strength: "Meta Mashups🌀", score: 13 }
       ]
       
       return { 
