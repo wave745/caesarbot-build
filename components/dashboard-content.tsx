@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import Link from "next/link"
 import { Search } from "lucide-react"
 import { useState } from "react"
+import { MetaCard } from "@/components/meta-card"
 
 export function DashboardContent() {
   const [selectedView, setSelectedView] = useState<"price" | "volume" | "wallet">("price")
@@ -141,31 +142,7 @@ export function DashboardContent() {
       {/* Bottom Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* META Section */}
-        <Card className="bg-[#111111] border-[#282828]">
-          <CardHeader>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <CardTitle className="text-white text-lg sm:text-xl">Meta</CardTitle>
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-fit bg-gradient-to-r from-yellow-500 to-orange-500 text-black border-yellow-500 hover:from-yellow-400 hover:to-orange-400 text-xs sm:text-sm"
-              >
-                View all
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center py-6 sm:py-8">
-              <div className="text-gray-400 mb-2">No meta analysis available</div>
-              <p className="text-sm text-gray-500 mb-4">Analysis will appear here when data is available</p>
-              <Link href="/meta">
-                <Button className="bg-gradient-to-r from-yellow-500 to-orange-500 text-black hover:from-yellow-400 hover:to-orange-400 w-full sm:w-auto text-sm">
-                  View Full Analysis
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
+        <MetaCard />
 
         {/* Recently Added */}
         <Card className="bg-[#111111] border-[#282828]">
