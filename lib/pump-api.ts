@@ -105,9 +105,25 @@ export class PumpApiService {
         }
       }
       
+      // Return fallback data when API fails
+      const fallbackData: MetaData[] = [
+        { word: "Quarter Flip", word_with_strength: "🔥🔥Quarter Flip🪙", score: 120 },
+        { word: "Edgy Trolling", word_with_strength: "🔥Edgy Trolling🃏", score: 105 },
+        { word: "Animal Antics", word_with_strength: "🔥Animal Antics🐾", score: 95 },
+        { word: "Streaming Parody", word_with_strength: "🔥Streaming Parody🍿", score: 70 },
+        { word: "Spirit World", word_with_strength: "🔥Spirit World👻", score: 58 },
+        { word: "AI Rush", word_with_strength: "🔥AI Rush🤖", score: 46 },
+        { word: "Justice Calls", word_with_strength: "Justice Calls⚖️", score: 41 },
+        { word: "Market Antics", word_with_strength: "Market Antics📉", score: 37 },
+        { word: "Meta Mashups", word_with_strength: "Meta Mashups🌀", score: 28 },
+        { word: "Political Insiders", word_with_strength: "Political Insiders🏛️", score: 18 },
+        { word: "Wealth Dreamers", word_with_strength: "Wealth Dreamers💰", score: 16 },
+        { word: "Cat Craze", word_with_strength: "Cat Craze🐱", score: 13 }
+      ]
+      
       return { 
-        data: [], 
-        error: error instanceof Error ? error.message : 'Failed to fetch meta data'
+        data: fallbackData, 
+        error: 'Using sample data due to API error. Real-time updates unavailable.'
       }
     }
   }

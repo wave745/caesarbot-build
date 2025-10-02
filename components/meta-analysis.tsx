@@ -21,7 +21,7 @@ export function MetaAnalysis() {
       
       if (response.error) {
         setError(response.error)
-        // If we have data (including fallback data), still show it
+        // Always show data if available, even if there's an error (fallback data)
         if (response.data && response.data.length > 0) {
           setMetaData(response.data)
         }
