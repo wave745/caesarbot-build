@@ -56,7 +56,7 @@ export function NewTokensSection({ onHoverChange }: NewTokensSectionProps) {
       
       const tokensToCheck = tokens.map(token => ({
         chainId: 'solana', // New tokens are on Solana
-        tokenAddress: token.tokenAddress || token.mint || token.address
+        tokenAddress: token.tokenAddress || token.mint
       }))
 
       const response = await fetch('/api/dexscreener/check-paid', {
@@ -86,7 +86,7 @@ export function NewTokensSection({ onHoverChange }: NewTokensSectionProps) {
     try {
       console.log('Fetching token metadata for new tokens...')
       
-      const tokenAddresses = tokens.map(token => token.tokenAddress || token.mint || token.address)
+      const tokenAddresses = tokens.map(token => token.tokenAddress || token.mint)
 
       const response = await fetch('/api/moralis/token-metadata', {
         method: 'POST',
@@ -147,7 +147,7 @@ export function NewTokensSection({ onHoverChange }: NewTokensSectionProps) {
   }
 
   const handleBuy = (token: LiveToken) => {
-    console.log(`Buying ${token.symbol} (${token.tokenAddress || token.address || token.mint})`)
+    console.log(`Buying ${token.symbol} (${token.tokenAddress || token.mint})`)
   }
 
   // Real-time streaming with EventSource
@@ -246,10 +246,10 @@ export function NewTokensSection({ onHoverChange }: NewTokensSectionProps) {
             <div className="divide-y divide-gray-800">
               {tokens.slice(0, 10).map((token) => (
                 <div 
-                  key={token.tokenAddress || token.address || token.mint} 
+                  key={token.tokenAddress || token.mint} 
                   className="grid grid-cols-7 gap-4 px-4 py-3 hover:bg-gray-900/50 transition-colors cursor-pointer"
                   onClick={() => {
-                    const tokenAddress = token.tokenAddress || token.address || token.mint
+                    const tokenAddress = token.tokenAddress || token.mint
                     try {
                       window.location.href = `/trade/${tokenAddress}`
                     } catch (error) {
@@ -262,8 +262,8 @@ export function NewTokensSection({ onHoverChange }: NewTokensSectionProps) {
                     <div className="relative">
                       <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-700 flex items-center justify-center">
                         {(() => {
-                          const tokenAddress = token.tokenAddress || token.address || token.mint
-                          const metadata = tokenMetadata.get(tokenAddress)
+                          const tokenAddress = token.tokenAddress || token.mint
+                          const metadata = tokenAddress ? tokenMetadata.get(tokenAddress) : null
                           const logoUrl = metadata?.logo || token.logo
                           
                           return logoUrl ? (
@@ -321,8 +321,8 @@ export function NewTokensSection({ onHoverChange }: NewTokensSectionProps) {
                   {/* Social/Web links below token info */}
                   <div className="flex items-center gap-1 mt-2">
                     {(() => {
-                      const tokenAddress = token.tokenAddress || token.address || token.mint
-                      const metadata = tokenMetadata.get(tokenAddress)
+                      const tokenAddress = token.tokenAddress || token.mint
+                      const metadata = tokenAddress ? tokenMetadata.get(tokenAddress) : null
                       const socialLinks = metadata?.socialLinks || {}
                       
                       return (
@@ -426,20 +426,20 @@ export function NewTokensSection({ onHoverChange }: NewTokensSectionProps) {
                           alt="DexScreener" 
                           className="w-full h-full object-cover"
                           style={{ 
-                            filter: dexPaidStatus.get(token.tokenAddress || token.address || token.mint) 
+                            filter: dexPaidStatus.get(token.tokenAddress || token.mint || '') 
                               ? 'brightness(0) saturate(100%) invert(48%) sepia(79%) saturate(2476%) hue-rotate(86deg) brightness(118%) contrast(119%)' // Green for paid
                               : 'brightness(0) saturate(100%) invert(27%) sepia(51%) saturate(2878%) hue-rotate(346deg) brightness(104%) contrast(97%)' // Red for unpaid
                           }}
                           onError={(e) => {
                             const target = e.target as HTMLImageElement
                             target.style.display = 'none'
-                            const isPaid = dexPaidStatus.get(token.tokenAddress || token.address || token.mint) || false
+                            const isPaid = dexPaidStatus.get(token.tokenAddress || token.mint || '') || false
                             target.parentElement!.innerHTML = `<div class="w-full h-full ${isPaid ? 'bg-green-500' : 'bg-red-500'} rounded-full flex items-center justify-center"><span class="text-xs text-white">D</span></div>`
                           }}
                         />
                       </div>
-                      <span className={dexPaidStatus.get(token.tokenAddress || token.address || token.mint) ? "text-green-400" : "text-red-400"}>
-                        {dexPaidStatus.get(token.tokenAddress || token.address || token.mint) ? "Paid" : "Unpaid"}
+                      <span className={dexPaidStatus.get(token.tokenAddress || token.mint || '') ? "text-green-400" : "text-red-400"}>
+                        {dexPaidStatus.get(token.tokenAddress || token.mint || '') ? "Paid" : "Unpaid"}
                       </span>
                     </div>
                   </div>
