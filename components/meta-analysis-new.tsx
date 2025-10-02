@@ -21,15 +21,10 @@ export function MetaAnalysis() {
       
       if (response.error) {
         setError(response.error)
-        // If we have data (including fallback data), still show it
-        if (response.data && response.data.length > 0) {
-          setMetaData(response.data)
-        }
       } else {
         setMetaData(response.data)
       }
     } catch (err) {
-      console.error('Error in fetchMetaData:', err)
       setError(err instanceof Error ? err.message : 'Failed to fetch data')
     } finally {
       setLoading(false)
@@ -39,10 +34,10 @@ export function MetaAnalysis() {
   useEffect(() => {
     fetchMetaData()
     
-    // Auto-refresh every 60 seconds
+    // Auto-refresh every 30 seconds
     const interval = setInterval(() => {
       fetchMetaData()
-    }, 60000)
+    }, 30000)
 
     return () => clearInterval(interval)
   }, [])
@@ -57,7 +52,7 @@ export function MetaAnalysis() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-white mb-2">META ANALYSIS</h1>
-        <p className="text-gray-400">DAILY META FEATURE ANALYSIS - Advanced Market Intelligence</p>
+        <p className="text-gray-400">CAESAR DAILY META FEATURE ANALYSIS - Advanced Market Intelligence</p>
       </div>
 
       {/* Quick Stats */}
@@ -150,12 +145,15 @@ export function MetaAnalysis() {
           )}
           
           {loading && !error && (
-            <div className="min-h-[400px] bg-[#0a0a0a] flex items-center justify-center">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500 mx-auto mb-4"></div>
-                <p className="text-gray-400">Loading meta data...</p>
-              </div>
-            </div>
+            <Card className="bg-black border-zinc-800">
+              <CardContent className="p-12 text-center">
+                <RefreshCw className="w-20 h-20 text-gray-600 mx-auto mb-6 animate-spin" />
+                <h2 className="text-2xl font-bold text-white mb-4">Loading Meta Data</h2>
+                <p className="text-gray-400 mb-6 max-w-md mx-auto">
+                  Fetching live data from pump.fun API...
+                </p>
+              </CardContent>
+            </Card>
           )}
 
           {!loading && !error && metaData.length > 0 && (
@@ -215,11 +213,9 @@ export function MetaAnalysis() {
             </CardHeader>
             <CardContent>
               {loading ? (
-                <div className="min-h-[300px] bg-[#0a0a0a] flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500 mx-auto mb-4"></div>
-                    <p className="text-gray-400">Loading sentiment data...</p>
-                  </div>
+                <div className="text-center py-8">
+                  <RefreshCw className="w-16 h-16 text-gray-600 mx-auto mb-4 animate-spin" />
+                  <p className="text-gray-400">Loading sentiment data...</p>
                 </div>
               ) : metaData.length > 0 ? (
                 <div className="space-y-6">
@@ -283,11 +279,9 @@ export function MetaAnalysis() {
             </CardHeader>
             <CardContent>
               {loading ? (
-                <div className="min-h-[300px] bg-[#0a0a0a] flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500 mx-auto mb-4"></div>
-                    <p className="text-gray-400">Loading rankings...</p>
-                  </div>
+                <div className="text-center py-8">
+                  <RefreshCw className="w-16 h-16 text-gray-600 mx-auto mb-4 animate-spin" />
+                  <p className="text-gray-400">Loading rankings...</p>
                 </div>
               ) : metaData.length > 0 ? (
                 <div className="space-y-2">

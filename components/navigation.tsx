@@ -15,6 +15,7 @@ const navItems = [
   { name: "Sniper", href: "/sniper" },
   { name: "Portfolio", href: "/portfolio" },
   { name: "Deployer", href: "/deployer" },
+  { name: "Meta", href: "/meta" },
   { name: "Rewards", href: "/rewards" },
 ]
 
