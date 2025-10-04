@@ -5,6 +5,7 @@ import {
   Eye,
   Zap
 } from "lucide-react"
+import { tokenCache } from "@/lib/services/token-cache"
 import { useRouter } from "next/navigation"
 
 // Define LiveToken interface for combined Pump.fun + BONK tokens
@@ -168,24 +169,30 @@ export function NewTokensSection({ onHoverChange }: NewTokensSectionProps) {
     console.log(`Buying ${token.symbol} (${token.tokenAddress || token.mint})`)
   }
 
-  // Fetch new tokens from pump.fun API with polling
+  // Fetch new tokens from both pump.fun and bonk.fun APIs with polling
   useEffect(() => {
     const fetchNewTokens = async () => {
       try {
-        console.log('🚀 NewTokensSection: Fetching new tokens from pump.fun...')
+        console.log('🚀 NewTokensSection: Fetching new tokens from pump.fun and bonk.fun...')
         // Don't set loading state to show tokens immediately
         
-        const response = await fetch('/api/pump-fun/new-tokens?limit=25')
+        // Fetch from both APIs in parallel
+        const [pumpResponse, bonkResponse] = await Promise.allSettled([
+          fetch('/api/pump-fun/new-tokens?limit=15'),
+          fetch('/api/bonk-fun/tokens?limit=15')
+        ])
         
-        if (response.ok) {
-          const data = await response.json()
-          console.log('✅ NewTokensSection: Success from pump.fun API:', data)
+        let allTokens: LiveToken[] = []
+        
+        // Process pump.fun tokens
+        if (pumpResponse.status === 'fulfilled' && pumpResponse.value.ok) {
+          const pumpData = await pumpResponse.value.json()
+          console.log('✅ NewTokensSection: Success from pump.fun API:', pumpData)
           
-          if (data.success && data.data && Array.isArray(data.data)) {
-            console.log('✅ NewTokensSection: Processing', data.data.length, 'tokens from pump.fun')
+          if (pumpData.success && pumpData.data && Array.isArray(pumpData.data)) {
+            console.log('✅ NewTokensSection: Processing', pumpData.data.length, 'tokens from pump.fun')
             
-            // Process tokens - pump.fun API already provides social links
-            const processedTokens = data.data.map((token: any) => ({
+            const pumpTokens = pumpData.data.map((token: any) => ({
               ...token,
               tokenAddress: token.tokenAddress || token.coinMint,
               symbol: token.symbol || token.ticker || 'UNKNOWN',
@@ -197,6 +204,8 @@ export function NewTokensSection({ onHoverChange }: NewTokensSectionProps) {
               volume24h: token.volume24h || '$0',
               priceChange24h: 0, // Pump.fun doesn't provide this
               isFavorited: false,
+              source: 'pumpfun' as const,
+              platform: 'Pump.fun' as const,
               // Social links are already included from pump.fun API
               website: token.website,
               twitter: token.twitter,
@@ -207,26 +216,78 @@ export function NewTokensSection({ onHoverChange }: NewTokensSectionProps) {
               hasSocial: token.hasSocial || false
             }))
             
-            setTokens(processedTokens)
-            setLastUpdate(new Date())
-            setIsConnected(true)
-            
-            // Fetch Dex paid status for new tokens (metadata already included from pump.fun)
-            fetchDexPaidStatus(processedTokens)
-            
-            console.log('✅ NewTokensSection: Successfully loaded', processedTokens.length, 'tokens from pump.fun')
-          } else {
-            console.log('❌ NewTokensSection: No tokens found from pump.fun API')
-            setTokens([])
-            setIsConnected(false)
+            allTokens = [...allTokens, ...pumpTokens]
+            console.log('✅ NewTokensSection: Added', pumpTokens.length, 'pump.fun tokens')
           }
         } else {
-          console.error('❌ NewTokensSection: Pump.fun API error:', response.status)
+          console.log('❌ NewTokensSection: Pump.fun API failed:', pumpResponse.status === 'rejected' ? pumpResponse.reason : 'HTTP error')
+        }
+        
+        // Process bonk.fun tokens
+        if (bonkResponse.status === 'fulfilled' && bonkResponse.value.ok) {
+          const bonkData = await bonkResponse.value.json()
+          console.log('✅ NewTokensSection: Success from bonk.fun API:', bonkData)
+          
+          if (bonkData.success && bonkData.data && Array.isArray(bonkData.data)) {
+            console.log('✅ NewTokensSection: Processing', bonkData.data.length, 'tokens from bonk.fun')
+            
+            const bonkTokens = bonkData.data.map((token: any) => ({
+              ...token,
+              tokenAddress: token.tokenAddress || token.mint,
+              symbol: token.symbol || 'UNKNOWN',
+              name: token.name || 'Unknown Token',
+              price: token.priceUsd || '$0.00',
+              priceUsd: token.priceUsd || '0',
+              marketCap: token.fullyDilutedValuation || '$0',
+              liquidity: token.liquidity || '$0',
+              volume24h: token.volume24h || '$0',
+              priceChange24h: 0, // Bonk.fun doesn't provide this
+              isFavorited: false,
+              source: 'bonk' as const,
+              platform: 'BONK.fun' as const,
+              // Social links from bonk.fun API
+              website: token.website,
+              twitter: token.twitter,
+              telegram: token.telegram,
+              hasTwitter: token.hasTwitter || false,
+              hasTelegram: token.hasTelegram || false,
+              hasWebsite: token.hasWebsite || false,
+              hasSocial: token.hasSocial || false
+            }))
+            
+            allTokens = [...allTokens, ...bonkTokens]
+            console.log('✅ NewTokensSection: Added', bonkTokens.length, 'bonk.fun tokens')
+          }
+        } else {
+          console.log('❌ NewTokensSection: Bonk.fun API failed:', bonkResponse.status === 'rejected' ? bonkResponse.reason : 'HTTP error')
+        }
+        
+        // Sort combined tokens by creation time (newest first)
+        allTokens.sort((a, b) => {
+          const timeA = new Date(a.createdAt).getTime()
+          const timeB = new Date(b.createdAt).getTime()
+          return timeB - timeA
+        })
+        
+        // Take only the first 25 tokens
+        const finalTokens = allTokens.slice(0, 25)
+        
+        if (finalTokens.length > 0) {
+          setTokens(finalTokens)
+          setLastUpdate(new Date())
+          setIsConnected(true)
+          
+          // Fetch Dex paid status for all tokens
+          fetchDexPaidStatus(finalTokens)
+          
+          console.log('✅ NewTokensSection: Successfully loaded', finalTokens.length, 'combined tokens (pump.fun + bonk.fun)')
+        } else {
+          console.log('❌ NewTokensSection: No tokens found from either API')
           setTokens([])
           setIsConnected(false)
         }
       } catch (error) {
-        console.error('❌ NewTokensSection: Error fetching tokens from pump.fun:', error)
+        console.error('❌ NewTokensSection: Error fetching tokens:', error)
         setTokens([])
         setIsConnected(false)
       } finally {
