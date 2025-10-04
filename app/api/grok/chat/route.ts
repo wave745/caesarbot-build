@@ -18,9 +18,32 @@ export async function POST(request: NextRequest) {
     }
 
     if (stream) {
-      const readableStream = await GrokService.streamChat(messages, metaContext);
+      const grokStream = await GrokService.streamChat(messages, metaContext);
       
-      return new NextResponse(readableStream, {
+      const transformedStream = new ReadableStream({
+        async start(controller) {
+          const reader = grokStream.getReader();
+          const decoder = new TextDecoder();
+          
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              
+              const text = decoder.decode(value, { stream: true });
+              const sseMessage = `data: ${JSON.stringify({ content: text })}\n\n`;
+              controller.enqueue(new TextEncoder().encode(sseMessage));
+            }
+            controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
+          } catch (error) {
+            controller.error(error);
+          } finally {
+            controller.close();
+          }
+        },
+      });
+      
+      return new NextResponse(transformedStream, {
         headers: {
           "Content-Type": "text/event-stream",
           "Cache-Control": "no-cache",
