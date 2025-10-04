@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { TrendingUp, BarChart3, AlertTriangle, Activity, Flame, RefreshCw, Brain } from "lucide-react"
 import { PumpApiService, MetaData } from "@/lib/pump-api"
+import { MetaAIChat } from "@/components/meta-ai-chat"
+import { MetaContext } from "@/lib/services/grok-service"
 
 export function MetaAnalysis() {
   const [activeTab, setActiveTab] = useState("overview")
@@ -51,6 +53,17 @@ export function MetaAnalysis() {
   const totalMetas = metaData.length
   const topMeta = metaData[0]
   const averageScore = metaData.length > 0 ? Math.round(metaData.reduce((sum, meta) => sum + meta.score, 0) / metaData.length) : 0
+
+  // Prepare meta context for AI
+  const metaContext: MetaContext = {
+    topMetas: metaData.slice(0, 10).map(meta => ({
+      word: meta.word,
+      score: meta.score,
+      word_with_strength: meta.word_with_strength
+    })),
+    totalMetas,
+    averageScore
+  }
 
   return (
     <div className="min-h-screen bg-black text-white p-6">
@@ -325,6 +338,8 @@ export function MetaAnalysis() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {metaData.length > 0 && <MetaAIChat metaContext={metaContext} />}
     </div>
   )
 }
