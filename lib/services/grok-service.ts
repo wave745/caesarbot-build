@@ -22,6 +22,10 @@ export interface MetaContext {
 
 export class GrokService {
   static async chat(messages: ChatMessage[], metaContext?: MetaContext): Promise<string> {
+    if (!process.env.XAI_API_KEY) {
+      throw new Error("XAI_API_KEY environment variable is not set");
+    }
+    
     try {
       const systemPrompt = metaContext
         ? `You are an expert Solana memecoin launch strategist and creative advisor. You analyze current market metas and provide actionable insights for token launches.
@@ -65,6 +69,10 @@ Keep responses concise but valuable. Use trader-friendly language.`
   }
 
   static async streamChat(messages: ChatMessage[], metaContext?: MetaContext): Promise<ReadableStream> {
+    if (!process.env.XAI_API_KEY) {
+      throw new Error("XAI_API_KEY environment variable is not set");
+    }
+    
     const systemPrompt = metaContext
       ? `You are an expert Solana memecoin launch strategist and creative advisor. You analyze current market metas and provide actionable insights for token launches.
 
