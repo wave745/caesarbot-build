@@ -23,6 +23,9 @@ import { PumpLiveProper } from "@/components/pump-live-proper"
 import { NewTokensSection } from "@/components/new-tokens-section"
 import { TrendingTokensSection } from "@/components/trending-tokens-section"
 import { DexTokensSection } from "@/components/dex-tokens-section"
+import { PumpLiveDropdown } from "@/components/pump-live-dropdown"
+import { LiveTracker } from "@/components/live-tracker"
+import { TopStreamTokens } from "@/components/top-stream-tokens"
 // Removed PumpPortal import - now using Moralis API
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
@@ -33,6 +36,7 @@ export function TrendingPage() {
   const [activeTab, setActiveTab] = useState("trending")
   const [isNewTabHovered, setIsNewTabHovered] = useState(false)
   const [sortBy, setSortBy] = useState<'new' | 'volume' | 'marketCap' | 'change' | 'priceChange'>('new')
+  const [pumpLiveOption, setPumpLiveOption] = useState<'live-tracker' | 'top-stream-tokens'>('live-tracker')
 
 
   const formatNumber = (num: number) => {
@@ -83,16 +87,13 @@ export function TrendingPage() {
             >
               Dex
             </button>
-            <button
-              onClick={() => setActiveTab("pump-live")}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-0 ${
-                activeTab === "pump-live"
-                  ? "bg-gradient-to-r from-yellow-500 to-orange-500 text-black"
-                  : "bg-[#111111] text-gray-400 hover:text-white border border-[#282828]"
-              }`}
-            >
-              Pump Live
-            </button>
+            <PumpLiveDropdown
+              onOptionSelect={(option) => {
+                setPumpLiveOption(option)
+                setActiveTab("pump-live")
+              }}
+              activeOption={activeTab === "pump-live" ? pumpLiveOption : undefined}
+            />
           </div>
         </div>
 
@@ -183,7 +184,8 @@ export function TrendingPage() {
         {activeTab === "trending" && <TrendingTokensSection sortBy={sortBy === 'priceChange' ? 'new' : sortBy as 'new' | 'volume' | 'marketCap' | 'change'} />}
         {activeTab === "new" && <NewTokensSection onHoverChange={setIsNewTabHovered} />}
         {activeTab === "dex" && <DexTokensSection sortBy={sortBy === 'change' ? 'new' : sortBy as 'new' | 'volume' | 'marketCap' | 'priceChange'} />}
-        {activeTab === "pump-live" && <PumpLiveProper />}
+        {activeTab === "pump-live" && pumpLiveOption === "live-tracker" && <LiveTracker />}
+        {activeTab === "pump-live" && pumpLiveOption === "top-stream-tokens" && <TopStreamTokens />}
       </div>
     </div>
   )
