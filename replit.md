@@ -33,7 +33,7 @@ Preferred communication style: Simple, everyday language.
 5. **Portfolio** - Wallet management and operations
 6. **Tracker** - Wallet performance tracking
 7. **Deployer** - Token creation and deployment tools
-8. **Meta** - Market meta-analysis and trend identification
+8. **Meta** - Market meta-analysis and trend identification with AI-powered launch assistant
 9. **Rewards** - Gamification and leaderboard system
 
 ### Data Layer & APIs
@@ -46,6 +46,7 @@ Preferred communication style: Simple, everyday language.
 - **Bitquery API**: Advanced blockchain queries and trading data
 - **Pump.fun API**: Platform-specific token data and metas
 - **CaesarX Backend API**: Custom automation and bundler services
+- **xAI Grok API**: AI-powered insights and ticker suggestions based on market metas
 
 **Service Layer Pattern**:
 - Singleton service classes for each external API (`/lib/services/`)
@@ -61,6 +62,15 @@ Preferred communication style: Simple, everyday language.
   - Early & Snipers (early buyers, PnL tracking)
   - Security/Risk (bundle checks, DEX verification, domain age)
   - Wallet Tools (analyzer, funding trace)
+
+**Meta AI Assistant**:
+- Grok AI-powered chat interface for market meta analysis
+- Floating chat icon with transparent card window UI
+- Context-aware responses based on live meta data (top metas, scores, trends)
+- Provides creative ticker suggestions with names, descriptions, and lore
+- Strategic insights for memecoin launches aligned with current market trends
+- Direct integration with deployer page for seamless token creation
+- Both streaming and non-streaming chat modes supported
 
 ### Automation & Trading System
 
@@ -138,6 +148,10 @@ Three distinct automation modes with shared execution infrastructure:
 6. **PumpPortal** (`PUMPPORTAL_API_KEY`, `PUMPPORTAL_API_BASE_URL`)
    - Purpose: Pump.fun platform integration
    - Usage: Platform-specific token data
+
+7. **xAI** (`XAI_API_KEY`)
+   - Purpose: Grok AI integration for meta analysis
+   - Usage: AI-powered ticker suggestions and strategic insights for token launches
 
 ### Solana Libraries
 
