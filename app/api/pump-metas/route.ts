@@ -24,7 +24,12 @@ export async function GET(request: NextRequest) {
     
     return NextResponse.json({
       success: true,
-      data: data
+      data: data,
+      meta: {
+        source: 'pump.fun',
+        timestamp: Date.now(),
+        count: data.length
+      }
     })
     
   } catch (error) {
@@ -32,24 +37,28 @@ export async function GET(request: NextRequest) {
     
     // Return fallback data when API fails
     const fallbackData = [
-      { word: "Halloween Fever", word_with_strength: "🔥🔥Halloween Fever🎃", score: 115 },
-      { word: "Cat Craze", word_with_strength: "🔥Cat Craze🐱", score: 82 },
-      { word: "Market Antics", word_with_strength: "🔥Market Antics📉", score: 70 },
-      { word: "Justice Rally", word_with_strength: "🔥Justice Rally⚖️", score: 60 },
-      { word: "AI Rush", word_with_strength: "🔥AI Rush🤖", score: 56 },
-      { word: "Streaming Parody", word_with_strength: "🔥Streaming Parody🍿", score: 39 },
-      { word: "Political Heat", word_with_strength: "🔥Political Heat🏛️", score: 36 },
-      { word: "Dog Hype", word_with_strength: "Dog Hype🐶", score: 27 },
-      { word: "Number Mania", word_with_strength: "Number Mania🔢", score: 26 },
-      { word: "Paranormal Crew", word_with_strength: "Paranormal Crew👻", score: 20 },
-      { word: "Wealth Dreamers", word_with_strength: "Wealth Dreamers💰", score: 14 },
-      { word: "Meta Mashups", word_with_strength: "Meta Mashups🌀", score: 13 }
+      { word: "Affordable Hype", word_with_strength: "🔥Affordable Hype💲", score: 77 },
+      { word: "Solana Spark", word_with_strength: "🔥Solana Spark🌞", score: 63 },
+      { word: "Pump Fun", word_with_strength: "🔥🔥Pump Fun💥", score: 49 },
+      { word: "Pepeverse", word_with_strength: "🔥Pepeverse🐸", score: 37 },
+      { word: "Animal Parade", word_with_strength: "🔥Animal Parade🐾", score: 35 },
+      { word: "Crypto Power", word_with_strength: "🔥Crypto Power⚡", score: 32 },
+      { word: "AI Surge", word_with_strength: "🔥AI Surge🤖", score: 21 },
+      { word: "Just Lucky", word_with_strength: "🔥Just Lucky🍀", score: 18 },
+      { word: "Celebrity Parody", word_with_strength: "🔥Celebrity Parody🎭", score: 17 },
+      { word: "Degens United", word_with_strength: "Degens United💀", score: 12 },
+      { word: "Matrix Mindset", word_with_strength: "Matrix Mindset🕶️", score: 7 },
+      { word: "Justice Calls", word_with_strength: "Justice Calls⚖️", score: 6 }
     ]
     
     return NextResponse.json({
       success: true,
       data: fallbackData,
-      error: 'Using fallback data due to API timeout'
+      meta: {
+        source: 'fallback',
+        timestamp: Date.now(),
+        note: 'Using fallback data due to API error'
+      }
     })
   }
 }

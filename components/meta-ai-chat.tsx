@@ -134,9 +134,6 @@ export function MetaAIChat({ metaContext }: MetaAIChatProps) {
             <X className="w-3 h-3" />
           </Button>
         </div>
-        <p className="text-[10px] text-gray-400 mt-1">
-          Powered by Grok AI • {metaContext.totalMetas} metas
-        </p>
       </CardHeader>
 
       <CardContent className="flex-1 overflow-y-auto p-3 space-y-3">
