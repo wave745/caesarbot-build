@@ -16,7 +16,7 @@
     display: none;  /* Safari and Chrome */
   }
   
-  /* Thin scrollbar styles */
+  /* Custom scrollbar for modal */
   .scrollbar-thin {
     scrollbar-width: thin;
   }
@@ -24,15 +24,14 @@
     width: 6px;
   }
   .scrollbar-thin::-webkit-scrollbar-track {
-    background: #27272a;
-    border-radius: 3px;
+    background: #111827; /* gray-900 */
   }
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background: #52525b;
+    background: #3b82f6; /* blue-500 */
     border-radius: 3px;
   }
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background: #71717a;
+    background: #2563eb; /* blue-600 */
   }
   
   /* Touch-friendly tap highlights */

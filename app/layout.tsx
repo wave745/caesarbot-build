@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { GeistSans } from "geist/font/sans"
 import { GeistMono } from "geist/font/mono"
 import { Navigation } from "@/components/navigation"
+import { Footer } from "@/components/footer"
 import "./globals.css"
 
 export const metadata: Metadata = {
@@ -24,12 +25,13 @@ export default function RootLayout({
       <head>
         <link rel="icon" type="image/png" href="/caesarx-logo.png" />
       </head>
-      <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable} bg-black text-white antialiased`}>
+      <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable} bg-black text-white antialiased`} suppressHydrationWarning={true}>
         <div className="min-h-screen bg-black">
           <Navigation />
-          <main className="p-3 sm:p-6">
+          <main className="p-3 sm:p-6 pb-20">
             {children}
           </main>
+          <Footer />
         </div>
       </body>
     </html>
