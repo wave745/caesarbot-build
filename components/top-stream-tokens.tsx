@@ -66,90 +66,292 @@ interface LiveToken {
 export function TopStreamTokens() {
   const [tokens, setTokens] = useState<LiveToken[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [hasError, setHasError] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
   const router = useRouter()
 
   useEffect(() => {
-    const fetchTopStreams = async () => {
+    let retryCount = 0
+    const maxRetries = 3
+    const retryDelay = 2000 // 2 seconds
+    let isMounted = true
+
+    const fetchTopStreams = async (attemptNumber = 0) => {
+      if (!isMounted) return
+      
       try {
-        console.log('🚀 TopStreamTokens: Fetching currently live pump.fun streams...')
-        
-        // Fetch currently live tokens from pump.fun API with timeout
-        const response = await fetch('https://frontend-api-v3.pump.fun/coins/currently-live?offset=0&limit=48&sort=currently_live&order=DESC&includeNsfw=true', {
-          signal: AbortSignal.timeout(8000) // 8 second timeout
-        })
-        
-        if (response.ok) {
-          const data = await response.json()
-          console.log('✅ TopStreamTokens: Successfully loaded', data.length, 'currently live tokens')
-          
-          // Transform pump.fun live data to match our interface
-          const transformedTokens = data.map((token: any, index: number) => ({
-            tokenAddress: token.mint,
-            mint: token.mint,
-            symbol: token.symbol,
-            name: token.name,
-            logo: token.image_uri,
-            image: token.image_uri,
-            decimals: '6', // Default for pump.fun tokens
-            priceNative: token.virtual_sol_reserves ? (token.virtual_sol_reserves / token.virtual_token_reserves).toString() : '0',
-            priceUsd: token.usd_market_cap ? (token.usd_market_cap / token.total_supply).toString() : '0',
-            liquidity: token.virtual_sol_reserves ? (token.virtual_sol_reserves / 1e9).toString() : '0',
-            fullyDilutedValuation: token.usd_market_cap ? token.usd_market_cap.toString() : '0',
-            createdAt: new Date(token.created_timestamp).toISOString(),
-            mcUsd: token.usd_market_cap || 0,
-            volume24h: 0, // Not provided by this API
-            transactions: token.reply_count || 0,
-            holders: token.num_participants || 0,
-            timeAgo: Math.floor((Date.now() - token.created_timestamp) / 1000),
-            risk: 'med' as const,
-            isPaid: false,
-            age: Math.floor((Date.now() - token.created_timestamp) / 1000),
-            source: 'pumpfun' as const,
-            platform: 'Pump.fun' as const,
-            website: token.website,
-            twitter: token.twitter,
-            telegram: token.telegram,
-            hasTwitter: !!token.twitter,
-            hasTelegram: !!token.telegram,
-            hasWebsite: !!token.website,
-            hasSocial: !!(token.twitter || token.telegram || token.website),
-            description: token.description,
-            // Live stream specific data
-            isCurrentlyLive: token.is_currently_live,
-            numParticipants: token.num_participants,
-            thumbnail: token.thumbnail,
-            lastTradeTimestamp: token.last_trade_timestamp,
-            kingOfTheHillTimestamp: token.king_of_the_hill_timestamp,
-            marketCap: token.market_cap,
-            athMarketCap: token.ath_market_cap,
-            athMarketCapTimestamp: token.ath_market_cap_timestamp,
-            complete: token.complete,
-            initialized: token.initialized,
-            rank: index + 1
-          }))
-          
-          setTokens(transformedTokens)
-          console.log('✅ TopStreamTokens: Successfully processed', transformedTokens.length, 'live stream tokens')
+        if (attemptNumber > 0) {
+          console.log(`🔄 TopStreamTokens: Retry attempt ${attemptNumber}/${maxRetries}...`)
         } else {
-          console.log('❌ TopStreamTokens: API error:', response.status)
-          setTokens([])
+          console.log('🚀 TopStreamTokens: Fetching currently live pump.fun streams...')
         }
+        
+        // Timeout will be handled by Promise.race
+        
+        // Use our local API proxy to avoid CORS issues
+        const apiUrl = '/api/pump-live-streams?limit=48&offset=0&includeNsfw=false&order=DESC'
+        
+        console.log('🌐 TopStreamTokens: Fetching from local API:', apiUrl)
+        
+        let response
+        try {
+          // Use Promise.race for timeout instead of AbortController
+          const fetchPromise = fetch(apiUrl, {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+            },
+            cache: 'no-cache'
+          })
+          
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Request timeout')), 10000)
+          )
+          
+          response = await Promise.race([fetchPromise, timeoutPromise]) as Response
+          
+          console.log('📡 TopStreamTokens: Response status:', response.status, response.statusText)
+        } catch (fetchError) {
+          console.error('❌ TopStreamTokens: Fetch failed:', fetchError)
+          
+          // If the API route fails, show fallback data immediately
+          console.log('🔄 TopStreamTokens: API route failed, showing fallback data')
+          const fallbackTokens: LiveToken[] = [
+            {
+              tokenAddress: 'fallback-demo-1',
+              mint: 'fallback-demo-1',
+              symbol: 'DEMO',
+              name: 'Demo Live Stream',
+              logo: '/icons/platforms/pump.fun-logo.svg',
+              image: '/icons/platforms/pump.fun-logo.svg',
+              decimals: '6',
+              priceNative: '0.001',
+              priceUsd: '0.15',
+              liquidity: '1000',
+              fullyDilutedValuation: '15000',
+              createdAt: new Date().toISOString(),
+              mcUsd: 15000,
+              volume24h: 0,
+              transactions: 0,
+              holders: 0,
+              timeAgo: 0,
+              risk: 'med' as const,
+              isPaid: false,
+              age: 0,
+              source: 'pumpfun' as const,
+              platform: 'Pump.fun' as const,
+              hasTwitter: false,
+              hasTelegram: false,
+              hasWebsite: false,
+              hasSocial: false,
+              isCurrentlyLive: true,
+              numParticipants: 0,
+              complete: false,
+              initialized: true,
+              rank: 1
+            }
+          ]
+          
+          if (!isMounted) return
+          
+          setTokens(fallbackTokens)
+          setHasError(true)
+          setErrorMessage('Using fallback data - API temporarily unavailable')
+          setIsLoading(false)
+          return
+        }
+        
+        // Timeout is handled by Promise.race
+        
+        if (!response) {
+          throw new Error('No response received from server')
+        }
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+        }
+        
+        let apiResponse
+        try {
+          apiResponse = await response.json()
+          console.log('📊 TopStreamTokens: Parsed API response:', apiResponse)
+        } catch (jsonError) {
+          console.error('❌ TopStreamTokens: JSON parsing failed:', jsonError)
+          throw new Error('Invalid JSON response from server')
+        }
+        
+        if (!isMounted) return
+        
+        // Handle our API response format
+        if (!apiResponse.success && !apiResponse.data) {
+          console.error('❌ TopStreamTokens: API returned error:', apiResponse.error)
+          throw new Error(apiResponse.error || 'API request failed')
+        }
+        
+        const data = apiResponse.data
+        if (!Array.isArray(data)) {
+          console.error('❌ TopStreamTokens: Expected array but got:', typeof data)
+          throw new Error('Invalid data format from server')
+        }
+        
+        console.log('✅ TopStreamTokens: Successfully loaded', data.length, 'currently live tokens from', apiResponse.source || 'API')
+        
+        // Transform pump.fun live data to match our interface
+        const transformedTokens = data.map((token: any, index: number) => ({
+          tokenAddress: token.mint,
+          mint: token.mint,
+          symbol: token.symbol,
+          name: token.name,
+          logo: token.image_uri,
+          image: token.image_uri,
+          decimals: '6', // Default for pump.fun tokens
+          priceNative: token.virtual_sol_reserves ? (token.virtual_sol_reserves / token.virtual_token_reserves).toString() : '0',
+          priceUsd: token.usd_market_cap ? (token.usd_market_cap / token.total_supply).toString() : '0',
+          liquidity: token.virtual_sol_reserves ? (token.virtual_sol_reserves / 1e9).toString() : '0',
+          fullyDilutedValuation: token.usd_market_cap ? token.usd_market_cap.toString() : '0',
+          createdAt: new Date(token.created_timestamp).toISOString(),
+          mcUsd: token.usd_market_cap || 0,
+          volume24h: 0, // Not provided by this API
+          transactions: token.reply_count || 0,
+          holders: token.num_participants || 0,
+          timeAgo: Math.floor((Date.now() - token.created_timestamp) / 1000),
+          risk: 'med' as const,
+          isPaid: false,
+          age: Math.floor((Date.now() - token.created_timestamp) / 1000),
+          source: 'pumpfun' as const,
+          platform: 'Pump.fun' as const,
+          website: token.website,
+          twitter: token.twitter,
+          telegram: token.telegram,
+          hasTwitter: !!token.twitter,
+          hasTelegram: !!token.telegram,
+          hasWebsite: !!token.website,
+          hasSocial: !!(token.twitter || token.telegram || token.website),
+          description: token.description,
+          // Live stream specific data
+          isCurrentlyLive: token.is_currently_live,
+          numParticipants: token.num_participants,
+          thumbnail: token.thumbnail,
+          lastTradeTimestamp: token.last_trade_timestamp,
+          kingOfTheHillTimestamp: token.king_of_the_hill_timestamp,
+          marketCap: token.market_cap,
+          athMarketCap: token.ath_market_cap,
+          athMarketCapTimestamp: token.ath_market_cap_timestamp,
+          complete: token.complete,
+          initialized: token.initialized,
+          rank: index + 1
+        }))
+        
+        if (!isMounted) return
+        
+        setTokens(transformedTokens)
+        setHasError(false) // Clear any previous errors
+        setErrorMessage('')
+        console.log('✅ TopStreamTokens: Successfully processed', transformedTokens.length, 'live stream tokens')
+        
       } catch (error) {
+        if (!isMounted) return
+        
         console.error('❌ TopStreamTokens: Error fetching live streams:', error)
+        
+        // Check if this is a retryable error
+        const isRetryableError = (
+          error.name === 'AbortError' || 
+          error.message.includes('Failed to fetch') ||
+          error.message.includes('NetworkError') ||
+          error.message.includes('TypeError') ||
+          error.message.includes('Network request failed')
+        )
+        
+        // Retry logic for network errors
+        if (attemptNumber < maxRetries && isRetryableError) {
+          console.log(`🔄 TopStreamTokens: Retrying in ${retryDelay}ms... (attempt ${attemptNumber + 1}/${maxRetries})`)
+          setTimeout(() => {
+            if (isMounted) {
+              fetchTopStreams(attemptNumber + 1)
+            }
+          }, retryDelay)
+          return
+        }
+        
+        // If all retries failed or it's a different error, show fallback
+        console.error('❌ TopStreamTokens: All retry attempts failed or non-retryable error')
+        setHasError(true)
+        setErrorMessage('Unable to load live streams. Please check your connection and try again.')
+        
         // Don't clear tokens on error, keep showing last successful data
+        // Only clear if this is the initial load and we have no data
+        if (tokens.length === 0) {
+          // Show fallback mock data for demonstration
+          const mockTokens: LiveToken[] = [
+            {
+              tokenAddress: 'mock1',
+              mint: 'mock1',
+              symbol: 'DEMO',
+              name: 'Demo Token',
+              logo: '/icons/platforms/pump.fun-logo.svg',
+              image: '/icons/platforms/pump.fun-logo.svg',
+              decimals: '6',
+              priceNative: '0.001',
+              priceUsd: '0.15',
+              liquidity: '1000',
+              fullyDilutedValuation: '15000',
+              createdAt: new Date().toISOString(),
+              mcUsd: 15000,
+              volume24h: 0,
+              transactions: 0,
+              holders: 0,
+              timeAgo: 0,
+              risk: 'med' as const,
+              isPaid: false,
+              age: 0,
+              source: 'pumpfun' as const,
+              platform: 'Pump.fun' as const,
+              hasTwitter: false,
+              hasTelegram: false,
+              hasWebsite: false,
+              hasSocial: false,
+              isCurrentlyLive: true,
+              numParticipants: 0,
+              complete: false,
+              initialized: true,
+              rank: 1
+            }
+          ]
+          setTokens(mockTokens)
+        }
       } finally {
-        setIsLoading(false)
+        if (!isMounted) return
+        
+        if (attemptNumber === 0) {
+          setIsLoading(false)
+        }
       }
     }
 
     // Initial fetch
     fetchTopStreams()
     
-    // Set up polling every 15 seconds for live updates (reduced frequency)
-    const interval = setInterval(fetchTopStreams, 15000)
+    // Set up polling every 30 seconds for live updates (increased interval to reduce load)
+    const interval = setInterval(() => {
+      if (isMounted) {
+        fetchTopStreams()
+      }
+    }, 30000)
+    
+    // Listen for retry events
+    const handleRetryEvent = () => {
+      if (isMounted) {
+        fetchTopStreams()
+      }
+    }
+    
+    window.addEventListener('retry-fetch', handleRetryEvent)
     
     return () => {
+      isMounted = false
       clearInterval(interval)
+      window.removeEventListener('retry-fetch', handleRetryEvent)
     }
   }, [])
 
@@ -218,6 +420,16 @@ export function TopStreamTokens() {
     }
   }
 
+  const handleRetry = () => {
+    setHasError(false)
+    setErrorMessage('')
+    setIsLoading(true)
+    // Trigger a new fetch by calling the effect again
+    // We'll use a key to force re-mount the component
+    const event = new CustomEvent('retry-fetch')
+    window.dispatchEvent(event)
+  }
+
 
   return (
     <div className="w-full">
@@ -230,7 +442,28 @@ export function TopStreamTokens() {
           </h2>
         </div>
         
+        {hasError && (
+          <Button 
+            onClick={handleRetry}
+            variant="outline" 
+            size="sm"
+            className="bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20 hover:border-red-500/50"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Retry
+          </Button>
+        )}
       </div>
+
+      {/* Error Message */}
+      {hasError && (
+        <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+          <div className="flex items-center gap-2 text-red-400 text-sm">
+            <Activity className="w-4 h-4" />
+            {errorMessage}
+          </div>
+        </div>
+      )}
 
       {/* Tokens Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -352,6 +585,19 @@ export function TopStreamTokens() {
               </div>
             </div>
           ))
+        ) : hasError ? (
+          <div className="col-span-full text-center py-8">
+            <div className="text-red-400 text-sm mb-2">Failed to load live stream tokens</div>
+            <Button 
+              onClick={handleRetry}
+              variant="outline" 
+              size="sm"
+              className="bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20 hover:border-red-500/50"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Try Again
+            </Button>
+          </div>
         ) : (
           <div className="col-span-full text-center py-8">
             <div className="text-gray-400 text-sm">No live stream tokens available</div>
