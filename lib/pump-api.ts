@@ -30,14 +30,19 @@ export class PumpApiService {
       }
 
       // Use our server-side API route instead of direct external API call
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+      
       const response = await fetch('/api/pump-metas', {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
         },
-        signal: AbortSignal.timeout(15000) // 15 second timeout
+        signal: controller.signal
       })
+      
+      clearTimeout(timeoutId)
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)

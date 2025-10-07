@@ -33,6 +33,13 @@ export function MetaAnalysis() {
     } catch (err) {
       console.error('Error in fetchMetaData:', err)
       setError(err instanceof Error ? err.message : 'Failed to fetch data')
+      
+      // Try to get cached data as fallback
+      const cachedData = PumpApiService.getCachedMetas()
+      if (cachedData.length > 0) {
+        setMetaData(cachedData)
+        setError('Using cached data due to connection issues')
+      }
     } finally {
       setLoading(false)
     }
