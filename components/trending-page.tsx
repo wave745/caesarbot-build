@@ -26,6 +26,7 @@ import { DexTokensSection } from "@/components/dex-tokens-section"
 import { PumpLiveDropdown } from "@/components/pump-live-dropdown"
 import { LiveTracker } from "@/components/live-tracker"
 import { TopStreamTokens } from "@/components/top-stream-tokens"
+import { TrendingFilterModal } from "@/components/trending-filter-modal"
 // Removed PumpPortal import - now using Moralis API
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
@@ -37,6 +38,8 @@ export function TrendingPage() {
   const [isNewTabHovered, setIsNewTabHovered] = useState(false)
   const [sortBy, setSortBy] = useState<'new' | 'volume' | 'marketCap' | 'change' | 'priceChange'>('new')
   const [pumpLiveOption, setPumpLiveOption] = useState<'live-tracker' | 'top-stream-tokens'>('live-tracker')
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const [appliedFilters, setAppliedFilters] = useState<any>(null)
 
 
   const formatNumber = (num: number) => {
@@ -148,10 +151,14 @@ export function TrendingPage() {
           <Button
             variant="outline"
             size="sm"
+            onClick={() => setIsFilterOpen(true)}
             className="border-[#282828] text-gray-400 hover:text-white hover:border-yellow-500"
           >
             <SlidersHorizontal className="w-4 h-4 mr-2" />
             Filter
+            {appliedFilters && (
+              <div className="ml-2 w-2 h-2 bg-blue-500 rounded-full" />
+            )}
           </Button>
 
           <div className="flex items-center gap-2">
@@ -181,12 +188,23 @@ export function TrendingPage() {
 
       {/* Main Content */}
       <div className="w-full">
-        {activeTab === "trending" && <TrendingTokensSection sortBy={sortBy === 'priceChange' ? 'new' : sortBy as 'new' | 'volume' | 'marketCap' | 'change'} />}
+        {activeTab === "trending" && <TrendingTokensSection sortBy={sortBy === 'priceChange' ? 'new' : sortBy as 'new' | 'volume' | 'marketCap' | 'change'} filters={appliedFilters} />}
         {activeTab === "new" && <NewTokensSection onHoverChange={setIsNewTabHovered} />}
         {activeTab === "dex" && <DexTokensSection sortBy={sortBy === 'change' ? 'new' : sortBy as 'new' | 'volume' | 'marketCap' | 'priceChange'} />}
         {activeTab === "pump-live" && pumpLiveOption === "live-tracker" && <LiveTracker />}
         {activeTab === "pump-live" && pumpLiveOption === "top-stream-tokens" && <TopStreamTokens />}
       </div>
+
+      {/* Filter Modal */}
+      <TrendingFilterModal
+        isOpen={isFilterOpen}
+        onClose={() => setIsFilterOpen(false)}
+        onApply={(filters) => {
+          setAppliedFilters(filters)
+          setIsFilterOpen(false)
+        }}
+        initialFilters={appliedFilters}
+      />
     </div>
   )
 }
