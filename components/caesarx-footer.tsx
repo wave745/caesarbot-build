@@ -222,7 +222,7 @@ export function CaesarXFooter() {
           <span className="text-white">${stats.solPrice > 0 ? stats.solPrice.toFixed(2) : '--'}</span>
         </div>
 
-        {/* Portfolio Value - Actually PumpFun Bond Market Cap */}
+        {/* PumpFun Bond Market Cap - SOL Price × 411 */}
         <div className="flex items-center gap-1 relative group">
           <img 
             src="/icons/platforms/pump.fun-logo.svg" 
@@ -232,7 +232,9 @@ export function CaesarXFooter() {
               e.currentTarget.style.display = 'none';
             }}
           />
-          <span className="text-white">${(stats.usdValue / 1000).toFixed(1)}K</span>
+          <span className="text-white">
+            ${stats.solPrice > 0 ? ((stats.solPrice * 411) / 1000).toFixed(1) : '--'}K
+          </span>
           
           {/* Tooltip */}
           <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50">
