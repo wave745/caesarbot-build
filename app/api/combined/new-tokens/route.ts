@@ -76,23 +76,23 @@ export async function GET(request: NextRequest) {
 
     // Combine and sort by creation time (newest first)
     let combinedTokens = [...pumpfunTokens, ...bonkTokens].sort((a, b) => {
-      const timeA = new Date(a.createdAt || a.created_at || 0).getTime()
-      const timeB = new Date(b.createdAt || b.created_at || 0).getTime()
+      const timeA = new Date(a.createdAt || 0).getTime()
+      const timeB = new Date(b.createdAt || 0).getTime()
       return timeB - timeA
     }).slice(0, limit)
 
     // Fetch metadata for tokens without logos
     try {
       const moralisService = MoralisComprehensiveService.getInstance()
-      const tokensWithoutLogos = combinedTokens.filter(token => !token.logo && !token.image)
+      const tokensWithoutLogos = combinedTokens.filter(token => !token.logo)
       
       if (tokensWithoutLogos.length > 0) {
         console.log(`Fetching metadata for ${tokensWithoutLogos.length} tokens without logos`)
         
         const metadataPromises = tokensWithoutLogos.map(async (token) => {
           try {
-            console.log(`Fetching metadata for token: ${token.tokenAddress || token.address || token.mint}`)
-            const metadata = await moralisService.getTokenMetadata(token.tokenAddress || token.address || token.mint)
+            console.log(`Fetching metadata for token: ${token.tokenAddress}`)
+            const metadata = await moralisService.getTokenMetadata(token.tokenAddress)
             console.log(`Metadata result for ${token.symbol}:`, metadata?.logo ? 'Has logo' : 'No logo')
             return { token, metadata }
           } catch (error) {
@@ -108,13 +108,12 @@ export async function GET(request: NextRequest) {
           if (result.status === 'fulfilled' && result.value.metadata) {
             const { token, metadata } = result.value
             const tokenIndex = combinedTokens.findIndex(t => 
-              (t.tokenAddress || t.address || t.mint) === (token.tokenAddress || token.address || token.mint)
+              t.tokenAddress === token.tokenAddress
             )
             if (tokenIndex !== -1) {
               combinedTokens[tokenIndex] = {
                 ...combinedTokens[tokenIndex],
-                logo: metadata.logo || combinedTokens[tokenIndex].logo,
-                image: metadata.logo || combinedTokens[tokenIndex].image
+                logo: metadata.logo || combinedTokens[tokenIndex].logo
               }
             }
           }

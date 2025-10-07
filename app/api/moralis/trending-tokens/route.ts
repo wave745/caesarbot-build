@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { MoralisComprehensiveService } from '@/lib/services/moralis-comprehensive-service'
 
 export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url)
+  const limit = parseInt(searchParams.get('limit') || '50')
+  const timeframe = searchParams.get('timeframe') || '1h'
+  
   try {
-    const { searchParams } = new URL(request.url)
-    const limit = parseInt(searchParams.get('limit') || '50')
-    const timeframe = searchParams.get('timeframe') || '1h'
-
     console.log(`API: Fetching trending tokens with limit: ${limit}, timeframe: ${timeframe}`)
 
     const moralisService = MoralisComprehensiveService.getInstance()
@@ -30,8 +30,8 @@ export async function GET(request: NextRequest) {
       success: true,
       data: [],
       meta: {
-        limit: parseInt(searchParams.get('limit') || '10'),
-        timeframe: searchParams.get('timeframe') || '1h',
+        limit,
+        timeframe,
         timestamp: Date.now(),
         pollingInterval: 3000,
         error: 'API timeout - showing empty state'

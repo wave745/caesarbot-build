@@ -49,12 +49,12 @@ export default function TradePage() {
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
 
   useEffect(() => {
-    const fetchTokenData = async () => {
-      try {
-        setIsLoading(true)
-        
-        // Use the mint address from URL params
-        const contractAddress = mint
+  const fetchTokenData = async () => {
+    // Use the mint address from URL params
+    const contractAddress = mint
+    
+    try {
+      setIsLoading(true)
         
         console.log('🔍 Fetching token data for:', contractAddress)
         
