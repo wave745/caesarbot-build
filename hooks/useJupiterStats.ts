@@ -179,13 +179,25 @@ export function useJupiterStats() {
   ];
 
   useEffect(() => {
+    let controller: AbortController | null = null;
+    let timeoutId: NodeJS.Timeout | null = null;
+    
     const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
         
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        // Clean up previous request if it exists
+        if (controller) {
+          controller.abort();
+        }
+        
+        controller = new AbortController();
+        timeoutId = setTimeout(() => {
+          if (controller) {
+            controller.abort();
+          }
+        }, 10000); // 10 second timeout
         
         // Use our server-side API route instead of direct external API call
         const response = await fetch('/api/jupiter-stats', {
@@ -197,7 +209,10 @@ export function useJupiterStats() {
           signal: controller.signal
         });
         
-        clearTimeout(timeoutId);
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+          timeoutId = null;
+        }
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -213,12 +228,17 @@ export function useJupiterStats() {
           throw new Error('Invalid response from server');
         }
       } catch (err) {
-        console.error('Error fetching Jupiter stats:', err);
-        setError(err instanceof Error ? err.message : 'Failed to fetch data');
+        // Don't log AbortError as it's expected when component unmounts
+        if (err instanceof Error && err.name !== 'AbortError') {
+          console.error('Error fetching Jupiter stats:', err);
+          setError(err.message);
+        }
         
-        // Use fallback data when API fails
-        console.log('Using fallback data due to API error');
-        setData(fallbackData);
+        // Use fallback data when API fails (but not for AbortError)
+        if (!(err instanceof Error && err.name === 'AbortError')) {
+          console.log('Using fallback data due to API error');
+          setData(fallbackData);
+        }
       } finally {
         setLoading(false);
       }
@@ -229,7 +249,15 @@ export function useJupiterStats() {
     // Refresh data every 30 seconds
     const interval = setInterval(fetchData, 30000);
     
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      if (controller) {
+        controller.abort();
+      }
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
   }, []);
 
   return { data, loading, error };
