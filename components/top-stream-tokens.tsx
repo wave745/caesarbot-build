@@ -115,48 +115,13 @@ export function TopStreamTokens() {
           console.error('❌ TopStreamTokens: Fetch failed:', fetchError)
           
           // If the API route fails, show fallback data immediately
-          console.log('🔄 TopStreamTokens: API route failed, showing fallback data')
-          const fallbackTokens: LiveToken[] = [
-            {
-              tokenAddress: 'fallback-demo-1',
-              mint: 'fallback-demo-1',
-              symbol: 'DEMO',
-              name: 'Demo Live Stream',
-              logo: '/icons/platforms/pump.fun-logo.svg',
-              image: '/icons/platforms/pump.fun-logo.svg',
-              decimals: '6',
-              priceNative: '0.001',
-              priceUsd: '0.15',
-              liquidity: '1000',
-              fullyDilutedValuation: '15000',
-              createdAt: new Date().toISOString(),
-              mcUsd: 15000,
-              volume24h: 0,
-              transactions: 0,
-              holders: 0,
-              timeAgo: 0,
-              risk: 'med' as const,
-              isPaid: false,
-              age: 0,
-              source: 'pumpfun' as const,
-              platform: 'Pump.fun' as const,
-              hasTwitter: false,
-              hasTelegram: false,
-              hasWebsite: false,
-              hasSocial: false,
-              isCurrentlyLive: true,
-              numParticipants: 0,
-              complete: false,
-              initialized: true,
-              rank: 1
-            }
-          ]
+          console.log('🔄 TopStreamTokens: API route failed, no fallback data')
           
           if (!isMounted) return
           
-          setTokens(fallbackTokens)
+          setTokens([])
           setHasError(true)
-          setErrorMessage('Using fallback data - API temporarily unavailable')
+          setErrorMessage('API temporarily unavailable')
           setIsLoading(false)
           return
         }
@@ -420,6 +385,18 @@ export function TopStreamTokens() {
     }
   }
 
+  const handleQuickBuy = (token: LiveToken) => {
+    console.log(`Quick buying ${token.symbol} (${token.tokenAddress || token.mint})`)
+    // TODO: Integrate with Solana wallet adapter for quick buy functionality
+    // For now, redirect to trade page with buy intent
+    const tokenAddress = token.tokenAddress || token.mint
+    try {
+      window.location.href = `/trade/${tokenAddress}?action=buy`
+    } catch (error) {
+      console.error('Quick buy navigation failed:', error)
+    }
+  }
+
   const handleRetry = () => {
     setHasError(false)
     setErrorMessage('')
@@ -552,35 +529,49 @@ export function TopStreamTokens() {
                   </div>
                 </div>
 
-                {/* Social links */}
-                <div className="flex items-center gap-1 pt-1 border-t border-white/10">
-                  {token.twitter && (
-                    <a href={token.twitter} target="_blank" rel="noopener noreferrer" className="w-4 h-4 text-gray-400 hover:text-white transition-colors">
-                      <img src="/icons/social/x-logo.svg" alt="Twitter" className="w-full h-full object-cover brightness-0 invert" />
-                    </a>
-                  )}
-                  {token.telegram && (
-                    <a href={token.telegram} target="_blank" rel="noopener noreferrer" className="w-4 h-4 text-gray-400 hover:text-white transition-colors">
-                      <img src="/icons/social/telegram-logo.svg" alt="Telegram" className="w-full h-full object-cover brightness-0 invert" />
-                    </a>
-                  )}
-                  {token.tiktok && (
-                    <a href={token.tiktok} target="_blank" rel="noopener noreferrer" className="w-4 h-4 text-gray-400 hover:text-white transition-colors">
-                      <img src="/icons/social/tiktok-icon.svg" alt="TikTok" className="w-full h-full object-cover" />
-                    </a>
-                  )}
-                  {token.website && (
-                    <a href={token.website} target="_blank" rel="noopener noreferrer" className="w-4 h-4 text-gray-400 hover:text-white transition-colors">
-                      {token.website.includes('tiktok.com') ? (
+                {/* Social links and Buy button */}
+                <div className="flex items-center justify-between pt-1 border-t border-white/10">
+                  <div className="flex items-center gap-1">
+                    {token.twitter && (
+                      <a href={token.twitter} target="_blank" rel="noopener noreferrer" className="w-4 h-4 text-gray-400 hover:text-white transition-colors">
+                        <img src="/icons/social/x-logo.svg" alt="Twitter" className="w-full h-full object-cover brightness-0 invert" />
+                      </a>
+                    )}
+                    {token.telegram && (
+                      <a href={token.telegram} target="_blank" rel="noopener noreferrer" className="w-4 h-4 text-gray-400 hover:text-white transition-colors">
+                        <img src="/icons/social/telegram-logo.svg" alt="Telegram" className="w-full h-full object-cover brightness-0 invert" />
+                      </a>
+                    )}
+                    {token.tiktok && (
+                      <a href={token.tiktok} target="_blank" rel="noopener noreferrer" className="w-4 h-4 text-gray-400 hover:text-white transition-colors">
                         <img src="/icons/social/tiktok-icon.svg" alt="TikTok" className="w-full h-full object-cover" />
-                      ) : (
-                        <img src="/icons/ui/web-icon.svg" alt="Website" className="w-full h-full object-cover brightness-0 invert" />
-                      )}
+                      </a>
+                    )}
+                    {token.website && (
+                      <a href={token.website} target="_blank" rel="noopener noreferrer" className="w-4 h-4 text-gray-400 hover:text-white transition-colors">
+                        {token.website.includes('tiktok.com') ? (
+                          <img src="/icons/social/tiktok-icon.svg" alt="TikTok" className="w-full h-full object-cover" />
+                        ) : (
+                          <img src="/icons/ui/web-icon.svg" alt="Website" className="w-full h-full object-cover brightness-0 invert" />
+                        )}
+                      </a>
+                    )}
+                    <a href={`https://solscan.io/token/${token.tokenAddress || token.mint}`} target="_blank" rel="noopener noreferrer" className="w-4 h-4 text-gray-400 hover:text-white transition-colors">
+                      <img src="/icons/ui/search-icon.svg" alt="Solscan" className="w-full h-full object-cover brightness-0 invert" />
                     </a>
-                  )}
-                  <a href={`https://solscan.io/token/${token.tokenAddress || token.mint}`} target="_blank" rel="noopener noreferrer" className="w-4 h-4 text-gray-400 hover:text-white transition-colors">
-                    <img src="/icons/ui/search-icon.svg" alt="Solscan" className="w-full h-full object-cover brightness-0 invert" />
-                  </a>
+                  </div>
+                  
+                  {/* Quick Buy Button */}
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleQuickBuy(token)
+                    }}
+                    className="bg-blue-500 hover:bg-blue-400 text-white font-bold px-2 py-1 rounded-md transition-all duration-200 hover:shadow-lg hover:shadow-blue-500/25 flex items-center gap-1"
+                  >
+                    <Zap className="w-2.5 h-2.5" />
+                    <span className="text-xs">BUY</span>
+                  </Button>
                 </div>
               </div>
             </div>
