@@ -24,7 +24,6 @@ export function TokenChart({ contractAddress }: TokenChartProps) {
           style={{ 
             border: 'none',
             overflow: 'hidden',
-            scrolling: 'no',
             transform: 'scale(1)',
             transformOrigin: 'top left'
           }}
