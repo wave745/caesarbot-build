@@ -102,7 +102,7 @@ export function MetaAIChat({ metaContext }: MetaAIChatProps) {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-50 group"
+        className="fixed bottom-16 right-6 z-50 group"
         aria-label="Open AI Assistant"
       >
         <div className="relative">
@@ -116,7 +116,7 @@ export function MetaAIChat({ metaContext }: MetaAIChatProps) {
   }
 
   return (
-    <Card className="fixed bottom-6 right-6 z-50 w-[340px] h-[480px] bg-black/95 backdrop-blur-xl border-zinc-800 shadow-2xl flex flex-col">
+    <Card className="fixed bottom-16 right-6 z-50 w-[340px] h-[480px] bg-black/95 backdrop-blur-xl border-zinc-800 shadow-2xl flex flex-col">
       <CardHeader className="border-b border-zinc-800 pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm text-white flex items-center gap-2">
