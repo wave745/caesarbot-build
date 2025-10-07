@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { GeistSans } from "geist/font/sans"
 import { GeistMono } from "geist/font/mono"
 import { Navigation } from "@/components/navigation"
+import { CaesarXFooter } from "@/components/caesarx-footer"
 import "./globals.css"
 
 export const metadata: Metadata = {
@@ -27,9 +28,10 @@ export default function RootLayout({
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable} bg-black text-white antialiased`}>
         <div className="min-h-screen bg-black">
           <Navigation />
-          <main className="p-3 sm:p-6">
+          <main className="p-3 sm:p-6 pb-16">
             {children}
           </main>
+          <CaesarXFooter />
         </div>
       </body>
     </html>

@@ -4,6 +4,9 @@ export async function GET(request: NextRequest) {
   try {
     console.log('Fetching metas from pump.fun API...')
     
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 20000) // 20 second timeout
+    
     const response = await fetch('https://frontend-api-v3.pump.fun/metas/current', {
       method: 'GET',
       headers: {
@@ -11,9 +14,10 @@ export async function GET(request: NextRequest) {
         'Content-Type': 'application/json',
         'User-Agent': 'CaesarX/1.0'
       },
-      // Vercel serverless functions have longer timeouts
-      signal: AbortSignal.timeout(30000) // 30 seconds
+      signal: controller.signal
     })
+    
+    clearTimeout(timeoutId)
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)
@@ -35,6 +39,15 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching metas from pump.fun API:', error)
     
+    // Check if it's a timeout error
+    const isTimeout = error instanceof Error && (
+      error.name === 'AbortError' || 
+      error.message.includes('timeout') ||
+      error.message.includes('signal timed out')
+    )
+    
+    console.log('Is timeout error:', isTimeout)
+    
     // Return fallback data when API fails
     const fallbackData = [
       { word: "Affordable Hype", word_with_strength: "🔥Affordable Hype💲", score: 77 },
@@ -54,6 +67,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: fallbackData,
+      error: isTimeout ? 'API timeout - using fallback data' : 'API error - using fallback data',
       meta: {
         source: 'fallback',
         timestamp: Date.now(),
