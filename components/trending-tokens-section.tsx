@@ -75,9 +75,10 @@ interface MoralisTrendingToken {
 interface TrendingTokensSectionProps {
   timeframe?: string
   sortBy?: 'new' | 'volume' | 'marketCap' | 'change'
+  filters?: any
 }
 
-export function TrendingTokensSection({ sortBy: propSortBy }: TrendingTokensSectionProps = {}) {
+export function TrendingTokensSection({ sortBy: propSortBy, filters }: TrendingTokensSectionProps = {}) {
   console.log('TrendingTokensSection: Component rendering - START')
   const [tokens, setTokens] = useState<MoralisTrendingToken[]>([])
   const [isLoading, setIsLoading] = useState(false) // Start with false for instant display
@@ -195,11 +196,36 @@ export function TrendingTokensSection({ sortBy: propSortBy }: TrendingTokensSect
       // NO LOADING STATE - show tokens immediately
       setError(null)
 
+      // Build query parameters from filters
+      const queryParams = new URLSearchParams()
+      
+      if (filters) {
+        // Add range filters
+        if (filters.marketCap?.min) queryParams.append('minMarketCap', filters.marketCap.min)
+        if (filters.marketCap?.max) queryParams.append('maxMarketCap', filters.marketCap.max)
+        if (filters.volume?.min) queryParams.append('minVolume', filters.volume.min)
+        if (filters.volume?.max) queryParams.append('maxVolume', filters.volume.max)
+        if (filters.liquidity?.min) queryParams.append('minLiquidity', filters.liquidity.min)
+        if (filters.liquidity?.max) queryParams.append('maxLiquidity', filters.liquidity.max)
+        if (filters.holders?.min) queryParams.append('minHolders', filters.holders.min)
+        if (filters.holders?.max) queryParams.append('maxHolders', filters.holders.max)
+        
+        // Add boolean filters
+        if (filters.dexPaid) queryParams.append('isPaid', 'true')
+        if (filters.devStillHolding) queryParams.append('devStillHolding', 'true')
+        if (filters.pumpLive) queryParams.append('pumpLive', 'true')
+        
+        // Add keyword filters
+        if (filters.includeKeywords) queryParams.append('includeKeywords', filters.includeKeywords)
+        if (filters.excludeKeywords) queryParams.append('excludeKeywords', filters.excludeKeywords)
+      }
+
       // Realistic fetch with proper timeout
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 10000) // 10s timeout for reliable response
       
-      const response = await fetch('/api/moralis/trending-tokens', {
+      const url = filters ? `/api/moralis/filtered-tokens?${queryParams.toString()}` : '/api/moralis/trending-tokens'
+      const response = await fetch(url, {
         signal: controller.signal
       })
       clearTimeout(timeoutId)
@@ -235,6 +261,14 @@ export function TrendingTokensSection({ sortBy: propSortBy }: TrendingTokensSect
       setIsLoading(false) // Show error state immediately
     }
   }
+
+  // Refetch when filters change
+  useEffect(() => {
+    if (filters) {
+      console.log('TrendingTokensSection: Filters changed, refetching...')
+      fetchTrendingTokens()
+    }
+  }, [filters])
 
   useEffect(() => {
     console.log('TrendingTokensSection: useEffect triggered - INSTANT LOADING')
