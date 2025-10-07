@@ -21,6 +21,7 @@ interface FilterState {
   launchpads: {
     pumpfun: boolean
     bonk: boolean
+    metdbc: boolean
   }
   
   // Checkbox filters
@@ -65,7 +66,8 @@ interface TrendingFilterModalProps {
 
 const launchpadData = [
   { id: 'pumpfun', name: 'Pumpfun', color: 'bg-green-500', icon: '/icons/platforms/pump.fun-logo.svg' },
-  { id: 'bonk', name: 'Bonk', color: 'bg-orange-500', icon: '/icons/platforms/bonk.fun-logo.svg' }
+  { id: 'bonk', name: 'Bonk', color: 'bg-orange-500', icon: '/icons/platforms/bonk.fun-logo.svg' },
+  { id: 'metdbc', name: 'MET-DBC', color: 'bg-cyan-500', icon: '/icons/platforms/meteora.ag(met-dbc)-logo.png' }
 ]
 
 export function TrendingFilterModal({ isOpen, onClose, onApply, initialFilters }: TrendingFilterModalProps) {
@@ -73,7 +75,8 @@ export function TrendingFilterModal({ isOpen, onClose, onApply, initialFilters }
   const [filters, setFilters] = useState<FilterState>({
     launchpads: {
       pumpfun: true,
-      bonk: true
+      bonk: true,
+      metdbc: true
     },
     atLeastOneSocial: false,
     originalSocials: false,
@@ -138,7 +141,8 @@ export function TrendingFilterModal({ isOpen, onClose, onApply, initialFilters }
     setFilters({
       launchpads: {
         pumpfun: false,
-        bonk: false
+        bonk: false,
+        metdbc: false
       },
       atLeastOneSocial: false,
       originalSocials: false,
@@ -213,16 +217,20 @@ export function TrendingFilterModal({ isOpen, onClose, onApply, initialFilters }
                 </Button>
               </div>
               
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 {launchpadData.map((launchpad) => (
                   <button
                     key={launchpad.id}
                     onClick={() => updateFilter(`launchpads.${launchpad.id}`, !filters.launchpads[launchpad.id as keyof typeof filters.launchpads])}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-colors ${
+                    className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-all duration-300 ${
                       filters.launchpads[launchpad.id as keyof typeof filters.launchpads]
                         ? launchpad.id === 'pumpfun' 
                           ? 'border-green-500 bg-green-500/10'
-                          : 'border-orange-500 bg-orange-500/10'
+                          : launchpad.id === 'bonk'
+                          ? 'border-orange-500 bg-orange-500/10'
+                          : 'border-cyan-500 bg-cyan-500/10'
+                        : launchpad.id === 'metdbc'
+                        ? 'border-[#282828] hover:border-cyan-400 hover:shadow-[0_0_20px_rgba(34,211,238,0.3)] hover:bg-cyan-500/5'
                         : 'border-[#282828] hover:border-gray-600'
                     }`}
                   >
