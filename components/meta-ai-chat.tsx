@@ -4,9 +4,10 @@ import { useState, useRef, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { MessageSquare, X, Send, Sparkles, Rocket, Loader2 } from "lucide-react"
+import { MessageSquare, X, Send, Sparkles, Rocket, Loader2, Maximize2, Minimize2 } from "lucide-react"
 import { MetaContext } from "@/lib/services/grok-service"
 import { useRouter } from "next/navigation"
+import { processChatMarkdown } from "@/lib/utils/markdown-processor"
 
 interface Message {
   role: "user" | "assistant"
@@ -19,6 +20,7 @@ interface MetaAIChatProps {
 
 export function MetaAIChat({ metaContext }: MetaAIChatProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
@@ -32,6 +34,17 @@ export function MetaAIChat({ metaContext }: MetaAIChatProps) {
   useEffect(() => {
     scrollToBottom()
   }, [messages])
+
+  // Keyboard shortcut for ESC to collapse
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isExpanded) {
+        setIsExpanded(false)
+      }
+    }
+    window.addEventListener("keydown", handleKey)
+    return () => window.removeEventListener("keydown", handleKey)
+  }, [isExpanded])
 
   useEffect(() => {
     if (isOpen && messages.length === 0) {
@@ -116,7 +129,7 @@ export function MetaAIChat({ metaContext }: MetaAIChatProps) {
   }
 
   return (
-    <Card className="fixed bottom-16 right-6 z-50 w-[340px] h-[480px] bg-black/95 backdrop-blur-xl border-zinc-800 shadow-2xl flex flex-col">
+    <Card className={`fixed bottom-16 right-6 z-50 ${isExpanded ? 'w-[720px]' : 'w-[340px]'} h-[480px] bg-black/95 backdrop-blur-xl border-zinc-800 shadow-2xl flex flex-col transition-all duration-300 ease-in-out`}>
       <CardHeader className="border-b border-zinc-800 pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm text-white flex items-center gap-2">
@@ -125,18 +138,29 @@ export function MetaAIChat({ metaContext }: MetaAIChatProps) {
             </div>
             Meta Launch Assistant
           </CardTitle>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsOpen(false)}
-            className="h-7 w-7 text-gray-400 hover:text-white hover:bg-zinc-800"
-          >
-            <X className="w-3 h-3" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="h-7 w-7 text-gray-400 hover:text-yellow-400 hover:bg-zinc-800 transition-colors"
+              title={isExpanded ? "Collapse chat" : "Expand chat"}
+            >
+              {isExpanded ? <Minimize2 className="w-3 h-3" /> : <Maximize2 className="w-3 h-3" />}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsOpen(false)}
+              className="h-7 w-7 text-gray-400 hover:text-white hover:bg-zinc-800"
+            >
+              <X className="w-3 h-3" />
+            </Button>
+          </div>
         </div>
       </CardHeader>
 
-      <CardContent className="flex-1 overflow-y-auto p-3 space-y-3">
+      <CardContent className="flex-1 overflow-y-auto p-3 space-y-3 scroll-smooth">
         {messages.map((message, index) => (
           <div
             key={index}
@@ -151,9 +175,14 @@ export function MetaAIChat({ metaContext }: MetaAIChatProps) {
                   : "bg-zinc-800 text-white border border-zinc-700"
               }`}
             >
-              <p className="text-xs whitespace-pre-wrap leading-relaxed">
-                {message.content}
-              </p>
+              <p 
+                className="text-xs whitespace-pre-wrap leading-relaxed"
+                dangerouslySetInnerHTML={{ 
+                  __html: message.role === "assistant" 
+                    ? processChatMarkdown(message.content) 
+                    : message.content 
+                }}
+              />
             </div>
           </div>
         ))}
