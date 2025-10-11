@@ -22,6 +22,9 @@ interface FilterState {
     pumpfun: boolean
     bonk: boolean
     metdbc: boolean
+    bagsfm: boolean
+    believeapp: boolean
+    moonit: boolean
   }
   
   // Checkbox filters
@@ -67,7 +70,10 @@ interface TrendingFilterModalProps {
 const launchpadData = [
   { id: 'pumpfun', name: 'Pumpfun', color: 'bg-green-500', icon: '/icons/platforms/pump.fun-logo.svg' },
   { id: 'bonk', name: 'Bonk', color: 'bg-orange-500', icon: '/icons/platforms/bonk.fun-logo.svg' },
-  { id: 'metdbc', name: 'MET-DBC', color: 'bg-cyan-500', icon: '/icons/platforms/meteora.ag(met-dbc)-logo.png' }
+  { id: 'metdbc', name: 'MET-DBC', color: 'bg-cyan-500', icon: '/icons/platforms/meteora.ag(met-dbc)-logo.png' },
+  { id: 'bagsfm', name: 'Bags.fm', color: 'bg-purple-500', icon: '/icons/platforms/bags.fm-logo.png' },
+  { id: 'believeapp', name: 'Believe.app', color: 'bg-blue-500', icon: '/icons/platforms/believe.app-logo.png' },
+  { id: 'moonit', name: 'Moon.it', color: 'bg-pink-500', icon: '/icons/platforms/moon.it-logo.png' }
 ]
 
 export function TrendingFilterModal({ isOpen, onClose, onApply, initialFilters }: TrendingFilterModalProps) {
@@ -76,7 +82,10 @@ export function TrendingFilterModal({ isOpen, onClose, onApply, initialFilters }
     launchpads: {
       pumpfun: true,
       bonk: true,
-      metdbc: true
+      metdbc: true,
+      bagsfm: true,
+      believeapp: true,
+      moonit: true
     },
     atLeastOneSocial: false,
     originalSocials: false,
@@ -142,7 +151,10 @@ export function TrendingFilterModal({ isOpen, onClose, onApply, initialFilters }
       launchpads: {
         pumpfun: false,
         bonk: false,
-        metdbc: false
+        metdbc: false,
+        bagsfm: false,
+        believeapp: false,
+        moonit: false
       },
       atLeastOneSocial: false,
       originalSocials: false,
@@ -217,7 +229,7 @@ export function TrendingFilterModal({ isOpen, onClose, onApply, initialFilters }
                 </Button>
               </div>
               
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 {launchpadData.map((launchpad) => (
                   <button
                     key={launchpad.id}
@@ -228,7 +240,13 @@ export function TrendingFilterModal({ isOpen, onClose, onApply, initialFilters }
                           ? 'border-green-500 bg-green-500/10'
                           : launchpad.id === 'bonk'
                           ? 'border-orange-500 bg-orange-500/10'
-                          : 'border-cyan-500 bg-cyan-500/10'
+                          : launchpad.id === 'metdbc'
+                          ? 'border-cyan-500 bg-cyan-500/10'
+                          : launchpad.id === 'bagsfm'
+                          ? 'border-purple-500 bg-purple-500/10'
+                          : launchpad.id === 'believeapp'
+                          ? 'border-blue-500 bg-blue-500/10'
+                          : 'border-pink-500 bg-pink-500/10'
                         : launchpad.id === 'metdbc'
                         ? 'border-[#282828] hover:border-cyan-400 hover:shadow-[0_0_20px_rgba(34,211,238,0.3)] hover:bg-cyan-500/5'
                         : 'border-[#282828] hover:border-gray-600'

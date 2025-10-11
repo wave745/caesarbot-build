@@ -42,7 +42,6 @@ interface TrenchesCardProps {
 }
 
 export function TrenchesCard({ token, isHovered = false }: TrenchesCardProps) {
-  const [isGlowing, setIsGlowing] = useState(false)
 
   const formatNumber = (num: number) => {
     if (num >= 1000000) {
@@ -74,11 +73,8 @@ export function TrenchesCard({ token, isHovered = false }: TrenchesCardProps) {
       className={`
         bg-zinc-900/50 border border-zinc-800/60 hover:bg-zinc-800/50 
         transition-all duration-300 cursor-pointer group
-        ${isGlowing ? 'shadow-lg shadow-green-500/20' : ''}
         ${isHovered ? 'scale-[1.02] shadow-xl' : ''}
       `}
-      onMouseEnter={() => setIsGlowing(true)}
-      onMouseLeave={() => setIsGlowing(false)}
     >
       <CardContent className="p-4">
         {/* Main Content Row */}
@@ -194,10 +190,6 @@ export function TrenchesCard({ token, isHovered = false }: TrenchesCardProps) {
           </div>
         </div>
 
-        {/* Optional: Glow Effect for Live Tokens */}
-        {token.status === 'live' && isGlowing && (
-          <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-green-500/10 to-blue-500/10 pointer-events-none animate-pulse"></div>
-        )}
       </CardContent>
     </Card>
   )

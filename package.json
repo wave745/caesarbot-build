@@ -9,6 +9,8 @@
     "start": "next start -p 5000 -H 0.0.0.0"
   },
   "dependencies": {
+    "@bagsfm/bags-sdk": "^1.0.8",
+    "@coral-xyz/anchor": "^0.32.1",
     "@hookform/resolvers": "^3.9.1",
     "@metaplex-foundation/mpl-token-metadata": "^3.4.0",
     "@radix-ui/react-accordion": "1.2.2",
@@ -40,6 +42,7 @@
     "@radix-ui/react-tooltip": "1.1.6",
     "@solana/web3.js": "^1.98.4",
     "autoprefixer": "^10.4.20",
+    "bn.js": "^5.2.2",
     "bs58": "^6.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
