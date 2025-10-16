@@ -2,14 +2,16 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { TrendingUp } from "lucide-react"
+import { useState } from "react"
+import PnLCardModal from "./pnl-card-modal"
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
 import { Search } from "lucide-react"
-import { useState } from "react"
-import { MetaCard } from "@/components/meta-card"
 
 export function DashboardContent() {
   const [selectedView, setSelectedView] = useState<"price" | "volume" | "wallet">("price")
+  const [isLargePnLOpen, setIsLargePnLOpen] = useState(false)
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Dashboard Header */}
@@ -42,7 +44,7 @@ export function DashboardContent() {
             <div className="flex items-center gap-4">
               <CardTitle className="text-white text-lg sm:text-xl">Market Overview</CardTitle>
               <div className="relative bg-[#111111] rounded-lg p-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white w-4 h-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
                   placeholder="Search tokens..."
                   className="pl-10 w-40 bg-transparent border-0 text-white placeholder-gray-400 text-sm focus:ring-0 focus:ring-offset-0"
@@ -120,7 +122,17 @@ export function DashboardContent() {
         {/* Overview Stats */}
         <Card className="bg-[#111111] border-[#282828]">
           <CardHeader>
-            <CardTitle className="text-white text-lg sm:text-xl">Overview</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-white text-lg sm:text-xl">Overview</CardTitle>
+              <button
+                onClick={() => setIsLargePnLOpen(true)}
+                className="flex items-center gap-1 text-gray-300 hover:text-white transition-colors text-xs sm:text-sm"
+                title="Open PnL Card"
+              >
+                <TrendingUp className="w-4 h-4" />
+                <span>PnL</span>
+              </button>
+            </div>
           </CardHeader>
           <CardContent className="space-y-3 sm:space-y-4">
             {[
@@ -139,10 +151,37 @@ export function DashboardContent() {
         </Card>
       </div>
 
+      {/* Large PnL Card Modal */}
+      <PnLCardModal isOpen={isLargePnLOpen} onClose={() => setIsLargePnLOpen(false)} size="large" />
+
       {/* Bottom Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* META Section */}
-        <MetaCard />
+        <Card className="bg-[#111111] border-[#282828]">
+          <CardHeader>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <CardTitle className="text-white text-lg sm:text-xl">Meta</CardTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-fit bg-gradient-to-r from-yellow-500 to-orange-500 text-black border-yellow-500 hover:from-yellow-400 hover:to-orange-400 text-xs sm:text-sm"
+              >
+                View all
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-6 sm:py-8">
+              <div className="text-gray-400 mb-2">No meta analysis available</div>
+              <p className="text-sm text-gray-500 mb-4">Analysis will appear here when data is available</p>
+              <Link href="/meta">
+                <Button className="bg-gradient-to-r from-yellow-500 to-orange-500 text-black hover:from-yellow-400 hover:to-orange-400 w-full sm:w-auto text-sm">
+                  View Full Analysis
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Recently Added */}
         <Card className="bg-[#111111] border-[#282828]">

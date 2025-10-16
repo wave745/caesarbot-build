@@ -10,12 +10,11 @@ import { useState, useRef, useEffect } from "react"
 const navItems = [
   { name: "Discover", href: "/" },
   { name: "Trending", href: "/trending" },
-  { name: "Trenches", href: "/trenches" },
   { name: "Tracker", href: "/tracker" },
+  { name: "Scanner", href: "/scanner" },
   { name: "Sniper", href: "/sniper" },
   { name: "Portfolio", href: "/portfolio" },
   { name: "Deployer", href: "/deployer" },
-  { name: "Meta", href: "/meta" },
   { name: "Rewards", href: "/rewards" },
 ]
 
