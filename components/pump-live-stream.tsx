@@ -18,86 +18,53 @@ import {
   WifiOff,
   RefreshCw
 } from "lucide-react"
-// Define interfaces locally since we're now using Moralis
-interface PumpToken {
-  mint: string
-  symbol: string
-  name: string
-  image?: string
-  mcUsd: number
-  volume24h: number
-  transactions: number
-  holders: number
-  timeAgo: number
-}
-
-interface PumpTrade {
-  id: string
-  token: string
-  type: 'buy' | 'sell'
-  amount: number
-  price: number
-  timestamp: number
-  user: string
-}
-
-interface PumpLiveStreamData {
-  tokens: PumpToken[]
-  trades: PumpTrade[]
-  timestamp: number
-}
+import { PumpPortalAPI, PumpToken, PumpTrade, PumpLiveStreamData } from "@/lib/services/pumpportal-api"
 
 export function PumpLiveStream() {
   const [data, setData] = useState<PumpLiveStreamData>({
-    tokens: [],
-    trades: [],
-    timestamp: Date.now()
+    newTokens: [],
+    recentTrades: [],
+    topGainers: [],
+    topLosers: []
   })
   const [isConnected, setIsConnected] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("new-tokens")
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch('/api/moralis/new-tokens')
-        const result = await response.json()
-        
-        if (result.success) {
-          setData({
-            tokens: result.tokens,
-            trades: [], // No trades data from Moralis new tokens endpoint
-            timestamp: Date.now()
-          })
-          setIsConnected(true)
-        } else {
-          setData({
-            tokens: [],
-            trades: [],
-            timestamp: Date.now()
-          })
-          setIsConnected(false)
-        }
-        setIsLoading(false)
-      } catch (error) {
-        console.error('Error fetching data:', error)
-        setData({
-          tokens: [],
-          trades: [],
-          timestamp: Date.now()
-        })
-        setIsConnected(false)
-        setIsLoading(false)
-      }
+    const api = PumpPortalAPI.getInstance()
+    
+    const handleData = (newData: PumpLiveStreamData) => {
+      setData(newData)
+      setIsLoading(false)
     }
 
-    // Initial fetch
-    fetchData()
+    const handleConnectionChange = () => {
+      setIsConnected(api.getConnectionStatus())
+    }
 
-    // Poll every 30 seconds for updates
-    const interval = setInterval(fetchData, 30000)
+    // Subscribe to data updates
+    api.subscribe(handleData)
+    
+    // Connect to PumpPortal
+    api.connect()
+      .then(() => {
+        setIsConnected(true)
+        setIsLoading(false)
+      })
+      .catch((error) => {
+        console.error('Failed to connect to PumpPortal:', error)
+        setIsConnected(false)
+        setIsLoading(false)
+      })
 
-    return () => clearInterval(interval)
+    // Check connection status periodically
+    const statusInterval = setInterval(handleConnectionChange, 1000)
+
+    return () => {
+      api.unsubscribe(handleData)
+      clearInterval(statusInterval)
+    }
   }, [])
 
   const formatNumber = (num: number) => {
@@ -126,35 +93,12 @@ export function PumpLiveStream() {
     return null
   }
 
-  const reconnect = async () => {
-    try {
-      const response = await fetch('/api/moralis/new-tokens')
-      const result = await response.json()
-      
-      if (result.success) {
-        setData({
-          tokens: result.tokens,
-          trades: [],
-          timestamp: Date.now()
-        })
-        setIsConnected(true)
-      } else {
-        setData({
-          tokens: [],
-          trades: [],
-          timestamp: Date.now()
-        })
-        setIsConnected(false)
-      }
-    } catch (error) {
-      console.error('Error during reconnect:', error)
-      setData({
-        tokens: [],
-        trades: [],
-        timestamp: Date.now()
-      })
-      setIsConnected(false)
-    }
+  const reconnect = () => {
+    const api = PumpPortalAPI.getInstance()
+    api.disconnect()
+    api.connect()
+      .then(() => setIsConnected(true))
+      .catch(() => setIsConnected(false))
   }
 
   return (

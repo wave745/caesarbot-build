@@ -1,59 +1,58 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { MoralisComprehensiveService } from '@/lib/services/moralis-comprehensive-service'
+import { PumpLiveService } from '@/lib/services/pumpportal-live'
 
-const moralisService = MoralisComprehensiveService.getInstance()
+const pumpLiveService = PumpLiveService.getInstance()
+
+// Initialize connection on first request
+let isInitialized = false
+const initializeService = async () => {
+  if (!isInitialized) {
+    console.log('Initializing PumpLiveService...')
+    await pumpLiveService.connect()
+    isInitialized = true
+    console.log('PumpLiveService initialized')
+  }
+}
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const limit = parseInt(searchParams.get('limit') || '100')
-    const timeframe = searchParams.get('timeframe') || '1h'
+    // Initialize service if not already done
+    await initializeService()
     
-    console.log(`API: Fetching new tokens (limit: ${limit}, timeframe: ${timeframe})`)
-    
-    const tokens = await moralisService.getNewTokens(limit, timeframe)
-    const isConnected = true // Moralis API is always connected
+    const tokens = pumpLiveService.getLiveTokens()
+    const isConnected = pumpLiveService.getConnectionStatus()
     
     return NextResponse.json({
-      success: true,
       tokens,
       isConnected,
       timestamp: Date.now()
     })
   } catch (error) {
-    console.error('Error fetching new tokens:', error)
-    return NextResponse.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      tokens: [],
-      isConnected: false
-    }, { status: 500 })
+    console.error('Error fetching live tokens:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch live tokens' },
+      { status: 500 }
+    )
   }
 }
 
-// POST endpoint for reconnection
+// WebSocket endpoint for real-time updates
 export async function POST(request: NextRequest) {
   try {
     const { action } = await request.json()
     
-    if (action === 'reconnect') {
-      // Re-fetch data from Moralis API
-      const tokens = await moralisService.getNewTokens(100, '1h')
-      return NextResponse.json({ 
-        success: true, 
-        tokens,
-        isConnected: true 
-      })
+    if (action === 'subscribe') {
+      // This would be used for WebSocket subscriptions
+      // For now, we'll use polling from the frontend
+      return NextResponse.json({ success: true })
     }
     
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
   } catch (error) {
-    console.error('Error handling reconnect:', error)
-    return NextResponse.json({
-      success: false,
-      error: 'Failed to reconnect',
-      tokens: [],
-      isConnected: false
-    }, { status: 500 })
+    console.error('Error handling subscription:', error)
+    return NextResponse.json(
+      { error: 'Failed to handle subscription' },
+      { status: 500 }
+    )
   }
 }

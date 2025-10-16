@@ -1,127 +1,56 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { 
+  Users, 
+  Target, 
+  ChefHat, 
+  Crown, 
+  ExternalLink,
   RefreshCw,
+  Wifi,
+  WifiOff,
   Eye,
+  Search,
+  Star,
+  Link,
+  Globe,
+  Shield,
   Zap
 } from "lucide-react"
-import { tokenCache } from "@/lib/services/token-cache"
-import { useRouter } from "next/navigation"
+import { LiveToken } from "@/lib/services/pumpportal-live"
 
-// Define LiveToken interface for combined Pump.fun + BONK tokens
-interface LiveToken {
-  tokenAddress: string
-  symbol: string
-  name: string
-  logo?: string
-  decimals: string
-  priceNative: string
-  priceUsd: string
-  liquidity: string
-  fullyDilutedValuation: string
-  createdAt: string
-  // Additional fields for compatibility
-  mint?: string
-  image?: string
-  mcUsd?: number
-  volume24h?: number
-  transactions?: number
-  holders?: number
-  timeAgo?: number
-  risk?: 'low' | 'med' | 'high'
-  isPaid?: boolean
-  age?: number
-  // New fields for combined tokens
-  source?: 'pumpfun' | 'bonk'
-  platform?: 'Pump.fun' | 'BONK.fun'
-  // Social links from pump.fun API
-  website?: string
-  twitter?: string
-  telegram?: string
-  hasTwitter?: boolean
-  hasTelegram?: boolean
-  hasWebsite?: boolean
-  hasSocial?: boolean
-}
-
-interface NewTokensSectionProps {
-  onHoverChange?: (isHovered: boolean) => void
-}
-
-export function NewTokensSection({ onHoverChange }: NewTokensSectionProps) {
+export function NewTokensSection() {
   const [tokens, setTokens] = useState<LiveToken[]>([])
   const [isConnected, setIsConnected] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
-  const [lastUpdate, setLastUpdate] = useState<Date>(new Date())
-  const [dexPaidStatus, setDexPaidStatus] = useState<Map<string, boolean>>(new Map())
-  const [tokenMetadata, setTokenMetadata] = useState<Map<string, any>>(new Map())
-  const router = useRouter()
 
-  const fetchDexPaidStatus = async (tokens: LiveToken[]) => {
-    try {
-      console.log('Fetching Dex paid status for new tokens...')
-      
-      const tokensToCheck = tokens.map(token => ({
-        chainId: 'solana', // New tokens are on Solana
-        tokenAddress: token.tokenAddress || token.mint
-      }))
-
-      const response = await fetch('/api/dexscreener/check-paid', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ tokens: tokensToCheck })
-      })
-
-      if (response.ok) {
+  useEffect(() => {
+    const fetchNewTokens = async () => {
+      try {
+        const response = await fetch('/api/pump-live-proper')
         const data = await response.json()
-        if (data.success && data.data) {
-          const statusMap = new Map<string, boolean>()
-          Object.entries(data.data).forEach(([tokenAddress, isPaid]) => {
-            statusMap.set(tokenAddress, isPaid as boolean)
-          })
-          setDexPaidStatus(statusMap)
-        }
+        
+        setTokens(data.tokens || [])
+        setIsConnected(data.isConnected || false)
+        setIsLoading(false)
+      } catch (error) {
+        console.error('Error fetching new tokens:', error)
+        setIsLoading(false)
       }
-    } catch (error) {
-      console.error('Error fetching Dex paid status for new tokens:', error)
     }
-  }
 
-  const fetchTokenMetadata = async (tokens: LiveToken[]) => {
-    try {
-      console.log('Fetching token metadata for new tokens...')
-      
-      const tokenAddresses = tokens.map(token => token.tokenAddress || token.mint)
+    // Initial fetch
+    fetchNewTokens()
 
-      const response = await fetch('/api/moralis/token-metadata', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ tokenAddresses })
-      })
+    // Poll every 3 seconds for updates
+    const interval = setInterval(fetchNewTokens, 3000)
 
-      if (response.ok) {
-        const data = await response.json()
-        if (data.success && data.data) {
-          const metadataMap = new Map<string, any>()
-          Object.entries(data.data).forEach(([tokenAddress, metadata]) => {
-            metadataMap.set(tokenAddress, metadata)
-          })
-          setTokenMetadata(metadataMap)
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching token metadata for new tokens:', error)
-    }
-  }
+    return () => clearInterval(interval)
+  }, [])
 
-  const formatNumber = (num: number | undefined) => {
-    if (num === undefined || num === null || isNaN(num)) {
-      return '0.00'
-    }
+  const formatNumber = (num: number) => {
     if (num >= 1_000_000) {
       return (num / 1_000_000).toFixed(1) + 'M'
     }
@@ -131,10 +60,7 @@ export function NewTokensSection({ onHoverChange }: NewTokensSectionProps) {
     return num.toFixed(2)
   }
 
-  const formatTimeAgo = (timeAgo: number | undefined) => {
-    if (timeAgo === undefined || timeAgo === null || isNaN(timeAgo) || timeAgo < 0) {
-      return 'now'
-    }
+  const formatTimeAgo = (timeAgo: number) => {
     if (timeAgo < 60) {
       return `${timeAgo}s`
     }
@@ -146,396 +72,238 @@ export function NewTokensSection({ onHoverChange }: NewTokensSectionProps) {
     return `${hours}h`
   }
 
-  const getTimeAgo = (createdAt: string) => {
-    const now = new Date().getTime()
-    const created = new Date(createdAt).getTime()
-    const diffInSeconds = Math.floor((now - created) / 1000)
-    
-    // Debug logging for time calculation
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Time calculation:', {
-        now: new Date(now).toISOString(),
-        created: new Date(created).toISOString(),
-        diffInSeconds,
-        createdAt
-      })
-    }
-    
-    // Ensure we don't return negative values
-    return Math.max(0, diffInSeconds)
+  const getTransactionBarColor = (tx: number) => {
+    if (tx === 0) return 'bg-gray-600'
+    if (tx < 5) return 'bg-green-500'
+    if (tx < 20) return 'bg-green-400'
+    return 'bg-green-300'
+  }
+
+  const getTransactionBarWidth = (tx: number) => {
+    const maxTx = 50 // Max transactions for 100% width
+    return Math.min((tx / maxTx) * 100, 100)
   }
 
   const handleBuy = (token: LiveToken) => {
-    console.log(`Buying ${token.symbol} (${token.tokenAddress || token.mint})`)
+    console.log(`Buying ${token.symbol} (${token.mint})`)
+    // TODO: Integrate with Solana wallet adapter
   }
 
-  // Fetch new tokens from both pump.fun and bonk.fun APIs with polling
-  useEffect(() => {
-    const fetchNewTokens = async () => {
-      try {
-        console.log('🚀 NewTokensSection: Fetching new tokens from pump.fun and bonk.fun...')
-        // Don't set loading state to show tokens immediately
-        
-        // Fetch from both APIs in parallel
-        const [pumpResponse, bonkResponse] = await Promise.allSettled([
-          fetch('/api/pump-fun/new-tokens?limit=15'),
-          fetch('/api/bonk-fun/tokens?limit=15')
-        ])
-        
-        let allTokens: LiveToken[] = []
-        
-        // Process pump.fun tokens
-        if (pumpResponse.status === 'fulfilled' && pumpResponse.value.ok) {
-          const pumpData = await pumpResponse.value.json()
-          console.log('✅ NewTokensSection: Success from pump.fun API:', pumpData)
-          
-          if (pumpData.success && pumpData.data && Array.isArray(pumpData.data)) {
-            console.log('✅ NewTokensSection: Processing', pumpData.data.length, 'tokens from pump.fun')
-            
-            const pumpTokens = pumpData.data.map((token: any) => ({
-              ...token,
-              tokenAddress: token.tokenAddress || token.coinMint,
-              symbol: token.symbol || token.ticker || 'UNKNOWN',
-              name: token.name || 'Unknown Token',
-              price: token.priceUsd || '$0.00',
-              priceUsd: token.priceUsd || '0',
-              marketCap: token.marketCap || token.fullyDilutedValuation || '$0',
-              liquidity: token.liquidity || '$0',
-              volume24h: token.volume24h || '$0',
-              priceChange24h: 0, // Pump.fun doesn't provide this
-              isFavorited: false,
-              source: 'pumpfun' as const,
-              platform: 'Pump.fun' as const,
-              // Social links are already included from pump.fun API
-              website: token.website,
-              twitter: token.twitter,
-              telegram: token.telegram,
-              hasTwitter: token.hasTwitter || false,
-              hasTelegram: token.hasTelegram || false,
-              hasWebsite: token.hasWebsite || false,
-              hasSocial: token.hasSocial || false
-            }))
-            
-            allTokens = [...allTokens, ...pumpTokens]
-            console.log('✅ NewTokensSection: Added', pumpTokens.length, 'pump.fun tokens')
-          }
-        } else {
-          console.log('❌ NewTokensSection: Pump.fun API failed:', pumpResponse.status === 'rejected' ? pumpResponse.reason : 'HTTP error')
-        }
-        
-        // Process bonk.fun tokens
-        if (bonkResponse.status === 'fulfilled' && bonkResponse.value.ok) {
-          const bonkData = await bonkResponse.value.json()
-          console.log('✅ NewTokensSection: Success from bonk.fun API:', bonkData)
-          
-          if (bonkData.success && bonkData.data && Array.isArray(bonkData.data)) {
-            console.log('✅ NewTokensSection: Processing', bonkData.data.length, 'tokens from bonk.fun')
-            
-            const bonkTokens = bonkData.data.map((token: any) => ({
-              ...token,
-              tokenAddress: token.tokenAddress || token.mint,
-              symbol: token.symbol || 'UNKNOWN',
-              name: token.name || 'Unknown Token',
-              price: token.priceUsd || '$0.00',
-              priceUsd: token.priceUsd || '0',
-              marketCap: token.fullyDilutedValuation || '$0',
-              liquidity: token.liquidity || '$0',
-              volume24h: token.volume24h || '$0',
-              priceChange24h: 0, // Bonk.fun doesn't provide this
-              isFavorited: false,
-              source: 'bonk' as const,
-              platform: 'BONK.fun' as const,
-              // Social links from bonk.fun API
-              website: token.website,
-              twitter: token.twitter,
-              telegram: token.telegram,
-              hasTwitter: token.hasTwitter || false,
-              hasTelegram: token.hasTelegram || false,
-              hasWebsite: token.hasWebsite || false,
-              hasSocial: token.hasSocial || false
-            }))
-            
-            allTokens = [...allTokens, ...bonkTokens]
-            console.log('✅ NewTokensSection: Added', bonkTokens.length, 'bonk.fun tokens')
-          }
-        } else {
-          console.log('❌ NewTokensSection: Bonk.fun API failed:', bonkResponse.status === 'rejected' ? bonkResponse.reason : 'HTTP error')
-        }
-        
-        // Sort combined tokens by creation time (newest first)
-        allTokens.sort((a, b) => {
-          const timeA = new Date(a.createdAt).getTime()
-          const timeB = new Date(b.createdAt).getTime()
-          return timeB - timeA
-        })
-        
-        // Take only the first 25 tokens
-        const finalTokens = allTokens.slice(0, 25)
-        
-        if (finalTokens.length > 0) {
-          setTokens(finalTokens)
-          setLastUpdate(new Date())
-          setIsConnected(true)
-          
-          // Fetch Dex paid status for all tokens
-          fetchDexPaidStatus(finalTokens)
-          
-          console.log('✅ NewTokensSection: Successfully loaded', finalTokens.length, 'combined tokens (pump.fun + bonk.fun)')
-        } else {
-          console.log('❌ NewTokensSection: No tokens found from either API')
-          setTokens([])
-          setIsConnected(false)
-        }
-      } catch (error) {
-        console.error('❌ NewTokensSection: Error fetching tokens:', error)
-        setTokens([])
-        setIsConnected(false)
-      } finally {
-        // Keep loading state false for immediate display
-        setIsLoading(false)
-      }
+  const reconnect = async () => {
+    setIsLoading(true)
+    setIsConnected(false)
+    try {
+      await fetch('/api/pump-live-proper', { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ action: 'reconnect' }) 
+      })
+      // Re-fetch data after reconnect attempt
+      const response = await fetch('/api/pump-live-proper')
+      const data = await response.json()
+      setTokens(data.tokens || [])
+      setIsConnected(data.isConnected || false)
+    } catch (error) {
+      console.error('Error during reconnect:', error)
+    } finally {
+      setIsLoading(false)
     }
-    
-    // Initial fetch
-    fetchNewTokens()
-    
-    // Set up polling every 10 seconds for fresh data
-    const interval = setInterval(fetchNewTokens, 10000)
-    
-    return () => {
-      clearInterval(interval)
-    }
-  }, [])
-
+  }
 
   return (
     <div className="w-full">
-      {/* Tokens Table */}
-      <div className="space-y-4">
-        <div className="bg-black border border-gray-800 rounded-lg overflow-hidden">
-          {/* Table Header - Fixed */}
-          <div className="grid grid-cols-7 gap-4 px-4 py-3 bg-gray-900 border-b border-gray-800 sticky top-0 z-10">
-            <div className="text-xs font-medium text-gray-400 uppercase tracking-wide">Pair info</div>
-            <div className="text-xs font-medium text-gray-400 uppercase tracking-wide">Market Cap</div>
-            <div className="text-xs font-medium text-gray-400 uppercase tracking-wide">Liquidity</div>
-            <div className="text-xs font-medium text-gray-400 uppercase tracking-wide">Price</div>
-            <div className="text-xs font-medium text-gray-400 uppercase tracking-wide">TXNS</div>
-            <div className="text-xs font-medium text-gray-400 uppercase tracking-wide">Token info</div>
-            <div className="text-xs font-medium text-gray-400 uppercase tracking-wide">Action</div>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-lg flex items-center justify-center shadow-lg">
+            <Zap className="w-5 h-5 text-white" />
           </div>
+          <div>
+            <h2 className="text-2xl font-bold text-white">NEWLY CREATED</h2>
+            <p className="text-sm text-gray-400">Fresh pump.fun token launches</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg">
+            <div className="w-4 h-4 border-2 border-gray-400 rounded"></div>
+          </Button>
+          <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg">
+            <div className="w-4 h-4 flex flex-col gap-1">
+              <div className="w-full h-0.5 bg-gray-400 rounded"></div>
+              <div className="w-full h-0.5 bg-gray-400 rounded"></div>
+              <div className="w-full h-0.5 bg-gray-400 rounded"></div>
+            </div>
+          </Button>
+        </div>
+      </div>
 
-          {/* Scrollable Table Body */}
-          <div className="max-h-[60vh] overflow-y-auto">
-            <div className="divide-y divide-gray-800">
-              {tokens.slice(0, 25).map((token) => (
-                <div 
-                  key={token.tokenAddress || token.mint} 
-                  className="grid grid-cols-7 gap-4 px-4 py-3 hover:bg-gray-900/50 transition-colors cursor-pointer"
-                  onClick={() => {
-                    const tokenAddress = token.tokenAddress || token.mint
-                    try {
-                      window.location.href = `/trade/${tokenAddress}`
-                    } catch (error) {
-                      console.error('Navigation failed:', error)
-                    }
-                  }}
-                >
-                  {/* Pair info */}
-                  <div className="flex items-center gap-3">
-                    <div className="relative">
-                      <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-700 flex items-center justify-center">
-                        {(() => {
-                          const tokenAddress = token.tokenAddress || token.mint
-                          const metadata = tokenAddress ? tokenMetadata.get(tokenAddress) : null
-                          const logoUrl = metadata?.logo || token.logo
-                          
-                          return logoUrl ? (
+      {/* Controls Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4 bg-[#111111] border border-[#282828] rounded-xl p-4">
+        {/* Status */}
+        <div className="flex items-center gap-3">
+          <Badge variant={isConnected ? "default" : "secondary"} className={`flex items-center gap-1 ${isConnected ? 'bg-green-500' : 'bg-red-500'} shadow-lg`}>
+            {isConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+            {isConnected ? "LIVE" : "OFFLINE"}
+          </Badge>
+          <span className="text-sm text-gray-400 font-medium">
+            {tokens.length} tokens
+          </span>
+        </div>
+
+        {/* Refresh Button */}
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={reconnect} 
+            className="border-[#282828] text-gray-400 hover:text-white hover:border-yellow-500 hover:bg-gray-800"
+            disabled={isLoading}
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+            Reconnect
+          </Button>
+        </div>
+      </div>
+
+      {/* Tokens Table */}
+      {isLoading ? (
+        <div className="flex items-center justify-center h-64 bg-[#111111] border border-[#282828] rounded-xl">
+          <div className="flex flex-col items-center gap-3 text-gray-400">
+            <RefreshCw className="w-8 h-8 animate-spin text-yellow-500" />
+            <span className="text-lg font-medium">Loading new tokens...</span>
+            <span className="text-sm">Fetching fresh pump.fun launches</span>
+          </div>
+        </div>
+      ) : tokens.length === 0 ? (
+        <div className="text-center py-16 bg-[#111111] border border-[#282828] rounded-xl">
+          <div className="w-16 h-16 mx-auto mb-4 text-gray-500">
+            <Zap className="w-16 h-16" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-400 mb-2">Waiting for New Tokens</h3>
+          <p className="text-gray-500 mb-4">New pump.fun tokens will appear here as they launch</p>
+          <p className="text-xs text-gray-600">Connected to PumpPortal WebSocket</p>
+        </div>
+      ) : (
+        <div className="bg-[#111111] border border-[#282828] rounded-xl overflow-hidden shadow-lg">
+          <div className="p-4 border-b border-[#282828] bg-gradient-to-r from-yellow-500/10 to-orange-500/10">
+            <h2 className="text-white text-lg font-semibold">New Tokens</h2>
+            <p className="text-sm text-gray-400">Fresh pump.fun token launches</p>
+          </div>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[800px]">
+              <thead className="bg-[#0a0a0a]">
+                <tr className="border-b border-[#282828]">
+                  <th className="text-left py-4 px-6 text-gray-400 text-xs font-semibold uppercase tracking-wider">Pair info</th>
+                  <th className="text-left py-4 px-6 text-gray-400 text-xs font-semibold uppercase tracking-wider">Market Cap</th>
+                  <th className="text-left py-4 px-6 text-gray-400 text-xs font-semibold uppercase tracking-wider">Liquidity</th>
+                  <th className="text-left py-4 px-6 text-gray-400 text-xs font-semibold uppercase tracking-wider">Volume</th>
+                  <th className="text-left py-4 px-6 text-gray-400 text-xs font-semibold uppercase tracking-wider">Txns</th>
+                  <th className="text-left py-4 px-6 text-gray-400 text-xs font-semibold uppercase tracking-wider">Token info</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tokens.slice(0, 10).map((token) => (
+                  <tr key={token.mint} className="border-b border-[#282828] hover:bg-gradient-to-r hover:from-yellow-500/5 hover:to-orange-500/5 transition-all duration-200 group">
+                    {/* Pair info */}
+                    <td className="py-4 px-6">
+                      <div className="flex items-center gap-4">
+                        <div className="relative flex-shrink-0">
+                          {token.image ? (
                             <img 
-                              src={logoUrl} 
-                              alt={token.symbol}
-                              className="w-full h-full object-cover"
+                              src={token.image} 
+                              alt={token.name} 
+                              className="w-10 h-10 rounded-lg object-cover ring-2 ring-gray-700 group-hover:ring-yellow-500/50 transition-all"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement
                                 target.style.display = 'none'
+                                target.nextElementSibling?.classList.remove('hidden')
                               }}
                             />
-                          ) : (
-                            <div className="w-full h-full bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center text-white text-sm font-bold">
-                              {token.symbol.charAt(0).toUpperCase()}
+                          ) : null}
+                          <div className={`w-10 h-10 rounded-lg bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center text-white text-sm font-bold ring-2 ring-gray-700 group-hover:ring-yellow-500/50 transition-all ${token.image ? 'hidden' : ''}`}>
+                            {token.symbol.charAt(0)}
+                          </div>
+                          <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center shadow-lg">
+                            <span className="text-white text-[10px] font-bold">✕</span>
+                          </div>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-white font-semibold text-sm">{token.symbol}</span>
+                            <span className="text-gray-400 text-xs truncate">{token.name}</span>
+                          </div>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-blue-400 text-xs font-medium">{formatTimeAgo(token.timeAgo)}</span>
+                            <div className="flex items-center gap-1">
+                              <Link className="w-3 h-3 text-gray-500 hover:text-yellow-400 transition-colors" />
+                              <Eye className="w-3 h-3 text-gray-500 hover:text-yellow-400 transition-colors" />
+                              <Search className="w-3 h-3 text-gray-500 hover:text-yellow-400 transition-colors" />
+                              <Star className="w-3 h-3 text-gray-500 hover:text-yellow-400 transition-colors" />
                             </div>
-                          )
-                        })()}
+                          </div>
+                        </div>
                       </div>
-                      {/* Platform logo badge */}
-                      <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full overflow-hidden border border-white/20">
-                        {token.source === 'pumpfun' ? (
-                          <img 
-                            src="/icons/platforms/pump.fun-logo.svg" 
-                            alt="Pump.fun" 
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement
-                              target.style.display = 'none'
-                              target.parentElement!.innerHTML = '<div class="w-full h-full bg-orange-500 rounded-full"></div>'
-                            }}
-                          />
-                        ) : token.source === 'bonk' ? (
-                          <img 
-                            src="/icons/platforms/bonk.fun-logo.svg" 
-                            alt="BONK.fun" 
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement
-                              target.style.display = 'none'
-                              target.parentElement!.innerHTML = '<div class="w-full h-full bg-blue-500 rounded-full"></div>'
-                            }}
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-green-500 rounded-full"></div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-white text-sm truncate">{token.symbol}</div>
-                      <div className="text-xs text-gray-400 truncate">{token.name}</div>
-                      <div className="flex items-center gap-1 mt-1">
-                        <span className="text-xs text-gray-500">{formatTimeAgo(getTimeAgo(token.createdAt))}</span>
-                      </div>
-                  {/* Social/Web links below token info */}
-                  <div className="flex items-center gap-1 mt-2">
-                    {(() => {
-                      const tokenAddress = token.tokenAddress || token.mint
-                      
-                      return (
-                        <>
-                          {/* Twitter/X - only show if token has twitter link */}
-                          {token.twitter && (
-                            <a href={token.twitter} target="_blank" rel="noopener noreferrer" className="w-3 h-3 text-white hover:text-gray-300">
-                              <img src="/icons/social/x-logo.svg" alt="Twitter" className="w-full h-full object-cover brightness-0 invert" />
-                            </a>
-                          )}
-                          {/* Telegram - only show if token has telegram link */}
-                          {token.telegram && (
-                            <a href={token.telegram} target="_blank" rel="noopener noreferrer" className="w-3 h-3 text-white hover:text-gray-300">
-                              <img src="/icons/social/telegram-logo.svg" alt="Telegram" className="w-full h-full object-cover brightness-0 invert" />
-                            </a>
-                          )}
-                          {/* Website - only show if token has website link */}
-                          {token.website && (
-                            <a href={token.website} target="_blank" rel="noopener noreferrer" className="w-3 h-3 text-white hover:text-gray-300">
-                              <img src="/icons/ui/web-icon.svg" alt="Website" className="w-full h-full object-cover brightness-0 invert" />
-                            </a>
-                          )}
-                          {/* Solscan - always show as it's blockchain data */}
-                          <a href={`https://solscan.io/token/${tokenAddress}`} target="_blank" rel="noopener noreferrer" className="w-3 h-3 text-white hover:text-gray-300">
-                            <img src="/icons/ui/search-icon.svg" alt="Solscan" className="w-full h-full object-cover brightness-0 invert" />
-                          </a>
-                        </>
-                      )
-                    })()}
-                  </div>
-                    </div>
-                  </div>
-
-                  {/* Market Cap */}
-                  <div className="flex flex-col justify-center">
-                    <div className="text-white font-medium text-sm">
-                      ${formatNumber(parseFloat(token.fullyDilutedValuation) || 0)}
-                    </div>
-                    <div className="text-xs text-green-400">
-                      +0.0%
-                    </div>
-                  </div>
-
-                  {/* Liquidity */}
-                  <div className="flex items-center">
-                    <div className="text-white font-medium text-sm">
-                      ${formatNumber(parseFloat(token.liquidity) || 0)}
-                    </div>
-                  </div>
-
-                  {/* Price */}
-                  <div className="flex items-center">
-                    <div className="text-white font-medium text-sm">
-                      ${formatNumber(parseFloat(token.priceUsd) || 0)}
-                    </div>
-                  </div>
-
-                  {/* TXNS */}
-                  <div className="flex flex-col justify-center">
-                    <div className="text-white font-medium text-sm">
-                      {formatNumber(token.transactions || 0)}
-                    </div>
-                    <div className="flex items-center gap-1 text-xs">
-                      <span className="text-green-400">{token.transactions || 0}</span>
-                      <span className="text-gray-400">/</span>
-                      <span className="text-red-400">0</span>
-                    </div>
-                  </div>
-
-                  {/* Token info */}
-                  <div className="flex flex-col justify-center">
-                    {/* Top 10 holders percentage */}
-                    <div className="flex items-center gap-1 text-xs mb-2">
-                      <div className="w-3 h-3 rounded-full flex items-center justify-center overflow-hidden">
-                        <img 
-                          src="/icons/ui/top10H-icon.svg" 
-                          alt="Top 10 Holders" 
-                          className="w-full h-full object-cover"
-                          style={{ filter: 'brightness(0) saturate(100%) invert(100%)' }}
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement
-                            target.style.display = 'none'
-                            target.parentElement!.innerHTML = '<div class="w-full h-full bg-blue-500 rounded-full flex items-center justify-center"><span class="text-xs text-white">👤</span></div>'
-                          }}
-                        />
-                      </div>
-                      <span className="text-white">+{Math.floor(Math.random() * 10) + 1}%</span>
-                    </div>
+                    </td>
                     
-                    {/* Dex paid status */}
-                    <div className="flex items-center gap-1 text-xs mb-2">
-                      <div className="w-3 h-3 rounded-full flex items-center justify-center overflow-hidden">
-                        <img 
-                          src="/icons/platforms/dexscreener-logo.svg" 
-                          alt="DexScreener" 
-                          className="w-full h-full object-cover"
-                          style={{ 
-                            filter: dexPaidStatus.get(token.tokenAddress || token.mint || '') 
-                              ? 'brightness(0) saturate(100%) invert(48%) sepia(79%) saturate(2476%) hue-rotate(86deg) brightness(118%) contrast(119%)' // Green for paid
-                              : 'brightness(0) saturate(100%) invert(27%) sepia(51%) saturate(2878%) hue-rotate(346deg) brightness(104%) contrast(97%)' // Red for unpaid
-                          }}
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement
-                            target.style.display = 'none'
-                            const isPaid = dexPaidStatus.get(token.tokenAddress || token.mint || '') || false
-                            target.parentElement!.innerHTML = `<div class="w-full h-full ${isPaid ? 'bg-green-500' : 'bg-red-500'} rounded-full flex items-center justify-center"><span class="text-xs text-white">D</span></div>`
-                          }}
-                        />
+                    {/* Market Cap */}
+                    <td className="py-4 px-6">
+                      <div>
+                        <div className="text-white font-semibold text-sm">${formatNumber(token.mcUsd)}</div>
+                        <div className="text-xs text-green-400 font-medium">0.0%</div>
                       </div>
-                      <span className={dexPaidStatus.get(token.tokenAddress || token.mint || '') ? "text-green-400" : "text-red-400"}>
-                        {dexPaidStatus.get(token.tokenAddress || token.mint || '') ? "Paid" : "Unpaid"}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Action */}
-                  <div className="flex items-center">
-                    <Button
-                      size="sm"
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 text-xs flex items-center gap-1"
-                      onClick={() => handleBuy(token)}
-                    >
-                      <Zap className="w-3 h-3" />
-                      5.00
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
+                    </td>
+                    
+                    {/* Liquidity */}
+                    <td className="py-4 px-6">
+                      <div className="text-white font-semibold text-sm">${formatNumber(token.mcUsd * 0.5)}</div>
+                    </td>
+                    
+                    {/* Volume */}
+                    <td className="py-4 px-6">
+                      <div className="text-white font-semibold text-sm">${formatNumber(token.volume24h)}</div>
+                    </td>
+                    
+                    {/* Transactions */}
+                    <td className="py-4 px-6">
+                      <div>
+                        <div className="text-white font-semibold text-sm">{token.transactions}</div>
+                        <div className="text-xs flex items-center gap-1">
+                          <span className="text-green-400 font-medium">{token.transactions}</span>
+                          <span className="text-gray-500">/</span>
+                          <span className="text-red-400 font-medium">0</span>
+                        </div>
+                      </div>
+                    </td>
+                    
+                    {/* Token info */}
+                    <td className="py-4 px-6">
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1">
+                          <Users className="w-4 h-4 text-gray-400" />
+                          <span className="text-white text-xs font-medium">{token.holders}%</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Shield className="w-4 h-4 text-red-400" />
+                          <span className="text-white text-xs font-medium">Unpaid</span>
+                        </div>
+                        <Button
+                          size="sm"
+                          className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white px-3 py-1 text-xs h-7 shadow-lg"
+                          onClick={() => handleBuy(token)}
+                        >
+                          <Zap className="w-3 h-3 mr-1" />
+                          Buy
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

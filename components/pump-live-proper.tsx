@@ -16,38 +16,13 @@ import {
   Users,
   Activity
 } from "lucide-react"
-import { useRouter } from "next/navigation"
-// Define LiveToken interface locally since we're now using Moralis
-interface LiveToken {
-  tokenAddress: string
-  symbol: string
-  name: string
-  logo?: string
-  decimals: string
-  priceNative: string
-  priceUsd: string
-  liquidity: string
-  fullyDilutedValuation: string
-  createdAt: string
-  // Additional fields for compatibility
-  mint?: string
-  image?: string
-  mcUsd?: number
-  volume24h?: number
-  transactions?: number
-  holders?: number
-  timeAgo?: number
-  risk?: 'low' | 'med' | 'high'
-  isPaid?: boolean
-  age?: number
-}
+import { LiveToken } from "@/lib/services/pumpportal-live"
 
 export function PumpLiveProper() {
   const [tokens, setTokens] = useState<LiveToken[]>([])
   const [isConnected, setIsConnected] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [sortBy, setSortBy] = useState<'time' | 'mc' | 'volume'>('time')
-  const router = useRouter()
 
   useEffect(() => {
     const fetchLiveTokens = async () => {
@@ -73,10 +48,7 @@ export function PumpLiveProper() {
     return () => clearInterval(interval)
   }, [])
 
-  const formatNumber = (num: number | undefined) => {
-    if (num === undefined || num === null || isNaN(num)) {
-      return '0.00'
-    }
+  const formatNumber = (num: number) => {
     if (num >= 1000000) {
       return (num / 1000000).toFixed(1) + 'M'
     } else if (num >= 1000) {
@@ -85,19 +57,13 @@ export function PumpLiveProper() {
     return num.toFixed(2)
   }
 
-  const formatTimeAgo = (seconds: number | undefined) => {
-    if (seconds === undefined || seconds === null || isNaN(seconds)) {
-      return '0s ago'
-    }
+  const formatTimeAgo = (seconds: number) => {
     if (seconds < 60) return `${seconds}s ago`
     if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`
     return `${Math.floor(seconds / 3600)}h ago`
   }
 
-  const getChangeColor = (change: number | undefined) => {
-    if (change === undefined || change === null || isNaN(change)) {
-      return "text-gray-400"
-    }
+  const getChangeColor = (change: number) => {
     if (change > 0) return "text-green-400"
     if (change < 0) return "text-red-400"
     return "text-gray-400"
@@ -106,17 +72,17 @@ export function PumpLiveProper() {
   const sortedTokens = [...tokens].sort((a, b) => {
     switch (sortBy) {
       case 'mc':
-        return (parseFloat(b.fullyDilutedValuation) || 0) - (parseFloat(a.fullyDilutedValuation) || 0)
+        return b.mcUsd - a.mcUsd
       case 'volume':
-        return (parseFloat(b.liquidity) || 0) - (parseFloat(a.liquidity) || 0)
+        return b.volume24h - a.volume24h
       case 'time':
       default:
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        return b.timestamp - a.timestamp
     }
   })
 
   const handleBuy = (token: LiveToken) => {
-    console.log(`Buying ${token.symbol} (${token.tokenAddress})`)
+    console.log(`Buying ${token.symbol} (${token.mint})`)
     // TODO: Integrate with Solana wallet adapter
   }
 
@@ -197,31 +163,20 @@ export function PumpLiveProper() {
           <Zap className="w-12 h-12 mx-auto mb-4 text-gray-600" />
           <p>Waiting for live pumps...</p>
           <p className="text-sm">New pump.fun tokens will appear here as they launch</p>
-          <p className="text-xs mt-2 text-gray-500">Connected to Moralis API</p>
+          <p className="text-xs mt-2 text-gray-500">Connected to PumpPortal WebSocket</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {sortedTokens.map((token) => (
-            <Card 
-              key={token.mint} 
-              className="bg-[#0b0d0e] border-zinc-800 hover:border-yellow-500/50 transition-colors group cursor-pointer"
-              onClick={() => {
-                const tokenAddress = token.tokenAddress || token.mint || ''
-                try {
-                  window.location.href = `/trade/${tokenAddress}`
-                } catch (error) {
-                  console.error('Navigation failed:', error)
-                }
-              }}
-            >
+            <Card key={token.mint} className="bg-[#0b0d0e] border-zinc-800 hover:border-yellow-500/50 transition-colors group">
               <CardContent className="p-4">
                 {/* Token Header */}
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
                     <div className="relative flex-shrink-0">
-                      {token.logo ? (
+                      {token.image ? (
                         <img 
-                          src={token.logo} 
+                          src={token.image} 
                           alt={token.symbol}
                           className="w-12 h-12 rounded-full object-cover"
                           onError={(e) => {
@@ -230,7 +185,7 @@ export function PumpLiveProper() {
                           }}
                         />
                       ) : null}
-                      <div className={`w-12 h-12 rounded-full bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center text-black font-bold text-lg ${token.logo ? 'hidden' : ''}`}>
+                      <div className={`w-12 h-12 rounded-full bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center text-black font-bold text-lg ${token.image ? 'hidden' : ''}`}>
                         {token.symbol.charAt(0)}
                       </div>
                       {token.isPaid && (
@@ -251,7 +206,7 @@ export function PumpLiveProper() {
                     </div>
                   </div>
                   
-                  <ExternalLink className="w-4 h-4 text-white group-hover:text-yellow-500 transition-colors" />
+                  <ExternalLink className="w-4 h-4 text-gray-400 group-hover:text-yellow-500 transition-colors" />
                 </div>
 
                 {/* Market Data */}
@@ -259,19 +214,19 @@ export function PumpLiveProper() {
                   <div className="flex items-center justify-between">
                     <span className="text-gray-400 text-sm">Market Cap</span>
                     <div className="text-right">
-                      <div className="text-white font-medium">${formatNumber(parseFloat(token.fullyDilutedValuation) || 0)}</div>
-                      <div className="text-xs text-gray-400">{formatNumber(parseFloat(token.liquidity) || 0)} SOL</div>
+                      <div className="text-white font-medium">${formatNumber(token.mcUsd)}</div>
+                      <div className="text-xs text-gray-400">{formatNumber(token.mcSol)} SOL</div>
                     </div>
                   </div>
                   
                   <div className="flex items-center justify-between">
                     <span className="text-gray-400 text-sm">Price</span>
-                    <span className="text-white font-medium">${formatNumber(parseFloat(token.priceUsd) || 0)}</span>
+                    <span className="text-white font-medium">${token.price.toFixed(8)}</span>
                   </div>
                   
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-400 text-sm">Liquidity</span>
-                    <span className="text-white font-medium">${formatNumber(parseFloat(token.liquidity) || 0)}</span>
+                    <span className="text-gray-400 text-sm">Volume 24h</span>
+                    <span className="text-white font-medium">${formatNumber(token.volume24h)}</span>
                   </div>
                 </div>
 
@@ -279,15 +234,15 @@ export function PumpLiveProper() {
                 <div className="flex items-center justify-between mb-4 text-xs text-gray-500">
                   <div className="flex items-center gap-1">
                     <Clock className="w-3 h-3" />
-                    <span>{formatTimeAgo(token.timeAgo || 0)}</span>
+                    <span>{formatTimeAgo(token.timeAgo)}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <Activity className="w-3 h-3" />
-                    <span>{formatNumber(token.transactions || 0)} txns</span>
+                    <span>{formatNumber(token.transactions)} txns</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <Users className="w-3 h-3" />
-                    <span>{formatNumber(token.holders || 0)} holders</span>
+                    <span>{formatNumber(token.holders)} holders</span>
                   </div>
                 </div>
 

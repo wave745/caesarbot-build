@@ -13,18 +13,7 @@ import {
   Wifi,
   WifiOff
 } from "lucide-react"
-// Define PumpToken interface locally since we're now using Moralis
-interface PumpToken {
-  mint: string
-  symbol: string
-  name: string
-  image?: string
-  mcUsd: number
-  volume24h: number
-  transactions: number
-  holders: number
-  timeAgo: number
-}
+import { PumpToken, PumpPortalAPI } from "@/lib/services/pumpportal-api"
 
 export function PumpLiveGrid() {
   const [tokens, setTokens] = useState<PumpToken[]>([])
@@ -33,34 +22,39 @@ export function PumpLiveGrid() {
   const [sortBy, setSortBy] = useState<'mc' | 'volume' | 'time'>('time')
 
   useEffect(() => {
-    const fetchTokens = async () => {
-      try {
-        const response = await fetch('/api/moralis/new-tokens')
-        const data = await response.json()
-        
-        if (data.success) {
-          setTokens(data.tokens.slice(0, 50)) // Keep last 50 tokens
-          setIsConnected(true)
-        } else {
-          setTokens([])
-          setIsConnected(false)
-        }
-        setIsLoading(false)
-      } catch (error) {
-        console.error('Error fetching tokens:', error)
-        setTokens([])
-        setIsConnected(false)
-        setIsLoading(false)
-      }
+    // Use the PumpPortalAPI directly instead of SSE for now
+    const pumpAPI = PumpPortalAPI.getInstance()
+    
+    const handleDataUpdate = (tokens: PumpToken[]) => {
+      setTokens(tokens.slice(0, 50)) // Keep last 50 tokens
+      setIsLoading(false)
     }
 
-    // Initial fetch
-    fetchTokens()
+    // Connect to PumpPortal
+    pumpAPI.connect()
+      .then(() => {
+        setIsConnected(true)
+        setIsLoading(false)
+        // Subscribe to updates
+        pumpAPI.subscribe(handleDataUpdate)
+      })
+      .catch((error) => {
+        console.error('Failed to connect to PumpPortal:', error)
+        setIsConnected(false)
+        setIsLoading(false)
+        // Still subscribe to get demo data
+        pumpAPI.subscribe(handleDataUpdate)
+      })
 
-    // Poll every 30 seconds for updates
-    const interval = setInterval(fetchTokens, 30000)
+    // Check connection status periodically
+    const statusInterval = setInterval(() => {
+      setIsConnected(pumpAPI.getConnectionStatus())
+    }, 1000)
 
-    return () => clearInterval(interval)
+    return () => {
+      pumpAPI.unsubscribe(handleDataUpdate)
+      clearInterval(statusInterval)
+    }
   }, [])
 
   const formatNumber = (num: number) => {
@@ -106,28 +100,22 @@ export function PumpLiveGrid() {
     // TODO: Integrate with Solana wallet adapter
   }
 
-  const reconnect = async () => {
+  const reconnect = () => {
     setIsLoading(true)
     setIsConnected(false)
     
-    try {
-      const response = await fetch('/api/moralis/new-tokens')
-      const data = await response.json()
-      
-      if (data.success) {
-        setTokens(data.tokens.slice(0, 50))
+    const pumpAPI = PumpPortalAPI.getInstance()
+    pumpAPI.disconnect()
+    
+    pumpAPI.connect()
+      .then(() => {
         setIsConnected(true)
-      } else {
-        setTokens([])
+        setIsLoading(false)
+      })
+      .catch(() => {
         setIsConnected(false)
-      }
-    } catch (error) {
-      console.error('Error during reconnect:', error)
-      setTokens([])
-      setIsConnected(false)
-    } finally {
-      setIsLoading(false)
-    }
+        setIsLoading(false)
+      })
   }
 
   return (
@@ -234,7 +222,7 @@ export function PumpLiveGrid() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="font-bold text-white text-lg truncate">{token.symbol}</h3>
-                      <ExternalLink className="w-3 h-3 text-white group-hover:text-yellow-500 transition-colors" />
+                      <ExternalLink className="w-3 h-3 text-gray-400 group-hover:text-yellow-500 transition-colors" />
                     </div>
                     <p className="text-gray-400 text-sm truncate">{token.name}</p>
                   </div>
