@@ -52,11 +52,11 @@ export function TrenchesBackground({ children }: TrenchesBackgroundProps) {
   const filterStyle = `brightness(${settings.brightness}%) contrast(${settings.contrast}%) blur(${settings.blur}px)`
 
   return (
-    <div className="relative min-h-screen">
-      {/* Background image layer - fills entire page */}
+    <div className="relative min-h-[calc(100vh-140px)]">
+      {/* Background image layer - fills only the trenches content area */}
       {settings.imageUrl && (
         <div 
-          className="fixed inset-0 z-0 transition-all duration-500 ease-out"
+          className="absolute inset-0 z-0 transition-all duration-500 ease-out"
           style={{
             backgroundImage: `url(${settings.imageUrl})`,
             backgroundSize: "cover",
