@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { TrenchesColumn } from "@/components/trenches-column"
 import { TrendingFilterModal } from "@/components/trending-filter-modal"
+import { BackgroundCustomizerInline } from "@/components/background-customizer-inline"
 import { 
   Search,
   Zap,
@@ -264,6 +265,7 @@ export function TrenchesPage() {
   const [moonItMCTokens, setMoonItMCTokens] = useState<TrenchesToken[]>([])
   const [moonItGraduatedTokens, setMoonItGraduatedTokens] = useState<TrenchesToken[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [showCustomizeModal, setShowCustomizeModal] = useState(false)
   const [filters, setFilters] = useState<FilterState>({
     launchpads: {
       pumpfun: true,
@@ -805,8 +807,14 @@ export function TrenchesPage() {
           <h1 className="text-2xl font-bold">Trenches</h1>
         </div>
         <div className="flex items-center space-x-2">
-          <Button variant="ghost" size="sm" className="hover:bg-gray-800">
-            Customize
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="hover:bg-gray-800"
+            onClick={() => setShowCustomizeModal(!showCustomizeModal)}
+          >
+            <Settings className="w-4 h-4 mr-2 text-yellow-600" />
+            Background
           </Button>
           <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-gray-800">
             <div className="relative">
@@ -816,6 +824,33 @@ export function TrenchesPage() {
           </Button>
         </div>
       </div>
+
+      {/* Background Customize Modal */}
+      {showCustomizeModal && (
+        <div className="mb-6">
+          <Card className="bg-black/40 backdrop-blur-xl border-yellow-600/30 overflow-hidden shadow-2xl">
+            <div className="px-4 py-3 border-b border-yellow-600/20">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Settings className="w-4 h-4 text-yellow-600" />
+                  <span className="text-sm font-medium text-yellow-600">Background Customization</span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0 hover:bg-yellow-600/10"
+                  onClick={() => setShowCustomizeModal(false)}
+                >
+                  <ExternalLink className="w-3 h-3 text-yellow-600" />
+                </Button>
+              </div>
+            </div>
+            <div className="p-4">
+              <BackgroundCustomizerInline onClose={() => setShowCustomizeModal(false)} />
+            </div>
+          </Card>
+        </div>
+      )}
 
 
 
