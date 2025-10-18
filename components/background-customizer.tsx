@@ -25,6 +25,7 @@ export function BackgroundCustomizer() {
   const [settings, setSettings] = useState<BackgroundSettings>(DEFAULT_SETTINGS)
   const [isExpanded, setIsExpanded] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const isFirstRender = useRef(true)
 
   // Load settings from localStorage on mount
   useEffect(() => {
@@ -37,10 +38,15 @@ export function BackgroundCustomizer() {
         console.error("Failed to load background settings:", error)
       }
     }
+    // Mark as no longer first render after loading attempt completes
+    isFirstRender.current = false
   }, [])
 
-  // Save settings to localStorage and dispatch event whenever they change
+  // Save settings to localStorage and dispatch event whenever they change (but skip first render)
   useEffect(() => {
+    // Skip the very first render to allow saved settings to load
+    if (isFirstRender.current) return
+
     localStorage.setItem("caesarx-trenches-bg", JSON.stringify(settings))
     
     // Dispatch custom event to update TrenchesBackground
