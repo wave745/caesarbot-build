@@ -27,7 +27,7 @@ interface BackgroundCustomizerInlineProps {
 export function BackgroundCustomizerInline({ onClose }: BackgroundCustomizerInlineProps) {
   const [settings, setSettings] = useState<BackgroundSettings>(DEFAULT_SETTINGS)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const isFirstRender = useRef(true)
+  const hasLoadedFromStorage = useRef(false)
 
   // Load settings from localStorage on mount
   useEffect(() => {
@@ -40,14 +40,15 @@ export function BackgroundCustomizerInline({ onClose }: BackgroundCustomizerInli
         console.error("Failed to load background settings:", error)
       }
     }
-    // Mark as no longer first render after loading attempt completes
-    isFirstRender.current = false
+    // Mark that we've attempted to load from storage (whether successful or not)
+    hasLoadedFromStorage.current = true
   }, [])
 
-  // Save settings to localStorage and dispatch event whenever they change (but skip first render)
+  // Save settings to localStorage and dispatch event whenever they change
+  // Skip saving until after we've loaded from storage to prevent overwriting saved settings
   useEffect(() => {
-    // Skip the very first render to allow saved settings to load
-    if (isFirstRender.current) return
+    // Don't save until we've loaded from storage first
+    if (!hasLoadedFromStorage.current) return
 
     localStorage.setItem("caesarx-trenches-bg", JSON.stringify(settings))
     
