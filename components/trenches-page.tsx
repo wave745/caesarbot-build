@@ -825,27 +825,28 @@ export function TrenchesPage() {
         </div>
       </div>
 
-      {/* Background Customize Modal */}
+      {/* Background Customize Modal - Floating Overlay */}
       {showCustomizeModal && (
-        <div className="mb-6 flex justify-center">
-          <Card className="bg-transparent border-yellow-600/20 overflow-hidden shadow-lg w-full max-w-2xl">
-            <div className="px-4 py-2 border-b border-yellow-600/20 bg-black/20">
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-20">
+          <div className="absolute inset-0 bg-black/20" onClick={() => setShowCustomizeModal(false)} />
+          <Card className="relative bg-transparent border-yellow-600/20 overflow-hidden shadow-2xl w-full max-w-md mx-4">
+            <div className="px-3 py-2 border-b border-yellow-600/20 bg-black/30 backdrop-blur-sm">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Settings className="w-4 h-4 text-yellow-600" />
-                  <span className="text-sm font-medium text-yellow-600">Background Customization</span>
+                  <Settings className="w-3.5 h-3.5 text-yellow-600" />
+                  <span className="text-xs font-medium text-yellow-600">Background Customization</span>
                 </div>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-6 w-6 p-0 hover:bg-yellow-600/10"
+                  className="h-5 w-5 p-0 hover:bg-yellow-600/10"
                   onClick={() => setShowCustomizeModal(false)}
                 >
                   <ExternalLink className="w-3 h-3 text-yellow-600" />
                 </Button>
               </div>
             </div>
-            <div className="p-4 max-h-[300px] overflow-y-auto bg-black/10 backdrop-blur-sm scrollbar-hide">
+            <div className="p-3 max-h-[250px] overflow-y-auto bg-black/20 backdrop-blur-sm scrollbar-hide">
               <BackgroundCustomizerInline onClose={() => setShowCustomizeModal(false)} />
             </div>
           </Card>
