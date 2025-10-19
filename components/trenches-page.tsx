@@ -827,9 +827,9 @@ export function TrenchesPage() {
 
       {/* Background Customize Modal */}
       {showCustomizeModal && (
-        <div className="mb-6">
-          <Card className="bg-transparent border-yellow-600/20 overflow-hidden shadow-lg">
-            <div className="px-4 py-3 border-b border-yellow-600/20 bg-black/20">
+        <div className="mb-6 flex justify-center">
+          <Card className="bg-transparent border-yellow-600/20 overflow-hidden shadow-lg w-full max-w-2xl">
+            <div className="px-4 py-2 border-b border-yellow-600/20 bg-black/20">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Settings className="w-4 h-4 text-yellow-600" />
@@ -845,7 +845,7 @@ export function TrenchesPage() {
                 </Button>
               </div>
             </div>
-            <div className="p-4 max-h-[400px] overflow-y-auto bg-black/10 backdrop-blur-sm">
+            <div className="p-4 max-h-[300px] overflow-y-auto bg-black/10 backdrop-blur-sm scrollbar-hide">
               <BackgroundCustomizerInline onClose={() => setShowCustomizeModal(false)} />
             </div>
           </Card>
