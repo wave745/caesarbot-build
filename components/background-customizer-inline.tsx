@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { Upload, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -28,6 +28,7 @@ export function BackgroundCustomizerInline({ onClose }: BackgroundCustomizerInli
   const [settings, setSettings] = useState<BackgroundSettings>(DEFAULT_SETTINGS)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const hasLoadedFromStorage = useRef(false)
+  const debounceTimerRef = useRef<NodeJS.Timeout>()
 
   // Load settings from localStorage on mount
   useEffect(() => {
@@ -40,48 +41,129 @@ export function BackgroundCustomizerInline({ onClose }: BackgroundCustomizerInli
         console.error("Failed to load background settings:", error)
       }
     }
-    // Mark that we've attempted to load from storage (whether successful or not)
     hasLoadedFromStorage.current = true
   }, [])
 
-  // Save settings to localStorage and dispatch event whenever they change
-  // Skip saving until after we've loaded from storage to prevent overwriting saved settings
+  // Debounced save to localStorage and dispatch event
   useEffect(() => {
-    // Don't save until we've loaded from storage first
     if (!hasLoadedFromStorage.current) return
 
-    localStorage.setItem("caesarx-trenches-bg", JSON.stringify(settings))
-    
-    // Dispatch custom event to update TrenchesBackground
-    const event = new CustomEvent("trenches-bg-update", { detail: settings })
-    window.dispatchEvent(event)
+    // Clear existing timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current)
+    }
+
+    // Debounce the save operation for 150ms
+    debounceTimerRef.current = setTimeout(() => {
+      localStorage.setItem("caesarx-trenches-bg", JSON.stringify(settings))
+      
+      const event = new CustomEvent("trenches-bg-update", { detail: settings })
+      window.dispatchEvent(event)
+    }, 150)
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current)
+      }
+    }
   }, [settings])
 
-  // Handle image upload
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (file) {
+  // Compress and resize image using Canvas API
+  const compressImage = useCallback((file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image()
       const reader = new FileReader()
+
       reader.onload = (e) => {
-        const imageUrl = e.target?.result as string
-        setSettings((prev) => ({ ...prev, imageUrl }))
+        img.src = e.target?.result as string
       }
+
+      img.onload = () => {
+        // Create canvas for resizing
+        const canvas = document.createElement('canvas')
+        const ctx = canvas.getContext('2d')
+        
+        if (!ctx) {
+          reject(new Error('Could not get canvas context'))
+          return
+        }
+
+        // Calculate new dimensions (max 1920x1080 for performance)
+        const MAX_WIDTH = 1920
+        const MAX_HEIGHT = 1080
+        let width = img.width
+        let height = img.height
+
+        if (width > MAX_WIDTH) {
+          height = (height * MAX_WIDTH) / width
+          width = MAX_WIDTH
+        }
+        
+        if (height > MAX_HEIGHT) {
+          width = (width * MAX_HEIGHT) / height
+          height = MAX_HEIGHT
+        }
+
+        canvas.width = width
+        canvas.height = height
+
+        // Use high-quality image smoothing
+        ctx.imageSmoothingEnabled = true
+        ctx.imageSmoothingQuality = 'high'
+        
+        // Draw resized image
+        ctx.drawImage(img, 0, 0, width, height)
+
+        // Convert to compressed JPEG (quality 0.85)
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85)
+        resolve(compressedDataUrl)
+      }
+
+      img.onerror = () => {
+        reject(new Error('Failed to load image'))
+      }
+
+      reader.onerror = () => {
+        reject(new Error('Failed to read file'))
+      }
+
       reader.readAsDataURL(file)
+    })
+  }, [])
+
+  // Handle image upload with compression
+  const handleImageUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    // Show loading state (could add a loading indicator here)
+    try {
+      const compressedImageUrl = await compressImage(file)
+      setSettings((prev) => ({ ...prev, imageUrl: compressedImageUrl }))
+    } catch (error) {
+      console.error('Failed to process image:', error)
     }
-  }
+  }, [compressImage])
 
   // Handle image removal
-  const handleRemoveImage = () => {
+  const handleRemoveImage = useCallback(() => {
     setSettings((prev) => ({ ...prev, imageUrl: null }))
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
     }
-  }
+  }, [])
 
-  // Handle slider changes
-  const handleSliderChange = (key: keyof BackgroundSettings, value: number) => {
+  // Handle slider changes with immediate UI feedback
+  const handleSliderChange = useCallback((key: keyof BackgroundSettings, value: number) => {
     setSettings((prev) => ({ ...prev, [key]: value }))
-  }
+  }, [])
+
+  const handleReset = useCallback(() => {
+    setSettings(DEFAULT_SETTINGS)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""
+    }
+  }, [])
 
   return (
     <div className="space-y-4 w-full">
@@ -122,6 +204,10 @@ export function BackgroundCustomizerInline({ onClose }: BackgroundCustomizerInli
               src={settings.imageUrl} 
               alt="Background preview" 
               className="w-full h-full object-cover"
+              loading="lazy"
+              style={{
+                willChange: 'auto'
+              }}
             />
           </div>
         )}
@@ -199,12 +285,7 @@ export function BackgroundCustomizerInline({ onClose }: BackgroundCustomizerInli
 
       {/* Reset button */}
       <Button
-        onClick={() => {
-          setSettings(DEFAULT_SETTINGS)
-          if (fileInputRef.current) {
-            fileInputRef.current.value = ""
-          }
-        }}
+        onClick={handleReset}
         size="sm"
         variant="ghost"
         className="w-full text-yellow-600/70 hover:text-yellow-600 hover:bg-yellow-600/10 text-xs"
