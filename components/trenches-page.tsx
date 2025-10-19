@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -555,43 +555,54 @@ export function TrenchesPage() {
     )
   }
 
-  // Helper function to apply filters to tokens
-  const applyFilters = (tokens: TrenchesToken[]) => {
+  // Helper functions - memoized for performance
+  const parseTimeToMinutes = useCallback((timeStr: string): number => {
+    if (timeStr.includes('s')) return 0
+    if (timeStr.includes('m')) return parseInt(timeStr) || 0
+    if (timeStr.includes('h')) return (parseInt(timeStr) || 0) * 60
+    if (timeStr.includes('d')) return (parseInt(timeStr) || 0) * 60 * 24
+    return 0
+  }, [])
+
+  const parseMarketCap = useCallback((mcStr: string): number => {
+    if (!mcStr) return 0
+    const cleanStr = mcStr.replace('$', '').replace(',', '')
+    if (cleanStr.includes('M')) {
+      return parseFloat(cleanStr.replace('M', '')) * 1000000
+    } else if (cleanStr.includes('K')) {
+      return parseFloat(cleanStr.replace('K', '')) * 1000
+    } else {
+      return parseFloat(cleanStr) || 0
+    }
+  }, [])
+
+  // Memoized filter function for better performance
+  const applyFilters = useCallback((tokens: TrenchesToken[]) => {
     return tokens.filter(token => {
-      // Platform filter
       const platformMap = {
         'pump.fun': 'pumpfun',
         'bonk.fun': 'bonk',
         'moon.it': 'moonit'
       }
       const platformKey = platformMap[token.platform] as keyof typeof filters.launchpads
-      if (!filters.launchpads[platformKey]) {
-        return false
-      }
+      if (!filters.launchpads[platformKey]) return false
 
-      // Social filters
       if (filters.atLeastOneSocial && !token.hasTwitter && !token.hasTelegram && !token.hasWebsite) {
         return false
       }
 
-      // Keyword filters
       if (filters.includeKeywords) {
         const includeKeywords = filters.includeKeywords.toLowerCase().split(',').map(k => k.trim())
         const tokenText = `${token.name} ${token.symbol} ${token.tag}`.toLowerCase()
-        if (!includeKeywords.some(keyword => tokenText.includes(keyword))) {
-          return false
-        }
+        if (!includeKeywords.some(keyword => tokenText.includes(keyword))) return false
       }
 
       if (filters.excludeKeywords) {
         const excludeKeywords = filters.excludeKeywords.toLowerCase().split(',').map(k => k.trim())
         const tokenText = `${token.name} ${token.symbol} ${token.tag}`.toLowerCase()
-        if (excludeKeywords.some(keyword => tokenText.includes(keyword))) {
-          return false
-        }
+        if (excludeKeywords.some(keyword => tokenText.includes(keyword))) return false
       }
 
-      // Range filters
       const marketCapValue = parseMarketCap(token.mc)
       if (filters.marketCap.min && marketCapValue < parseFloat(filters.marketCap.min)) return false
       if (filters.marketCap.max && marketCapValue > parseFloat(filters.marketCap.max)) return false
@@ -614,103 +625,67 @@ export function TrenchesPage() {
 
       return true
     })
-  }
+  }, [filters, parseMarketCap])
 
-  const getTokensByCategory = (category: 'new' | 'about-to-graduate' | 'graduated') => {
-    // Helper function to filter tokens not older than 3 days
-    const filterRecentTokens = (tokens: TrenchesToken[]) => {
-      const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000) // 3 days in milliseconds
-      return tokens.filter(token => {
-        const tokenTime = parseTimeToMinutes(token.age)
-        const tokenTimestamp = Date.now() - (tokenTime * 60 * 1000) // Convert minutes to milliseconds
-        return tokenTimestamp >= threeDaysAgo
+  // Memoized token processing for each category
+  const newTokens = useMemo(() => {
+    const combinedTokens = [...realTokens, ...bonkFunTokens, ...moonItTokens]
+    const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000)
+    const recentTokens = combinedTokens.filter(token => {
+      const tokenTime = parseTimeToMinutes(token.age)
+      const tokenTimestamp = Date.now() - (tokenTime * 60 * 1000)
+      return tokenTimestamp >= threeDaysAgo
+    })
+    const filteredTokens = applyFilters(recentTokens)
+    return filteredTokens
+      .sort((a, b) => {
+        const aTime = parseTimeToMinutes(a.age)
+        const bTime = parseTimeToMinutes(b.age)
+        return aTime - bTime
       })
-    }
+      .slice(0, 30)
+  }, [realTokens, bonkFunTokens, moonItTokens, applyFilters, parseTimeToMinutes])
 
-    if (category === 'new') {
-      // Combine Pump.fun, bonk.fun, and moon.it tokens for the new column
-      const combinedTokens = [...realTokens, ...bonkFunTokens, ...moonItTokens]
-      // Filter tokens not older than 3 days
-      const recentTokens = filterRecentTokens(combinedTokens)
-      // Apply user filters
-      const filteredTokens = applyFilters(recentTokens)
-      // Sort by creation time (newest first) and limit to 30 tokens
-      return filteredTokens
-        .sort((a, b) => {
-          // Sort by age (newest first) - assuming age is in format like "2m", "1h", etc.
-          const aTime = parseTimeToMinutes(a.age)
-          const bTime = parseTimeToMinutes(b.age)
-          return aTime - bTime
-        })
-        .slice(0, 30)
-    }
-    
-    if (category === 'about-to-graduate') {
-      // Combine Pump.fun, bonk.fun, and moon.it MC tokens for the % MC column
-      const combinedMCTokens = [...mcTokens, ...bonkFunMCTokens, ...moonItMCTokens]
-      // Filter tokens not older than 3 days
-      const recentMCTokens = filterRecentTokens(combinedMCTokens)
-      // Apply user filters
-      const filteredMCTokens = applyFilters(recentMCTokens)
-      // Sort by market cap (highest first) and limit to 30 tokens
-      return filteredMCTokens
-        .sort((a, b) => {
-          // Parse market cap for sorting
-          const aMC = parseMarketCap(a.mc)
-          const bMC = parseMarketCap(b.mc)
-          return bMC - aMC
-        })
-        .slice(0, 30)
-    }
-    
-    if (category === 'graduated') {
-      // Combine Pump.fun, bonk.fun, and moon.it graduated tokens for the Migrated column
-      const combinedGraduatedTokens = [...graduatedTokens, ...bonkFunGraduatedTokens, ...moonItGraduatedTokens]
-      // Filter tokens not older than 3 days
-      const recentGraduatedTokens = filterRecentTokens(combinedGraduatedTokens)
-      // Apply user filters
-      const filteredGraduatedTokens = applyFilters(recentGraduatedTokens)
-      // Sort by creation time (newest first) and limit to 30 tokens
-      return filteredGraduatedTokens
-        .sort((a, b) => {
-          // Sort by age (newest first)
-          const aTime = parseTimeToMinutes(a.age)
-          const bTime = parseTimeToMinutes(b.age)
-          return aTime - bTime
-        })
-        .slice(0, 30)
-    }
-    
-    // Return empty arrays for other categories - no mock data
-    return []
-  }
+  const mcCategoryTokens = useMemo(() => {
+    const combinedMCTokens = [...mcTokens, ...bonkFunMCTokens, ...moonItMCTokens]
+    const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000)
+    const recentMCTokens = combinedMCTokens.filter(token => {
+      const tokenTime = parseTimeToMinutes(token.age)
+      const tokenTimestamp = Date.now() - (tokenTime * 60 * 1000)
+      return tokenTimestamp >= threeDaysAgo
+    })
+    const filteredMCTokens = applyFilters(recentMCTokens)
+    return filteredMCTokens
+      .sort((a, b) => {
+        const aMC = parseMarketCap(a.mc)
+        const bMC = parseMarketCap(b.mc)
+        return bMC - aMC
+      })
+      .slice(0, 30)
+  }, [mcTokens, bonkFunMCTokens, moonItMCTokens, applyFilters, parseTimeToMinutes, parseMarketCap])
 
-  // Helper function to parse time strings to minutes for sorting
-  const parseTimeToMinutes = (timeStr: string): number => {
-    if (timeStr.includes('s')) return 0 // seconds = 0 minutes
-    if (timeStr.includes('m')) return parseInt(timeStr) || 0
-    if (timeStr.includes('h')) return (parseInt(timeStr) || 0) * 60
-    if (timeStr.includes('d')) return (parseInt(timeStr) || 0) * 60 * 24
-    return 0
-  }
+  const graduatedCategoryTokens = useMemo(() => {
+    const combinedGraduatedTokens = [...graduatedTokens, ...bonkFunGraduatedTokens, ...moonItGraduatedTokens]
+    const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000)
+    const recentGraduatedTokens = combinedGraduatedTokens.filter(token => {
+      const tokenTime = parseTimeToMinutes(token.age)
+      const tokenTimestamp = Date.now() - (tokenTime * 60 * 1000)
+      return tokenTimestamp >= threeDaysAgo
+    })
+    const filteredGraduatedTokens = applyFilters(recentGraduatedTokens)
+    return filteredGraduatedTokens
+      .sort((a, b) => {
+        const aTime = parseTimeToMinutes(a.age)
+        const bTime = parseTimeToMinutes(b.age)
+        return aTime - bTime
+      })
+      .slice(0, 30)
+  }, [graduatedTokens, bonkFunGraduatedTokens, moonItGraduatedTokens, applyFilters, parseTimeToMinutes])
 
-  // Helper function to parse market cap strings to numbers for sorting
-  const parseMarketCap = (mcStr: string): number => {
-    if (!mcStr) return 0
-    const cleanStr = mcStr.replace('$', '').replace(',', '')
-    if (cleanStr.includes('M')) {
-      return parseFloat(cleanStr.replace('M', '')) * 1000000
-    } else if (cleanStr.includes('K')) {
-      return parseFloat(cleanStr.replace('K', '')) * 1000
-    } else {
-      return parseFloat(cleanStr) || 0
-    }
-  }
-
-  // Filter handler
-  const handleFiltersChange = (newFilters: FilterState) => {
+  // Memoized filter handler
+  const handleFiltersChange = useCallback((newFilters: FilterState) => {
     setFilters(newFilters)
-  }
+  }, [])
 
   const TokenCard = ({ token }: { token: TrenchesToken }) => (
     <Card className="bg-gray-800/30 border border-gray-600 hover:bg-gray-700/30 transition-colors cursor-pointer">
@@ -827,9 +802,9 @@ export function TrenchesPage() {
 
       {/* Background Customize Modal - Floating Overlay */}
       {showCustomizeModal && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-20">
-          <div className="absolute inset-0 bg-black/20" onClick={() => setShowCustomizeModal(false)} />
-          <Card className="relative bg-transparent border-yellow-600/20 overflow-hidden shadow-2xl w-full max-w-md mx-4">
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 animate-in fade-in duration-200">
+          <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px]" onClick={() => setShowCustomizeModal(false)} />
+          <Card className="relative bg-transparent border-yellow-600/20 overflow-hidden shadow-2xl w-full max-w-md mx-4 animate-in slide-in-from-top-4 duration-300">
             <div className="px-3 py-2 border-b border-yellow-600/20 bg-black/30 backdrop-blur-sm">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -860,7 +835,7 @@ export function TrenchesPage() {
         <div className="px-1">
           <TrenchesColumn 
             title="New" 
-            tokens={getTokensByCategory('new')} 
+            tokens={newTokens} 
             onFiltersChange={handleFiltersChange}
             initialFilters={filters}
           />
@@ -868,7 +843,7 @@ export function TrenchesPage() {
         <div>
           <TrenchesColumn 
             title="% MC" 
-            tokens={getTokensByCategory('about-to-graduate')} 
+            tokens={mcCategoryTokens} 
             onFiltersChange={handleFiltersChange}
             initialFilters={filters}
           />
@@ -876,7 +851,7 @@ export function TrenchesPage() {
         <div className="px-1">
           <TrenchesColumn 
             title="Migrated" 
-            tokens={getTokensByCategory('graduated')} 
+            tokens={graduatedCategoryTokens} 
             onFiltersChange={handleFiltersChange}
             initialFilters={filters}
           />

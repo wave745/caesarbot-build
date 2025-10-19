@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, memo } from "react"
 import { Button } from "@/components/ui/button"
 import { 
   Copy,
@@ -295,7 +295,8 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
         className="flex flex-col divide-y divide-zinc-800 overflow-y-auto max-h-[85vh] custom-scrollbar pr-2"
         style={{
           scrollbarWidth: 'thin',
-          scrollbarColor: '#18181b #09090b'
+          scrollbarColor: '#18181b #09090b',
+          willChange: 'scroll-position'
         }}
       >
         {loading ? (
@@ -321,7 +322,7 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
   )
 }
 
-function TrenchesTokenCard({ token, solAmount }: { token: TrenchesToken; solAmount: string }) {
+const TrenchesTokenCard = memo(function TrenchesTokenCard({ token, solAmount }: { token: TrenchesToken; solAmount: string }) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'migrated': return 'border-red-500/60'
@@ -547,4 +548,4 @@ function TrenchesTokenCard({ token, solAmount }: { token: TrenchesToken; solAmou
       </div>
     </div>
   )
-}
+})
