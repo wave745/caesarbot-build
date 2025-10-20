@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { TrenchesColumn } from "@/components/trenches-column"
 import { TrendingFilterModal } from "@/components/trending-filter-modal"
-import { BackgroundCustomizerInline } from "@/components/background-customizer-inline"
 import { 
   Search,
   Zap,
@@ -265,7 +264,6 @@ export function TrenchesPage() {
   const [moonItMCTokens, setMoonItMCTokens] = useState<TrenchesToken[]>([])
   const [moonItGraduatedTokens, setMoonItGraduatedTokens] = useState<TrenchesToken[]>([])
   const [error, setError] = useState<string | null>(null)
-  const [showCustomizeModal, setShowCustomizeModal] = useState(false)
   const [filters, setFilters] = useState<FilterState>({
     launchpads: {
       pumpfun: true,
@@ -775,48 +773,10 @@ export function TrenchesPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center space-x-4">
-          <h1 className="text-2xl font-bold">Trenches</h1>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="hover:bg-gray-800"
-            onClick={() => setShowCustomizeModal(!showCustomizeModal)}
-          >
-            <Settings className="w-4 h-4 mr-2 text-yellow-600" />
-            Background
-          </Button>
+          <h1 className="text-2xl font-bold">Echo</h1>
         </div>
       </div>
 
-      {/* Background Customize Modal - Floating Overlay */}
-      {showCustomizeModal && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 animate-in fade-in duration-200">
-          <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px]" onClick={() => setShowCustomizeModal(false)} />
-          <Card className="relative bg-transparent border-yellow-600/20 overflow-hidden shadow-2xl w-full max-w-md mx-4 animate-in slide-in-from-top-4 duration-300">
-            <div className="px-3 py-2 border-b border-yellow-600/20 bg-black/30 backdrop-blur-sm">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Settings className="w-3.5 h-3.5 text-yellow-600" />
-                  <span className="text-xs font-medium text-yellow-600">Background Customization</span>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-5 w-5 p-0 hover:bg-yellow-600/10"
-                  onClick={() => setShowCustomizeModal(false)}
-                >
-                  <ExternalLink className="w-3 h-3 text-yellow-600" />
-                </Button>
-              </div>
-            </div>
-            <div className="p-3 max-h-[250px] overflow-y-auto bg-black/20 backdrop-blur-sm scrollbar-hide">
-              <BackgroundCustomizerInline onClose={() => setShowCustomizeModal(false)} />
-            </div>
-          </Card>
-        </div>
-      )}
 
 
 

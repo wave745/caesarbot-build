@@ -200,7 +200,7 @@ export function CaesarXFooter() {
           }`}
         >
           <Shield className="w-3 h-3" />
-          <span>Trenches</span>
+          <span>Echo</span>
         </button>
 
         <button 
