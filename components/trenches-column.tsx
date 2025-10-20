@@ -8,6 +8,8 @@ import {
 } from "lucide-react"
 import Image from "next/image"
 import { TrendingFilterModal } from "@/components/trending-filter-modal"
+import { useColumnSound } from "@/hooks/use-column-sound"
+import { SoundSelector } from "@/components/sound-selector"
 
 interface TrenchesToken {
   id: string
@@ -138,6 +140,24 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
     alphaGroupMentions: { min: '', max: '' }
   })
   const presetRef = useRef<HTMLDivElement>(null)
+  const prevTokenCountRef = useRef<number>(0)
+
+  // Initialize sound system with column ID based on title
+  const columnId = title.toLowerCase().replace(/\s+/g, '-')
+  const { sound, volume, playSound, updateSound, updateVolume } = useColumnSound(columnId)
+
+  // Track token changes and play sound on new tokens
+  useEffect(() => {
+    const currentCount = tokens.length
+    const prevCount = prevTokenCountRef.current
+
+    // Only play sound if tokens increased (new tokens added)
+    if (currentCount > prevCount && prevCount > 0) {
+      playSound()
+    }
+
+    prevTokenCountRef.current = currentCount
+  }, [tokens, playSound])
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -274,6 +294,14 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
               </div>
             )}
           </div>
+          
+          <SoundSelector
+            selectedSound={sound}
+            volume={volume}
+            onSoundChange={updateSound}
+            onVolumeChange={updateVolume}
+            onTestSound={playSound}
+          />
           
           <button 
             className="p-1 bg-zinc-800 rounded hover:bg-zinc-700 transition-colors"
