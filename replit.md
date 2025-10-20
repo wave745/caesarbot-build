@@ -78,9 +78,11 @@ Preferred communication style: Simple, everyday language.
 - 6 preset sounds: Click, Ding, Fart, Let's Go!, Punch, Swoosh
 - Customizable volume control per column (0-100%)
 - Persistent settings stored in localStorage
-- Automatic playback when new tokens appear in any column
+- One sound notification per new unique token (no repeats)
+- Individual token tracking to ensure each token triggers sound only once
+- Sequential playback with 600ms delay between multiple new tokens
 - Test sound functionality for preview
-- Throttled playback (500ms) to prevent audio spam during rapid updates
+- Clean modal interface for custom sound upload (matching padre.gg)
 
 ### Automation & Trading System
 

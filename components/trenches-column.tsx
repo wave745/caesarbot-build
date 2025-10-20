@@ -140,23 +140,35 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
     alphaGroupMentions: { min: '', max: '' }
   })
   const presetRef = useRef<HTMLDivElement>(null)
-  const prevTokenCountRef = useRef<number>(0)
+  const seenTokenIdsRef = useRef<Set<string>>(new Set())
 
   // Initialize sound system with column ID based on title
   const columnId = title.toLowerCase().replace(/\s+/g, '-')
   const { sound, volume, playSound, updateSound, updateVolume } = useColumnSound(columnId)
 
-  // Track token changes and play sound on new tokens
+  // Track individual tokens and play sound for each new unique token
   useEffect(() => {
-    const currentCount = tokens.length
-    const prevCount = prevTokenCountRef.current
+    const currentTokenIds = new Set(tokens.map(t => `${t.platform}-${t.id}-${t.coinMint || t.contractAddress}`))
+    const seenIds = seenTokenIdsRef.current
+    
+    // Find truly new tokens that haven't been seen before
+    const newTokens = tokens.filter(token => {
+      const tokenId = `${token.platform}-${token.id}-${token.coinMint || token.contractAddress}`
+      return !seenIds.has(tokenId)
+    })
 
-    // Only play sound if tokens increased (new tokens added)
-    if (currentCount > prevCount && prevCount > 0) {
-      playSound()
+    // Play sound for each new token (one per token)
+    if (newTokens.length > 0 && seenIds.size > 0) {
+      // Play sound once for each new token with slight delay between them
+      newTokens.forEach((_, index) => {
+        setTimeout(() => {
+          playSound()
+        }, index * 600) // 600ms delay between each sound
+      })
     }
 
-    prevTokenCountRef.current = currentCount
+    // Update the seen tokens set
+    seenTokenIdsRef.current = currentTokenIds
   }, [tokens, playSound])
 
   // Close dropdown when clicking outside

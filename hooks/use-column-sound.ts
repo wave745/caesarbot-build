@@ -24,8 +24,6 @@ export function useColumnSound(columnId: string) {
     volume: 70
   })
   const audioRef = useRef<HTMLAudioElement | null>(null)
-  const lastPlayTimeRef = useRef<number>(0)
-  const THROTTLE_MS = 500 // Prevent sound spam
 
   // Load settings from localStorage on mount
   useEffect(() => {
@@ -67,12 +65,7 @@ export function useColumnSound(columnId: string) {
   const playSound = useCallback(() => {
     if (settings.sound === 'none' || !audioRef.current) return
 
-    // Throttle to prevent spam
-    const now = Date.now()
-    if (now - lastPlayTimeRef.current < THROTTLE_MS) return
-    lastPlayTimeRef.current = now
-
-    // Clone the audio to allow overlapping plays if needed
+    // Clone the audio to allow playing multiple instances
     const audio = audioRef.current.cloneNode() as HTMLAudioElement
     audio.volume = settings.volume / 100
     audio.play().catch(err => {
