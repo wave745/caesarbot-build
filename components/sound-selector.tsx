@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { Volume2, VolumeX } from "lucide-react"
+import { Volume2, VolumeX, Check } from "lucide-react"
 import type { SoundOption } from "@/hooks/use-column-sound"
 
 interface SoundSelectorProps {
@@ -24,6 +24,7 @@ const SOUND_OPTIONS: { value: SoundOption; label: string }[] = [
 
 export function SoundSelector({ selectedSound, volume, onSoundChange, onVolumeChange, onTestSound }: SoundSelectorProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const [showCustomModal, setShowCustomModal] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   // Close dropdown when clicking outside
@@ -40,79 +41,101 @@ export function SoundSelector({ selectedSound, volume, onSoundChange, onVolumeCh
     }
   }, [isOpen])
 
-  const selectedLabel = SOUND_OPTIONS.find(opt => opt.value === selectedSound)?.label || 'None'
+  const handleSoundSelect = (sound: SoundOption) => {
+    onSoundChange(sound)
+    setIsOpen(false)
+    if (sound !== 'none') {
+      setTimeout(() => onTestSound(), 100)
+    }
+  }
+
+  const handleAddCustom = () => {
+    setIsOpen(false)
+    setShowCustomModal(true)
+  }
 
   return (
-    <div className="relative" ref={dropdownRef}>
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1 px-2 py-1 bg-zinc-800 rounded text-xs hover:bg-zinc-700 transition-colors"
-        title="Sound settings"
-      >
-        {selectedSound === 'none' ? (
-          <VolumeX className="w-3 h-3 text-zinc-400" />
-        ) : (
-          <Volume2 className="w-3 h-3 text-yellow-400" />
-        )}
-        <span className="text-white font-medium">{selectedLabel}</span>
-      </button>
+    <>
+      <div className="relative" ref={dropdownRef}>
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="p-1 bg-zinc-800 rounded hover:bg-zinc-700 transition-colors"
+          title="Sound settings"
+        >
+          {selectedSound === 'none' ? (
+            <VolumeX className="w-3.5 h-3.5 text-zinc-400" />
+          ) : (
+            <Volume2 className="w-3.5 h-3.5 text-zinc-300" />
+          )}
+        </button>
 
-      {isOpen && (
-        <div className="absolute top-full right-0 mt-1 bg-zinc-800 border border-zinc-700 rounded-lg shadow-lg z-50 min-w-[180px]">
-          {/* Sound options */}
-          <div className="py-1">
-            <div className="px-3 py-1 text-xs text-zinc-400 font-medium">Sound</div>
+        {isOpen && (
+          <div className="absolute top-full right-0 mt-1 bg-zinc-900 border border-zinc-700 rounded-md shadow-xl z-50 min-w-[140px] py-1">
             {SOUND_OPTIONS.map((option) => (
               <button
                 key={option.value}
-                onClick={() => {
-                  onSoundChange(option.value)
-                  if (option.value !== 'none') {
-                    setTimeout(() => onTestSound(), 100)
-                  }
-                }}
-                className={`w-full text-left px-3 py-2 text-sm hover:bg-zinc-700 transition-colors ${
-                  selectedSound === option.value ? 'bg-zinc-700 text-yellow-400' : 'text-white'
-                }`}
+                onClick={() => handleSoundSelect(option.value)}
+                className="w-full text-left px-3 py-1.5 text-sm hover:bg-zinc-800 transition-colors flex items-center justify-between group"
               >
-                {option.label}
+                <span className="text-zinc-200">{option.label}</span>
+                {selectedSound === option.value && (
+                  <Check className="w-3.5 h-3.5 text-zinc-400" />
+                )}
               </button>
             ))}
+            <div className="border-t border-zinc-800 my-1" />
+            <button
+              onClick={handleAddCustom}
+              className="w-full text-left px-3 py-1.5 text-sm hover:bg-zinc-800 transition-colors text-zinc-200"
+            >
+              Add custom
+            </button>
           </div>
+        )}
+      </div>
 
-          {/* Volume slider (only show if sound is not 'none') */}
-          {selectedSound !== 'none' && (
-            <>
-              <div className="border-t border-zinc-700 my-1" />
-              <div className="px-3 py-2">
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-medium text-zinc-400">Volume</label>
-                  <span className="text-xs text-zinc-400">{volume}%</span>
-                </div>
+      {/* Custom Sound Modal */}
+      {showCustomModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100]" onClick={() => setShowCustomModal(false)}>
+          <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-5 w-[400px] shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-white font-semibold">Custom sound</h3>
+              <button
+                onClick={() => setShowCustomModal(false)}
+                className="text-zinc-400 hover:text-white transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            <button className="w-full px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium transition-colors mb-4">
+              Upload custom sound, max 0.2 MB
+            </button>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-sm text-zinc-300">Custom sound volume</label>
+                <span className="text-sm text-zinc-400">{volume}%</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <VolumeX className="w-4 h-4 text-zinc-400" />
                 <input
                   type="range"
                   min="0"
                   max="100"
                   value={volume}
                   onChange={(e) => onVolumeChange(Number(e.target.value))}
-                  className="w-full h-1.5 bg-zinc-700 rounded-lg appearance-none cursor-pointer"
+                  className="flex-1 h-1.5 bg-zinc-700 rounded-lg appearance-none cursor-pointer"
                   style={{
-                    background: `linear-gradient(to right, rgb(234 179 8) 0%, rgb(234 179 8) ${volume}%, rgb(63 63 70) ${volume}%, rgb(63 63 70) 100%)`
+                    background: `linear-gradient(to right, rgb(96 165 250) 0%, rgb(96 165 250) ${volume}%, rgb(63 63 70) ${volume}%, rgb(63 63 70) 100%)`
                   }}
                 />
+                <span className="text-sm text-zinc-400 w-8 text-right">{volume}</span>
               </div>
-              <div className="px-3 pb-2">
-                <button
-                  onClick={onTestSound}
-                  className="w-full px-2 py-1 text-xs bg-zinc-700 hover:bg-zinc-600 text-white rounded transition-colors"
-                >
-                  Test Sound
-                </button>
-              </div>
-            </>
-          )}
+            </div>
+          </div>
         </div>
       )}
-    </div>
+    </>
   )
 }
