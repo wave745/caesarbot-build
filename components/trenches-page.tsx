@@ -775,10 +775,6 @@ export function TrenchesPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center space-x-4">
-          <Button variant="ghost" size="sm" className="flex items-center space-x-2">
-            <Settings className="w-4 h-4" />
-            <span>Positions</span>
-          </Button>
           <h1 className="text-2xl font-bold">Trenches</h1>
         </div>
         <div className="flex items-center space-x-2">
@@ -790,12 +786,6 @@ export function TrenchesPage() {
           >
             <Settings className="w-4 h-4 mr-2 text-yellow-600" />
             Background
-          </Button>
-          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-gray-800">
-            <div className="relative">
-              <Square className="w-4 h-4" />
-              <Plus className="w-3 h-3 absolute -top-1 -right-1" />
-            </div>
           </Button>
         </div>
       </div>
