@@ -43,6 +43,16 @@ export type EchoSettings = {
     tweet2: string
     tweet3: string
   }
+  quickBuy: {
+    buttonColor: string
+    buttonTextColor: string
+    extraBehavior: "None" | "Open Market" | "Open New Tab"
+    size: "Small" | "Large" | "Mega" | "Ultra"
+    shape: "Round" | "Square"
+    width: number
+    transparency: number
+    showSecondButton: boolean
+  }
   dataDisplay: {
     top10Holders: boolean
     devHolding: boolean
@@ -107,6 +117,16 @@ const defaultSettings: EchoSettings = {
     tweet1: "#ef4444", // red
     tweet2: "#f59e0b", // amber
     tweet3: "#06b6d4"  // cyan
+  },
+  quickBuy: {
+    buttonColor: "#22c55e",
+    buttonTextColor: "#0b0b0b",
+    extraBehavior: "None",
+    size: "Small",
+    shape: "Round",
+    width: 60,
+    transparency: 0,
+    showSecondButton: false
   },
   dataDisplay: {
     top10Holders: true,
@@ -293,9 +313,46 @@ export function EchoCustomizeModal({ isOpen, onClose, settings, onApply }: EchoC
               </div>
             </TabsContent>
 
-            {/* Quick Buy Tab (placeholder) */}
+            {/* Quick Buy Tab */}
             <TabsContent value="quick" className="pt-3 pb-2">
-              <div className="text-sm text-zinc-400 px-1">Quick Buy settings coming soon.</div>
+              <div className="space-y-3">
+                <Row label="Button color" right={
+                  <ColorPicker value={local.quickBuy.buttonColor} onChange={(v)=>write(p=>({...p,quickBuy:{...p.quickBuy,buttonColor:v}}))} />
+                } />
+                <Row label="Button text color" right={
+                  <ColorPicker value={local.quickBuy.buttonTextColor} onChange={(v)=>write(p=>({...p,quickBuy:{...p.quickBuy,buttonTextColor:v}}))} />
+                } />
+
+                <div className="px-2">
+                  <div className="text-sm text-zinc-300 mb-1">Quick buy extra behavior</div>
+                  <Chooser current={local.quickBuy.extraBehavior} options={["None","Open Market","Open New Tab"]} onChange={(v)=>write(p=>({...p,quickBuy:{...p.quickBuy,extraBehavior:v as any}}))} />
+                </div>
+
+                <Row label="Size" right={
+                  <Chooser current={local.quickBuy.size} options={["Small","Large","Mega","Ultra"]} onChange={(v)=>write(p=>({...p,quickBuy:{...p.quickBuy,size:v as any}}))} />
+                } />
+                <Row label="Shape" right={
+                  <Chooser current={local.quickBuy.shape} options={["Round","Square"]} onChange={(v)=>write(p=>({...p,quickBuy:{...p.quickBuy,shape:v as any}}))} />
+                } />
+
+                <div className="px-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-zinc-200">Width</span>
+                    <input type="range" min={0} max={100} value={local.quickBuy.width} onChange={(e)=>write(p=>({...p,quickBuy:{...p.quickBuy,width: parseInt(e.target.value) || 0}}))} className="w-40" />
+                  </div>
+                </div>
+
+                <div className="px-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-zinc-200">Transparency</span>
+                    <input type="range" min={0} max={100} value={local.quickBuy.transparency} onChange={(e)=>write(p=>({...p,quickBuy:{...p.quickBuy,transparency: parseInt(e.target.value) || 0}}))} className="w-40" />
+                  </div>
+                </div>
+
+                <Row label="Show second button" right={
+                  <Checkbox checked={local.quickBuy.showSecondButton} onCheckedChange={(v)=>write(p=>({...p,quickBuy:{...p.quickBuy,showSecondButton:Boolean(v)}}))} />
+                } />
+              </div>
             </TabsContent>
           </Tabs>
         </div>
@@ -364,6 +421,15 @@ function ThresholdRow({ color, value, onChange, suffix, onColorChange }: { color
       <span className="text-xs text-zinc-400">if at least</span>
       <Input value={value} onChange={(e)=>onChange(e.target.value)} className="h-8 bg-[#111111] border-[#2a2a2a] text-white text-sm" />
       <span className="text-xs text-zinc-400">{suffix}</span>
+    </div>
+  )
+}
+
+function ColorPicker({ value, onChange }: { value: string; onChange: (v: string)=>void }) {
+  return (
+    <div className="flex items-center gap-2">
+      <div className="w-4 h-4 rounded" style={{ backgroundColor: value }}></div>
+      <input type="color" value={value} onChange={(e)=>onChange(e.target.value)} className="w-8 h-5 p-0 bg-transparent border-0 outline-none cursor-pointer" />
     </div>
   )
 }
