@@ -5,7 +5,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
-import { X, RotateCcw, Settings } from "lucide-react"
+import { X, RotateCcw, Settings, Zap } from "lucide-react"
+import { PresetsModal } from "./presets-modal"
 
 export type EchoSettings = {
   layout: {
@@ -52,6 +53,15 @@ export type EchoSettings = {
     width: number
     transparency: number
     showSecondButton: boolean
+    extraButtonColor: string
+    extraButtonTextColor: string
+    extraPreset: string
+    amount: string
+    presets: {
+      P1: { prio: string; tip: string; slippage: string; mev: boolean }
+      P2: { prio: string; tip: string; slippage: string; mev: boolean }
+      P3: { prio: string; tip: string; slippage: string; mev: boolean }
+    }
   }
   dataDisplay: {
     top10Holders: boolean
@@ -126,7 +136,16 @@ const defaultSettings: EchoSettings = {
     shape: "Round",
     width: 60,
     transparency: 0,
-    showSecondButton: false
+    showSecondButton: false,
+    extraButtonColor: "#22c55e",
+    extraButtonTextColor: "#0b0b0b",
+    extraPreset: "P1",
+    amount: "0"
+    ,presets: {
+      P1: { prio: "0.003", tip: "0.004", slippage: "20", mev: true },
+      P2: { prio: "0.008", tip: "0.012", slippage: "10", mev: false },
+      P3: { prio: "0.012", tip: "0.03", slippage: "10", mev: false }
+    }
   },
   dataDisplay: {
     top10Holders: true,
@@ -166,6 +185,7 @@ interface EchoCustomizeModalProps {
 
 export function EchoCustomizeModal({ isOpen, onClose, settings, onApply }: EchoCustomizeModalProps) {
   const [activeTab, setActiveTab] = useState<"layout" | "data" | "quick">("layout")
+  const [showPresetsModal, setShowPresetsModal] = useState(false)
   const [local, setLocal] = useState<EchoSettings>(settings || defaultSettings)
 
   useEffect(() => {
@@ -352,8 +372,37 @@ export function EchoCustomizeModal({ isOpen, onClose, settings, onApply }: EchoC
                 <Row label="Show second button" right={
                   <Checkbox checked={local.quickBuy.showSecondButton} onCheckedChange={(v)=>write(p=>({...p,quickBuy:{...p.quickBuy,showSecondButton:Boolean(v)}}))} />
                 } />
+
+                {local.quickBuy.showSecondButton && (
+                  <div className="space-y-3 border-t border-[#1f1f1f] pt-3">
+                    <div className="px-2">
+                      <div className="text-sm text-zinc-300 mb-2">Config</div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 px-2 py-1 rounded-md border border-[#2a2a2a] bg-[#111111]">
+                          <Zap className="w-3 h-3" />
+                          <input
+                            type="number"
+                            value={local.quickBuy.amount}
+                            onChange={(e)=>write(p=>({...p,quickBuy:{...p.quickBuy,amount:e.target.value}}))}
+                            className="w-10 bg-transparent border-0 outline-none text-sm text-white"
+                          />
+                          <img src="/sol-logo.png" alt="SOL" className="w-3 h-3" />
+                        </div>
+                        <PresetDropdown current={local.quickBuy.extraPreset as 'P1'|'P2'|'P3'} onChange={(v)=>write(p=>({...p,quickBuy:{...p.quickBuy,extraPreset:v}}))} presets={local.quickBuy.presets} onEditPresets={()=>setShowPresetsModal(true)} />
+                      </div>
+                    </div>
+
+                    <Row label="Extra button color" right={
+                      <ColorPicker value={local.quickBuy.extraButtonColor} onChange={(v)=>write(p=>({...p,quickBuy:{...p.quickBuy,extraButtonColor:v}}))} />
+                    } />
+                    <Row label="Extra button text color" right={
+                      <ColorPicker value={local.quickBuy.extraButtonTextColor} onChange={(v)=>write(p=>({...p,quickBuy:{...p.quickBuy,extraButtonTextColor:v}}))} />
+                    } />
+                  </div>
+                )}
               </div>
             </TabsContent>
+
           </Tabs>
         </div>
 
@@ -363,6 +412,22 @@ export function EchoCustomizeModal({ isOpen, onClose, settings, onApply }: EchoC
           <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleApply}>Apply</Button>
         </div>
       </div>
+
+      {/* Presets Modal */}
+      <PresetsModal
+        isOpen={showPresetsModal}
+        onClose={() => setShowPresetsModal(false)}
+        presets={local.quickBuy.presets}
+        onSave={(newPresets) => {
+          setLocal(prev => ({
+            ...prev,
+            quickBuy: {
+              ...prev.quickBuy,
+              presets: newPresets
+            }
+          }))
+        }}
+      />
     </div>
   )
 }
@@ -430,6 +495,43 @@ function ColorPicker({ value, onChange }: { value: string; onChange: (v: string)
     <div className="flex items-center gap-2">
       <div className="w-4 h-4 rounded" style={{ backgroundColor: value }}></div>
       <input type="color" value={value} onChange={(e)=>onChange(e.target.value)} className="w-8 h-5 p-0 bg-transparent border-0 outline-none cursor-pointer" />
+    </div>
+  )
+}
+
+function PresetDropdown({ current, presets, onChange, onEditPresets }: { current: 'P1'|'P2'|'P3'; presets: any; onChange: (v: 'P1'|'P2'|'P3')=>void; onEditPresets: ()=>void }) {
+  return (
+    <div className="relative">
+      <details className="group">
+        <summary className="list-none cursor-pointer select-none px-2 py-1 rounded-md border border-[#2a2a2a] bg-[#111111] text-xs text-zinc-300 flex items-center gap-2">
+          {current}
+        </summary>
+        <div className="absolute left-0 mt-1 min-w-[220px] bg-[#0e0e0e] border border-[#2a2a2a] rounded-lg shadow-xl z-50">
+          {(['P1','P2','P3'] as const).map((id)=> (
+            <button
+              key={id}
+              onClick={(e)=>{ e.preventDefault(); onChange(id); }}
+              className={`w-full text-left px-3 py-2 text-sm hover:bg-[#151515] ${current===id ? 'bg-[#151515]' : ''}`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-medium text-white">{id}</span>
+                <span className="text-xs text-zinc-400">{presets[id].slippage}%</span>
+              </div>
+              <div className="mt-1 flex items-center gap-3 text-xs text-zinc-300">
+                <span>⛽ {presets[id].prio}</span>
+                <span>👤 {presets[id].tip}</span>
+                <span>{presets[id].mev ? '🟢 On' : '🔴 Off'}</span>
+              </div>
+            </button>
+          ))}
+          <div className="border-t border-[#222]"></div>
+          <button
+            onClick={(e)=>{ e.preventDefault(); onEditPresets(); }}
+            className="w-full text-left px-3 py-2 text-sm text-zinc-300 hover:bg-[#151515]"
+          >
+          </button>
+        </div>
+      </details>
     </div>
   )
 }
