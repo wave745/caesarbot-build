@@ -29,12 +29,13 @@ Preferred communication style: Simple, everyday language.
 1. **Dashboard** - Market overview, asset tracking, liquidity monitoring
 2. **Scanner** - Real-time Solana token analysis with 40+ commands for deep inspection
 3. **Trending** - Live token feeds from multiple sources (Moralis, DexScreener, Pump.fun)
-4. **Sniper** - Automated trading system with copy trading, token sniping, and transaction bundling
-5. **Portfolio** - Wallet management and operations
-6. **Tracker** - Wallet performance tracking
-7. **Deployer** - Token creation and deployment tools
-8. **Meta** - Market meta-analysis and trend identification with AI-powered launch assistant
-9. **Rewards** - Gamification and leaderboard system
+4. **Echo (Trenches)** - Multi-column token tracking with real-time updates and sound notifications
+5. **Sniper** - Automated trading system with copy trading, token sniping, and transaction bundling
+6. **Portfolio** - Wallet management and operations
+7. **Tracker** - Wallet performance tracking
+8. **Deployer** - Token creation and deployment tools
+9. **Meta** - Market meta-analysis and trend identification with AI-powered launch assistant
+10. **Rewards** - Gamification and leaderboard system
 
 ### Data Layer & APIs
 
@@ -71,6 +72,17 @@ Preferred communication style: Simple, everyday language.
 - Strategic insights for memecoin launches aligned with current market trends
 - Direct integration with deployer page for seamless token creation
 - Both streaming and non-streaming chat modes supported
+
+**Echo (Trenches) Sound System**:
+- Per-column sound notifications for new token updates
+- 6 preset sounds: Click, Ding, Fart, Let's Go!, Punch, Swoosh
+- Customizable volume control per column (0-100%)
+- Persistent settings stored in localStorage
+- One sound notification per new unique token (no repeats)
+- Individual token tracking to ensure each token triggers sound only once
+- Sequential playback with 600ms delay between multiple new tokens
+- Test sound functionality for preview
+- Clean modal interface for custom sound upload (matching padre.gg)
 
 ### Automation & Trading System
 

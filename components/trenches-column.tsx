@@ -8,6 +8,8 @@ import {
 } from "lucide-react"
 import Image from "next/image"
 import { TrendingFilterModal } from "@/components/trending-filter-modal"
+import { useColumnSound } from "@/hooks/use-column-sound"
+import { SoundSelector } from "@/components/sound-selector"
 
 interface TrenchesToken {
   id: string
@@ -139,6 +141,36 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
     alphaGroupMentions: { min: '', max: '' }
   })
   const presetRef = useRef<HTMLDivElement>(null)
+  const seenTokenIdsRef = useRef<Set<string>>(new Set())
+
+  // Initialize sound system with column ID based on title
+  const columnId = title.toLowerCase().replace(/\s+/g, '-')
+  const { sound, volume, playSound, updateSound, updateVolume } = useColumnSound(columnId)
+
+  // Track individual tokens and play sound for each new unique token
+  useEffect(() => {
+    const currentTokenIds = new Set(tokens.map(t => `${t.platform}-${t.id}-${t.coinMint || t.contractAddress}`))
+    const seenIds = seenTokenIdsRef.current
+    
+    // Find truly new tokens that haven't been seen before
+    const newTokens = tokens.filter(token => {
+      const tokenId = `${token.platform}-${token.id}-${token.coinMint || token.contractAddress}`
+      return !seenIds.has(tokenId)
+    })
+
+    // Play sound for each new token (one per token)
+    if (newTokens.length > 0 && seenIds.size > 0) {
+      // Play sound once for each new token with slight delay between them
+      newTokens.forEach((_, index) => {
+        setTimeout(() => {
+          playSound()
+        }, index * 600) // 600ms delay between each sound
+      })
+    }
+
+    // Update the seen tokens set
+    seenTokenIdsRef.current = currentTokenIds
+  }, [tokens, playSound])
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -279,6 +311,14 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
               </div>
             )}
           </div>
+          
+          <SoundSelector
+            selectedSound={sound}
+            volume={volume}
+            onSoundChange={updateSound}
+            onVolumeChange={updateVolume}
+            onTestSound={playSound}
+          />
           
           <button 
             className="p-1 bg-zinc-800 rounded hover:bg-zinc-700 transition-colors"
