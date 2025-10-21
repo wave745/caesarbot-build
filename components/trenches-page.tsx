@@ -304,6 +304,11 @@ export function TrenchesPage() {
   const [showCustomize, setShowCustomize] = useState(false)
   const [selectedChain, setSelectedChain] = useState<'solana' | 'bnb'>('solana')
   const [echoSettings, setEchoSettings] = useState<EchoSettings | undefined>(undefined)
+  
+  // BSC Token States
+  const [bscRealTokens, setBscRealTokens] = useState<TrenchesToken[]>([])
+  const [bscMcTokens, setBscMcTokens] = useState<TrenchesToken[]>([])
+  const [bscGraduatedTokens, setBscGraduatedTokens] = useState<TrenchesToken[]>([])
 
   // Background SOL price fetcher to keep cache updated
   useEffect(() => {
@@ -825,30 +830,67 @@ export function TrenchesPage() {
 
       {/* Three Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 items-start w-full">
-        <div className="px-1">
-          <TrenchesColumn 
-            title="New" 
-            tokens={newTokens} 
-            onFiltersChange={handleFiltersChange}
-            initialFilters={filters}
-          />
-        </div>
-        <div>
-          <TrenchesColumn 
-            title="% MC" 
-            tokens={mcCategoryTokens} 
-            onFiltersChange={handleFiltersChange}
-            initialFilters={filters}
-          />
-        </div>
-        <div className="px-1">
-          <TrenchesColumn 
-            title="Migrated" 
-            tokens={graduatedCategoryTokens} 
-            onFiltersChange={handleFiltersChange}
-            initialFilters={filters}
-          />
-        </div>
+        {selectedChain === 'solana' ? (
+          <>
+            <div className="px-1">
+              <TrenchesColumn 
+                title="New" 
+                tokens={newTokens} 
+                onFiltersChange={handleFiltersChange}
+                initialFilters={filters}
+                selectedChain={selectedChain}
+              />
+            </div>
+            <div>
+              <TrenchesColumn 
+                title="% MC" 
+                tokens={mcCategoryTokens} 
+                onFiltersChange={handleFiltersChange}
+                initialFilters={filters}
+                selectedChain={selectedChain}
+              />
+            </div>
+            <div className="px-1">
+              <TrenchesColumn 
+                title="Migrated" 
+                tokens={graduatedCategoryTokens} 
+                onFiltersChange={handleFiltersChange}
+                initialFilters={filters}
+                selectedChain={selectedChain}
+              />
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="px-1">
+              <TrenchesColumn 
+                title="New" 
+                tokens={bscRealTokens} 
+                onFiltersChange={handleFiltersChange}
+                initialFilters={filters}
+                selectedChain={selectedChain}
+              />
+            </div>
+            <div>
+              <TrenchesColumn 
+                title="% MC" 
+                tokens={bscMcTokens} 
+                onFiltersChange={handleFiltersChange}
+                initialFilters={filters}
+                selectedChain={selectedChain}
+              />
+            </div>
+            <div className="px-1">
+              <TrenchesColumn 
+                title="Migrated" 
+                tokens={bscGraduatedTokens} 
+                onFiltersChange={handleFiltersChange}
+                initialFilters={filters}
+                selectedChain={selectedChain}
+              />
+            </div>
+          </>
+        )}
       </div>
 
       {/* Customize Modal */}

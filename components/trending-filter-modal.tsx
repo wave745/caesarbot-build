@@ -65,6 +65,7 @@ interface TrendingFilterModalProps {
   onClose: () => void
   onApply: (filters: FilterState) => void
   initialFilters?: Partial<FilterState>
+  selectedChain?: 'solana' | 'bnb'
 }
 
 const launchpadData = [
@@ -76,7 +77,7 @@ const launchpadData = [
   { id: 'moonit', name: 'Moon.it', color: 'bg-pink-500', icon: '/icons/platforms/moon.it-logo.png' }
 ]
 
-export function TrendingFilterModal({ isOpen, onClose, onApply, initialFilters }: TrendingFilterModalProps) {
+export function TrendingFilterModal({ isOpen, onClose, onApply, initialFilters, selectedChain = 'solana' }: TrendingFilterModalProps) {
   const [activeTab, setActiveTab] = useState<'manual' | 'saved'>('manual')
   const [filters, setFilters] = useState<FilterState>({
     launchpads: {
@@ -216,54 +217,56 @@ export function TrendingFilterModal({ isOpen, onClose, onApply, initialFilters }
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide">
             {/* Protocols Section */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium text-white">Protocols</h3>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={selectAllLaunchpads}
-                  className="text-sm text-gray-400 hover:text-white"
-                >
-                  {Object.values(filters.launchpads).every(Boolean) ? 'Unselect All' : 'Select All'}
-                </Button>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-3">
-                {launchpadData.map((launchpad) => (
-                  <button
-                    key={launchpad.id}
-                    onClick={() => updateFilter(`launchpads.${launchpad.id}`, !filters.launchpads[launchpad.id as keyof typeof filters.launchpads])}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-all duration-300 ${
-                      filters.launchpads[launchpad.id as keyof typeof filters.launchpads]
-                        ? launchpad.id === 'pumpfun' 
-                          ? 'border-green-500 bg-green-500/10'
-                          : launchpad.id === 'bonk'
-                          ? 'border-orange-500 bg-orange-500/10'
-                          : launchpad.id === 'metdbc'
-                          ? 'border-cyan-500 bg-cyan-500/10'
-                          : launchpad.id === 'bagsfm'
-                          ? 'border-purple-500 bg-purple-500/10'
-                          : launchpad.id === 'believeapp'
-                          ? 'border-blue-500 bg-blue-500/10'
-                          : 'border-pink-500 bg-pink-500/10'
-                        : launchpad.id === 'metdbc'
-                        ? 'border-[#282828] hover:border-cyan-400 hover:shadow-[0_0_20px_rgba(34,211,238,0.3)] hover:bg-cyan-500/5'
-                        : 'border-[#282828] hover:border-gray-600'
-                    }`}
+            {selectedChain === 'solana' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-medium text-white">Protocols</h3>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={selectAllLaunchpads}
+                    className="text-sm text-gray-400 hover:text-white"
                   >
-                    <div className="w-5 h-5 rounded-full flex items-center justify-center">
-                      <img 
-                        src={launchpad.icon} 
-                        alt={launchpad.name}
-                        className="w-4 h-4 object-contain"
-                      />
-                    </div>
-                    <span className="text-sm font-medium text-white">{launchpad.name}</span>
-                  </button>
-                ))}
+                    {Object.values(filters.launchpads).every(Boolean) ? 'Unselect All' : 'Select All'}
+                  </Button>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  {launchpadData.map((launchpad) => (
+                    <button
+                      key={launchpad.id}
+                      onClick={() => updateFilter(`launchpads.${launchpad.id}`, !filters.launchpads[launchpad.id as keyof typeof filters.launchpads])}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-all duration-300 ${
+                        filters.launchpads[launchpad.id as keyof typeof filters.launchpads]
+                          ? launchpad.id === 'pumpfun' 
+                            ? 'border-green-500 bg-green-500/10'
+                            : launchpad.id === 'bonk'
+                            ? 'border-orange-500 bg-orange-500/10'
+                            : launchpad.id === 'metdbc'
+                            ? 'border-cyan-500 bg-cyan-500/10'
+                            : launchpad.id === 'bagsfm'
+                            ? 'border-purple-500 bg-purple-500/10'
+                            : launchpad.id === 'believeapp'
+                            ? 'border-blue-500 bg-blue-500/10'
+                            : 'border-pink-500 bg-pink-500/10'
+                          : launchpad.id === 'metdbc'
+                          ? 'border-[#282828] hover:border-cyan-400 hover:shadow-[0_0_20px_rgba(34,211,238,0.3)] hover:bg-cyan-500/5'
+                          : 'border-[#282828] hover:border-gray-600'
+                      }`}
+                    >
+                      <div className="w-5 h-5 rounded-full flex items-center justify-center">
+                        <img 
+                          src={launchpad.icon} 
+                          alt={launchpad.name}
+                          className="w-4 h-4 object-contain"
+                        />
+                      </div>
+                      <span className="text-sm font-medium text-white">{launchpad.name}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Checkbox Filters */}
             <div className="space-y-3">

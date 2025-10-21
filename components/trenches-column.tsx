@@ -93,9 +93,10 @@ interface TrenchesColumnProps {
   loading?: boolean
   onFiltersChange?: (filters: FilterState) => void
   initialFilters?: FilterState
+  selectedChain?: 'solana' | 'bnb'
 }
 
-export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange, initialFilters }: TrenchesColumnProps) {
+export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange, initialFilters, selectedChain = 'solana' }: TrenchesColumnProps) {
   const [solAmount, setSolAmount] = useState("5")
   const [isEditing, setIsEditing] = useState(false)
   const [showPresets, setShowPresets] = useState(false)
@@ -226,7 +227,11 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
                 {solAmount}
               </span>
             )}
-            <img src="/sol-logo.png" alt="SOL" className="w-3 h-3" />
+            <img 
+              src={selectedChain === 'solana' ? "/sol-logo.png" : "/bnb-chain-binance-smart-chain-logo.svg"} 
+              alt={selectedChain === 'solana' ? "SOL" : "BNB"} 
+              className="w-3 h-3" 
+            />
           </div>
           
           <div className="relative" ref={presetRef}>
@@ -317,6 +322,7 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
         onClose={handleFilterClose}
         onApply={handleFilterApply}
         initialFilters={filters}
+        selectedChain={selectedChain}
       />
     </div>
   )
