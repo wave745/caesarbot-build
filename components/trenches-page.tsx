@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { TrenchesColumn } from "@/components/trenches-column"
 import { TrendingFilterModal } from "@/components/trending-filter-modal"
+import { EchoCustomizeModal, type EchoSettings } from "@/components/echo-customize-modal"
 import { 
   Search,
   Zap,
@@ -300,6 +301,9 @@ export function TrenchesPage() {
     devHolding: { min: '', max: '' },
     alphaGroupMentions: { min: '', max: '' }
   })
+  const [showCustomize, setShowCustomize] = useState(false)
+  const [selectedChain, setSelectedChain] = useState<'solana' | 'bnb'>('solana')
+  const [echoSettings, setEchoSettings] = useState<EchoSettings | undefined>(undefined)
 
   // Background SOL price fetcher to keep cache updated
   useEffect(() => {
@@ -772,8 +776,47 @@ export function TrenchesPage() {
     <div className="min-h-screen text-white">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center space-x-4">
+        <div className="flex items-end space-x-4">
           <h1 className="text-2xl font-bold">Echo</h1>
+          
+          {/* Chain Toggle */}
+          <div className="flex items-center rounded-lg p-1 pb-0.5">
+            <button
+              onClick={() => setSelectedChain('solana')}
+              className="flex items-center justify-center p-1.5 transition-all hover:bg-zinc-800/30 rounded-md"
+            >
+              <img 
+                src="/sol-logo.png" 
+                alt="Solana" 
+                className={`w-3 h-3 transition-all ${
+                  selectedChain === 'solana' ? 'opacity-100' : 'opacity-50 grayscale'
+                }`}
+              />
+            </button>
+            <button
+              onClick={() => setSelectedChain('bnb')}
+              className="flex items-center justify-center p-1.5 transition-all hover:bg-zinc-800/30 rounded-md"
+            >
+              <img 
+                src="/bnb-chain-binance-smart-chain-logo.svg" 
+                alt="BNB Chain" 
+                className={`w-3 h-3 transition-all ${
+                  selectedChain === 'bnb' ? 'opacity-100' : 'opacity-50 grayscale'
+                }`}
+              />
+            </button>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            aria-label="Customize"
+            onClick={() => setShowCustomize(!showCustomize)}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-zinc-900/60 border border-zinc-700 text-zinc-200 hover:bg-zinc-800/60 transition-colors shadow-sm"
+          >
+            <Settings className="w-3 h-3 text-zinc-400" />
+            <span className="text-xs">Customize</span>
+          </button>
         </div>
       </div>
 
@@ -807,6 +850,14 @@ export function TrenchesPage() {
           />
         </div>
       </div>
+
+      {/* Customize Modal */}
+      <EchoCustomizeModal 
+        isOpen={showCustomize}
+        onClose={() => setShowCustomize(false)}
+        settings={echoSettings}
+        onApply={(s) => setEchoSettings(s)}
+      />
 
     </div>
   )
