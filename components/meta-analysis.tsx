@@ -175,8 +175,8 @@ export function MetaAnalysis() {
                 <div className="flex items-center gap-3">
                   <AlertTriangle className="w-5 h-5 text-yellow-500" />
                   <div>
-                    <h3 className="text-yellow-500 font-semibold text-sm">Sample Data</h3>
-                    <p className="text-yellow-400 text-xs">Showing sample data. Real-time updates unavailable.</p>
+                    <h3 className="text-yellow-500 font-semibold text-sm">Limited Data</h3>
+                    <p className="text-yellow-400 text-xs">Showing limited data. Real-time updates unavailable.</p>
                   </div>
                 </div>
               </CardContent>

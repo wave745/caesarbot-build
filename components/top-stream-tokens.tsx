@@ -247,43 +247,8 @@ export function TopStreamTokens() {
         // Don't clear tokens on error, keep showing last successful data
         // Only clear if this is the initial load and we have no data
         if (tokens.length === 0) {
-          // Show fallback mock data for demonstration
-          const mockTokens: LiveToken[] = [
-            {
-              tokenAddress: 'mock1',
-              mint: 'mock1',
-              symbol: 'DEMO',
-              name: 'Demo Token',
-              logo: '/icons/platforms/pump.fun-logo.svg',
-              image: '/icons/platforms/pump.fun-logo.svg',
-              decimals: '6',
-              priceNative: '0.001',
-              priceUsd: '0.15',
-              liquidity: '1000',
-              fullyDilutedValuation: '15000',
-              createdAt: new Date().toISOString(),
-              mcUsd: 15000,
-              volume24h: 0,
-              transactions: 0,
-              holders: 0,
-              timeAgo: 0,
-              risk: 'med' as const,
-              isPaid: false,
-              age: 0,
-              source: 'pumpfun' as const,
-              platform: 'Pump.fun' as const,
-              hasTwitter: false,
-              hasTelegram: false,
-              hasWebsite: false,
-              hasSocial: false,
-              isCurrentlyLive: true,
-              numParticipants: 0,
-              complete: false,
-              initialized: true,
-              rank: 1
-            }
-          ]
-          setTokens(mockTokens)
+          // Keep tokens empty if no data available
+          setTokens([])
         }
       } finally {
         if (!isMounted) return

@@ -23,10 +23,11 @@ export type EchoSettings = {
   }
   toggles: {
     copyNameOnClick: boolean
-    pauseOnHover: boolean
-    backgroundColor: boolean
-    searchKeywords: boolean
-    showAvatarReused: boolean
+      pauseOnHover: boolean
+      backgroundColor: boolean
+      launchpadColorMatching: boolean
+      searchKeywords: boolean
+      showAvatarReused: boolean
   }
   thresholds: {
     mc1: string
@@ -107,10 +108,11 @@ const defaultSettings: EchoSettings = {
   },
   toggles: {
     copyNameOnClick: true,
-    pauseOnHover: true,
-    backgroundColor: false,
-    searchKeywords: true,
-    showAvatarReused: true
+      pauseOnHover: true,
+      backgroundColor: false,
+      launchpadColorMatching: false,
+      searchKeywords: true,
+      showAvatarReused: true
   },
   thresholds: {
     mc1: "100000",
@@ -207,7 +209,7 @@ export function EchoCustomizeModal({ isOpen, onClose, settings, onApply }: EchoC
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-black/50">
-      <div className="mt-14 w-[380px] sm:w-[420px] bg-[#0b0b0b] border border-[#1f1f1f] rounded-xl shadow-xl overflow-hidden max-h-[80vh] flex flex-col">
+      <div className="mt-14 w-[280px] sm:w-[320px] bg-[#0b0b0b] border border-[#1f1f1f] rounded-xl shadow-xl overflow-hidden max-h-[70vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-[#262626] bg-[#101010]">
           <div className="flex items-center gap-2 text-zinc-200">
@@ -265,8 +267,9 @@ export function EchoCustomizeModal({ isOpen, onClose, settings, onApply }: EchoC
                 <Divider title="" />
                 <Row label="Copy name on click" right={<Toggle checked={local.toggles.copyNameOnClick} onChange={(v)=>write(p=>({...p,toggles:{...p.toggles,copyNameOnClick:v}}))} />} />
                 <Row label="Pause on hover" right={<Toggle checked={local.toggles.pauseOnHover} onChange={(v)=>write(p=>({...p,toggles:{...p.toggles,pauseOnHover:v}}))} />} />
-                <Row label="Background color" right={<Toggle checked={local.toggles.backgroundColor} onChange={(v)=>write(p=>({...p,toggles:{...p.toggles,backgroundColor:v}}))} />} />
-                <Row label="Search keywords" right={<Toggle checked={local.toggles.searchKeywords} onChange={(v)=>write(p=>({...p,toggles:{...p.toggles,searchKeywords:v}}))} />} />
+                 <Row label="Background color" right={<Toggle checked={local.toggles.backgroundColor} onChange={(v)=>write(p=>({...p,toggles:{...p.toggles,backgroundColor:v}}))} />} />
+                 <Row label="Launchpad color matching" right={<Toggle checked={local.toggles.launchpadColorMatching} onChange={(v)=>write(p=>({...p,toggles:{...p.toggles,launchpadColorMatching:v}}))} disabled={!local.toggles.backgroundColor} />} />
+                 <Row label="Search keywords" right={<Toggle checked={local.toggles.searchKeywords} onChange={(v)=>write(p=>({...p,toggles:{...p.toggles,searchKeywords:v}}))} />} />
                 <Row label="Show avatar reused" right={<Toggle checked={local.toggles.showAvatarReused} onChange={(v)=>write(p=>({...p,toggles:{...p.toggles,showAvatarReused:v}}))} />} />
 
                 {/* Threshold sections */}
@@ -408,8 +411,8 @@ export function EchoCustomizeModal({ isOpen, onClose, settings, onApply }: EchoC
 
         {/* Footer */}
         <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-[#262626]">
-          <Button variant="outline" className="bg-[#111111] border-[#2a2a2a] text-white hover:bg-[#1a1a1a]" onClick={handleReset}>Reset</Button>
-          <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleApply}>Apply</Button>
+          <Button variant="outline" size="sm" className="bg-[#111111] border-[#2a2a2a] text-white hover:bg-[#1a1a1a] text-xs px-3 py-1.5" onClick={handleReset}>Reset</Button>
+          <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-xs px-3 py-1.5" onClick={handleApply}>Apply</Button>
         </div>
       </div>
 
@@ -458,9 +461,9 @@ function Chooser({ current, options, onChange }: { current: string; options: str
   )
 }
 
-function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean)=>void }) {
+function Toggle({ checked, onChange, disabled }: { checked: boolean; onChange: (v: boolean)=>void; disabled?: boolean }) {
   return (
-    <Checkbox checked={checked} onCheckedChange={(v)=>onChange(Boolean(v))} />
+    <Checkbox checked={checked} onCheckedChange={(v)=>onChange(Boolean(v))} disabled={disabled} />
   )
 }
 
@@ -468,6 +471,26 @@ function Divider({ title }: { title: string }) {
   return (
     <div className="mt-3 mb-1 px-2 text-xs uppercase tracking-wide text-zinc-400">{title}</div>
   )
+}
+
+// Launchpad color mapping utility
+export function getLaunchpadColor(platform: string): string {
+  const colorMap: Record<string, string> = {
+    'pump.fun': 'bg-green-900/30',
+    'bonk.fun': 'bg-orange-900/30', 
+    'pumpswap': 'bg-green-900/30',
+    'moonshot': 'bg-purple-900/30',
+    'moon.it': 'bg-yellow-900/30',
+    'boop.fun': 'bg-blue-900/30',
+    'orca': 'bg-cyan-900/30',
+    'meteora': 'bg-red-900/30',
+    'raydium': 'bg-red-900/30',
+    'bagsfm': 'bg-green-900/30',
+    'believeapp': 'bg-green-900/30',
+    'jupiter': 'bg-blue-900/30'
+  }
+  
+  return colorMap[platform] || 'bg-zinc-800/30'
 }
 
 function ThresholdRow({ color, value, onChange, suffix, onColorChange }: { color: string; value: string; onChange: (v: string)=>void; suffix: string; onColorChange?: (c: string)=>void }) {

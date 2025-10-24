@@ -40,8 +40,6 @@ export class BitqueryService {
 
   constructor() {
     this.apiKey = process.env.BITQUERY_API_KEY || ''
-    console.log('BitqueryService constructor - API key found:', !!this.apiKey)
-    console.log('BitqueryService constructor - API key length:', this.apiKey.length)
     if (!this.apiKey) {
       console.warn('Bitquery API key not found in environment variables - using mock data for testing')
     }
@@ -69,7 +67,7 @@ export class BitqueryService {
         return this.getMockBonkTokens(limit)
       }
       
-      console.log('Using Bitquery API key:', this.apiKey.substring(0, 10) + '...')
+      console.log('Using Bitquery API for data fetching...')
       
       const query = `
         query GetNewBonkTokens($limit: Int!) {
@@ -163,30 +161,8 @@ export class BitqueryService {
   }
 
   private getMockBonkTokens(limit: number): BitqueryToken[] {
-    const mockTokens: BitqueryToken[] = [
-      {
-        mintAddress: 'BONK1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
-        name: 'Test Bonk Token 1',
-        symbol: 'TBONK1',
-        decimals: 6,
-        createdAt: Date.now() / 1000 - 300, // 5 minutes ago
-        creator: 'Creator1234567890abcdef1234567890abcdef1234567890',
-        transactionSignature: 'Tx1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
-        blockTime: new Date().toISOString()
-      },
-      {
-        mintAddress: 'BONK2345678901bcdef1234567890abcdef1234567890abcdef1234567890',
-        name: 'Test Bonk Token 2',
-        symbol: 'TBONK2',
-        decimals: 6,
-        createdAt: Date.now() / 1000 - 600, // 10 minutes ago
-        creator: 'Creator2345678901bcdef1234567890abcdef1234567890',
-        transactionSignature: 'Tx2345678901bcdef1234567890abcdef1234567890abcdef1234567890',
-        blockTime: new Date().toISOString()
-      }
-    ]
-    
-    return mockTokens.slice(0, limit)
+    // Return empty array instead of mock data
+    return []
   }
 
   /**

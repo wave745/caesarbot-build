@@ -62,7 +62,7 @@ interface TrenchesToken {
   top10Holders: number
   snipers: number
   insiders: number
-  platform: 'pump.fun' | 'bonk.fun' | 'moon.it' | 'pumpswap' | 'moonshot' | 'boop.fun' | 'orca' | 'meteora' | 'raydium' | 'jupiter' | 'birdeye' | 'dexscreener' | 'solscan' | 'solana' | 'trends.fun' | 'rupert' | 'bags.fm' | 'believe.app' | 'unknown'
+  platform: 'pump.fun' | 'bonk.fun' | 'moon.it' | 'pumpswap' | 'moonshot' | 'boop.fun' | 'orca' | 'meteora' | 'raydium'
   platformLogo?: string
   buyAmount: string
   totalFees?: number
@@ -86,12 +86,61 @@ interface TrenchesToken {
 }
 
 
+// Function to convert SolanaTracker data to our token format
+const convertSolanaTrackerToToken = (token: any, index: number, status: 'new' | 'about-to-graduate' | 'migrated' = 'new'): TrenchesToken => {
+  const volumeInUsd = formatVolume(token.volume24h || 0)
+  
+  // Determine platform based on token data
+  const platform = token.platform || 'pump.fun'
+  const platformLogo = token.platformLogo
+  
+  return {
+    id: (index + 1).toString(),
+    name: token.name,
+    symbol: token.symbol,
+    image: token.logoURI || '/placeholder-token.png',
+    mc: formatMarketCap(token.marketCap || 0),
+    volume: volumeInUsd,
+    fee: "0.1%", // Default fee
+    age: formatTimeAgo(token.createdAt || Date.now()),
+    holders: token.holders || 0,
+    buys: 0, // Not provided in SolanaTracker API
+    sells: 0, // Not provided in SolanaTracker API
+    status: status,
+    tag: token.name,
+    contractAddress: token.address,
+    migratedTokens: 0,
+    devSold: false, // Not provided in SolanaTracker API
+    top10Holders: 0, // Not provided in SolanaTracker API
+    snipers: 0, // Not provided in SolanaTracker API
+    insiders: 0, // Not provided in SolanaTracker API
+    platform: platform as any,
+    platformLogo: platformLogo,
+    buyAmount: "5.00",
+    // SolanaTracker specific fields
+    coinMint: token.address,
+    dev: null, // Not provided in SolanaTracker API
+    bondingCurveProgress: 0, // Not provided in SolanaTracker API
+    sniperCount: 0, // Not provided in SolanaTracker API
+    graduationDate: null,
+    devHoldingsPercentage: 0, // Not provided in SolanaTracker API
+    sniperOwnedPercentage: 0, // Not provided in SolanaTracker API
+    topHoldersPercentage: 0, // Not provided in SolanaTracker API
+    hasTwitter: !!token.socialLinks?.twitter,
+    hasTelegram: !!token.socialLinks?.telegram,
+    hasWebsite: !!token.socialLinks?.website,
+    twitter: token.socialLinks?.twitter,
+    telegram: token.socialLinks?.telegram,
+    website: token.socialLinks?.website
+  }
+}
+
 // Function to convert Pump.fun data to our token format - moved inside component
 const convertPumpFunToToken = (coin: PumpFunCoin, index: number, status: 'new' | 'about-to-graduate' | 'migrated' = 'new'): TrenchesToken => {
   const volumeInUsd = formatVolume(coin.volume)
   
   // Determine platform based on coin data
-  const platform = coin.platform || 'unknown'
+  const platform = coin.platform || 'pump.fun'
   const platformLogo = coin.platformLogo
   
   return {
@@ -101,7 +150,7 @@ const convertPumpFunToToken = (coin: PumpFunCoin, index: number, status: 'new' |
     image: coin.imageUrl || `https://ui-avatars.com/api/?name=${coin.ticker}&background=6366f1&color=fff&size=48`,
     mc: formatMarketCap(coin.marketCap),
     volume: volumeInUsd,
-    fee: typeof coin.totalFees === 'string' ? coin.totalFees : (coin.totalFees || 0).toFixed(3), // Use total fees from SolanaTracker (already formatted) - CACHE BUSTER
+    fee: typeof coin.totalFees === 'string' ? coin.totalFees : (coin.totalFees || 0).toString(), // Use total fees from SolanaTracker (already formatted) - CACHE BUSTER
     age: formatTimeAgo(coin.creationTime),
     holders: coin.numHolders,
     buys: coin.buyTransactions,
@@ -228,56 +277,6 @@ const convertMoonItToToken = (token: MoonItToken, index: number): TrenchesToken 
   }
 }
 
-// Function to convert Solana Tracker data to our token format
-const convertSolanaTrackerToToken = (token: any, index: number, status: 'new' | 'about-to-graduate' | 'migrated' = 'new'): TrenchesToken => {
-  const volumeInUsd = formatVolume(token.volume || 0)
-  const marketCap = token.marketCap || 0
-  const createdAt = token.creationTime || Date.now()
-  
-  return {
-    id: token.id || (index + 1).toString(),
-    name: token.name,
-    symbol: token.symbol,
-    image: token.image || `https://ui-avatars.com/api/?name=${token.symbol}&background=6366f1&color=fff&size=48`,
-    mc: formatMarketCap(marketCap),
-    volume: volumeInUsd,
-    fee: typeof token.totalFees === 'string' ? token.totalFees : (token.totalFees || 0).toFixed(3),
-    age: token.age || formatTimeAgo(createdAt),
-    holders: token.holders || 0,
-    buys: token.buyTransactions || 0,
-    sells: token.sellTransactions || 0,
-    status: status,
-    tag: token.name, // Using name as tag for now
-    contractAddress: token.contractAddress || '',
-    migratedTokens: status === 'migrated' ? 1 : 0,
-    devSold: (token.devHoldingsPercentage || 0) === 0,
-    top10Holders: Math.round(token.topHoldersPercentage || 0),
-    snipers: Math.round((token.sniperOwnedPercentage || 0) * 100) / 100,
-    insiders: 0, // Not provided in Solana Tracker API
-    platform: token.platform || 'unknown' as any,
-    platformLogo: token.platformLogo,
-    buyAmount: "5.00",
-    totalFees: typeof token.totalFees === 'string' ? parseFloat(token.totalFees) || 0 : token.totalFees || 0,
-    tradingFees: typeof token.tradingFees === 'string' ? parseFloat(token.tradingFees) || 0 : token.tradingFees || 0,
-    tipsFees: typeof token.tipsFees === 'string' ? parseFloat(token.tipsFees) || 0 : token.tipsFees || 0,
-    // Solana Tracker specific fields
-    coinMint: token.contractAddress || '',
-    dev: '', // Not provided in Solana Tracker API
-    bondingCurveProgress: token.bondingCurveProgress || 0,
-    sniperCount: token.sniperCount || 0,
-    graduationDate: token.graduationDate || null,
-    devHoldingsPercentage: token.devHoldingsPercentage || 0,
-    sniperOwnedPercentage: token.sniperOwnedPercentage || 0,
-    topHoldersPercentage: token.topHoldersPercentage || 0,
-    hasTwitter: token.hasTwitter || false,
-    hasTelegram: token.hasTelegram || false,
-    hasWebsite: token.hasWebsite || false,
-    twitter: token.twitter || null,
-    telegram: token.telegram || null,
-    website: token.website || null
-  }
-}
-
 // Filter state interface matching the trending filter modal
 interface FilterState {
   launchpads: {
@@ -287,20 +286,6 @@ interface FilterState {
     bagsfm: boolean
     believeapp: boolean
     moonit: boolean
-    pumpswap: boolean
-    moonshot: boolean
-    boop: boolean
-    orca: boolean
-    meteora: boolean
-    raydium: boolean
-    jupiter: boolean
-    birdeye: boolean
-    dexscreener: boolean
-    solscan: boolean
-    solana: boolean
-    trends: boolean
-    rupert: boolean
-    unknown: boolean
   }
   atLeastOneSocial: boolean
   originalSocials: boolean
@@ -336,8 +321,6 @@ export function TrenchesPage() {
   const [mcTokens, setMcTokens] = useState<TrenchesToken[]>([])
   const [graduatedTokens, setGraduatedTokens] = useState<TrenchesToken[]>([])
   const [migratedTokens, setMigratedTokens] = useState<TrenchesToken[]>([])
-  const [solanaTrackerGraduatingTokens, setSolanaTrackerGraduatingTokens] = useState<TrenchesToken[]>([])
-  const [solanaTrackerGraduatedTokens, setSolanaTrackerGraduatedTokens] = useState<TrenchesToken[]>([])
   const [bonkFunTokens, setBonkFunTokens] = useState<TrenchesToken[]>([])
   const [bonkFunMCTokens, setBonkFunMCTokens] = useState<TrenchesToken[]>([])
   const [bonkFunGraduatedTokens, setBonkFunGraduatedTokens] = useState<TrenchesToken[]>([])
@@ -346,7 +329,6 @@ export function TrenchesPage() {
   const [moonItGraduatedTokens, setMoonItGraduatedTokens] = useState<TrenchesToken[]>([])
   const [error, setError] = useState<string | null>(null)
   const [currentTime, setCurrentTime] = useState<number>(Date.now())
-  const [lastUpdateTime, setLastUpdateTime] = useState<number>(Date.now())
   const [filters, setFilters] = useState<FilterState>({
     launchpads: {
       pumpfun: true,
@@ -354,21 +336,7 @@ export function TrenchesPage() {
       moonit: true,
       metdbc: true,
       bagsfm: true,
-      believeapp: true,
-      pumpswap: true,
-      moonshot: true,
-      boop: true,
-      orca: true,
-      meteora: true,
-      raydium: true,
-      jupiter: true,
-      birdeye: true,
-      dexscreener: true,
-      solscan: true,
-      solana: true,
-      trends: true,
-      rupert: true,
-      unknown: true
+      believeapp: true
     },
     atLeastOneSocial: false,
     originalSocials: false,
@@ -462,318 +430,137 @@ export function TrenchesPage() {
     return () => clearInterval(solPriceInterval)
   }, [])
 
-  // Fetch all trading data in parallel for immediate loading with live updates every 1 second
-  // CACHE BUSTER - Force file change to resolve fetchPumpFunMigratedTokens error
+  // Fetch SolanaTracker data using clean API
   useEffect(() => {
-    const fetchAllDataInParallel = async () => {
-      console.log('🚀 Fetching all trading data in parallel for immediate loading...')
-      setLastUpdateTime(Date.now())
+    const fetchSolanaTrackerData = async () => {
+      console.log('🚀 Fetching SolanaTracker data...')
       
-      // Fetch migrated tokens through API route to avoid exposing API keys
-      const fetchMigratedTokensInline = async () => {
-        try {
-          const response = await fetch('/api/pump-tokens-migrated', {
-            method: 'GET',
-            headers: {
-              'Accept': 'application/json',
-              'Content-Type': 'application/json'
-            },
-            signal: AbortSignal.timeout(3000)
-          })
-          
-          if (!response.ok) return []
-          const data = await response.json()
-          return Array.isArray(data.coins) ? data.coins.slice(0, 30) : []
-        } catch (error) {
-          console.warn('Error fetching migrated tokens:', error)
-          return []
+      try {
+        // Fetch all three types of tokens in parallel
+        const [newTokensRes, graduatingTokensRes, graduatedTokensRes] = await Promise.allSettled([
+          fetch('/api/solanatracker?type=new&limit=30'),
+          fetch('/api/solanatracker?type=graduating&limit=30'),
+          fetch('/api/solanatracker?type=graduated&limit=30')
+        ])
+
+        // Process new tokens
+        if (newTokensRes.status === 'fulfilled') {
+          const newData = await newTokensRes.value.json()
+          if (newData.success && newData.data) {
+            const convertedTokens = newData.data.map((token: any, index: number) => 
+              convertSolanaTrackerToToken(token, index, 'new')
+            )
+            setRealTokens(convertedTokens)
+            console.log('✅ New tokens loaded:', convertedTokens.length)
+          }
         }
-      }
 
-      // Fetch Solana Tracker tokens for NEW column
-      const fetchSolanaTrackerNewTokens = async () => {
-        try {
-          const response = await fetch('/api/solanatracker/tokens?type=new&limit=30', {
-            method: 'GET',
-            headers: {
-              'Accept': 'application/json',
-              'Content-Type': 'application/json'
-            },
-            signal: AbortSignal.timeout(5000)
-          })
-          
-          if (!response.ok) return []
-          const data = await response.json()
-          return data.success && Array.isArray(data.data) ? data.data : []
-        } catch (error) {
-          console.warn('Error fetching Solana Tracker new tokens:', error)
-          return []
+        // Process graduating tokens
+        if (graduatingTokensRes.status === 'fulfilled') {
+          const graduatingData = await graduatingTokensRes.value.json()
+          if (graduatingData.success && graduatingData.data) {
+            const convertedTokens = graduatingData.data.map((token: any, index: number) => 
+              convertSolanaTrackerToToken(token, index, 'about-to-graduate')
+            )
+            setMcTokens(convertedTokens)
+            console.log('✅ Graduating tokens loaded:', convertedTokens.length)
+          }
         }
-      }
 
-      // Fetch Solana Tracker graduating tokens for MC column
-      const fetchSolanaTrackerGraduatingTokens = async () => {
-        try {
-          const response = await fetch('/api/solanatracker/tokens?type=graduating&limit=30', {
-            method: 'GET',
-            headers: {
-              'Accept': 'application/json',
-              'Content-Type': 'application/json'
-            },
-            signal: AbortSignal.timeout(5000)
-          })
-          
-          if (!response.ok) return []
-          const data = await response.json()
-          return data.success && Array.isArray(data.data) ? data.data : []
-        } catch (error) {
-          console.warn('Error fetching Solana Tracker graduating tokens:', error)
-          return []
+        // Process graduated tokens
+        if (graduatedTokensRes.status === 'fulfilled') {
+          const graduatedData = await graduatedTokensRes.value.json()
+          if (graduatedData.success && graduatedData.data) {
+            const convertedTokens = graduatedData.data.map((token: any, index: number) => 
+              convertSolanaTrackerToToken(token, index, 'migrated')
+            )
+            setGraduatedTokens(convertedTokens)
+            console.log('✅ Graduated tokens loaded:', convertedTokens.length)
+          }
         }
-      }
 
-      // Fetch Solana Tracker graduated tokens for 3rd column
-      const fetchSolanaTrackerGraduatedTokens = async () => {
-        try {
-          const response = await fetch('/api/solanatracker/tokens?type=graduated&limit=30', {
-            method: 'GET',
-            headers: {
-              'Accept': 'application/json',
-              'Content-Type': 'application/json'
-            },
-            signal: AbortSignal.timeout(5000)
-          })
-          
-          if (!response.ok) return []
-          const data = await response.json()
-          return data.success && Array.isArray(data.data) ? data.data : []
-        } catch (error) {
-          console.warn('Error fetching Solana Tracker graduated tokens:', error)
-          return []
+        // Also fetch other platform data for BSC chain
+        const [
+          bonkFunResult,
+          bonkFunMCResult,
+          bonkFunGraduatedResult,
+          moonItResult,
+          moonItMCResult,
+          moonItGraduatedResult
+        ] = await Promise.allSettled([
+          fetchBonkFunTokens(),
+          fetchBonkFunMCTokens(),
+          fetchBonkFunGraduatedTokens(),
+          fetchMoonItTokens(),
+          fetchMoonItMCTokens(),
+          fetchMoonItGraduatedTokens()
+        ])
+
+        // Process BSC chain tokens
+        if (bonkFunResult.status === 'fulfilled') {
+          const convertedBonkFunTokens = bonkFunResult.value.slice(0, 30).map((coin, index) => 
+            convertBonkFunToToken(coin, index)
+          )
+          setBonkFunTokens(convertedBonkFunTokens)
+          console.log('✅ Bonk.fun tokens loaded:', convertedBonkFunTokens.length)
         }
-      }
-      
-      // Execute all API calls in parallel for maximum speed
-      const [
-        solanaTrackerNewResult,
-        solanaTrackerGraduatingResult,
-        solanaTrackerGraduatedResult,
-        pumpFunResult,
-        pumpFunMCResult,
-        pumpFunGraduatedResult,
-        pumpFunMigratedResult,
-        bonkFunResult,
-        bonkFunMCResult,
-        bonkFunGraduatedResult,
-        moonItResult,
-        moonItMCResult,
-        moonItGraduatedResult
-      ] = await Promise.allSettled([
-        fetchSolanaTrackerNewTokens(),
-        fetchSolanaTrackerGraduatingTokens(),
-        fetchSolanaTrackerGraduatedTokens(),
-        fetchPumpFunTokens(),
-        fetchPumpFunMCTokens(),
-        fetchPumpFunGraduatedTokens(),
-        fetchMigratedTokensInline(),
-        fetchBonkFunTokens(),
-        fetchBonkFunMCTokens(),
-        fetchBonkFunGraduatedTokens(),
-        fetchMoonItTokens(),
-        fetchMoonItMCTokens(),
-        fetchMoonItGraduatedTokens()
-      ])
 
-      // Process results immediately as they come in
-      let hasSolanaTrackerTokens = false
-      
-      if (solanaTrackerNewResult.status === 'fulfilled' && solanaTrackerNewResult.value.length > 0) {
-        const convertedTokens = solanaTrackerNewResult.value.slice(0, 30).map((token: any, index: number) => 
-          convertSolanaTrackerToToken(token, index, 'new')
-        )
-        setRealTokens(convertedTokens)
-        hasSolanaTrackerTokens = true
-        console.log('✅ Solana Tracker NEW tokens loaded:', convertedTokens.length)
-      } else {
-        console.log('⚠️ Solana Tracker NEW tokens not available, will use fallback')
-      }
-
-      if (solanaTrackerGraduatingResult.status === 'fulfilled' && solanaTrackerGraduatingResult.value.length > 0) {
-        const convertedTokens = solanaTrackerGraduatingResult.value.slice(0, 30).map((token: any, index: number) => 
-          convertSolanaTrackerToToken(token, index, 'about-to-graduate')
-        )
-        // Filter out Solana Tracker graduating tokens older than 3 days
-        const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000)
-        const filteredSolanaTrackerGraduatingTokens = convertedTokens.filter((token: any) => {
-          const tokenAge = parseTimeToMinutes(token.age)
-          const tokenAgeInMs = tokenAge * 60 * 1000
-          const tokenCreatedAt = Date.now() - tokenAgeInMs
-          return tokenCreatedAt > threeDaysAgo
-        })
-        setSolanaTrackerGraduatingTokens(filteredSolanaTrackerGraduatingTokens)
-        console.log('✅ Solana Tracker GRADUATING tokens loaded:', filteredSolanaTrackerGraduatingTokens.length, '(filtered from', convertedTokens.length, 'to exclude tokens >3 days old)')
-      } else {
-        console.log('⚠️ Solana Tracker GRADUATING tokens not available')
-      }
-
-      if (solanaTrackerGraduatedResult.status === 'fulfilled' && solanaTrackerGraduatedResult.value.length > 0) {
-        const convertedTokens = solanaTrackerGraduatedResult.value.slice(0, 30).map((token: any, index: number) => 
-          convertSolanaTrackerToToken(token, index, 'migrated')
-        )
-        // Filter out Solana Tracker graduated tokens older than 3 days
-        const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000)
-        const filteredSolanaTrackerGraduatedTokens = convertedTokens.filter((token: any) => {
-          const tokenAge = parseTimeToMinutes(token.age)
-          const tokenAgeInMs = tokenAge * 60 * 1000
-          const tokenCreatedAt = Date.now() - tokenAgeInMs
-          return tokenCreatedAt > threeDaysAgo
-        })
-        setSolanaTrackerGraduatedTokens(filteredSolanaTrackerGraduatedTokens)
-        console.log('✅ Solana Tracker GRADUATED tokens loaded:', filteredSolanaTrackerGraduatedTokens.length, '(filtered from', convertedTokens.length, 'to exclude tokens >3 days old)')
-      } else {
-        console.log('⚠️ Solana Tracker GRADUATED tokens not available')
-      }
-
-      if (pumpFunResult.status === 'fulfilled') {
-        const convertedTokens = pumpFunResult.value.slice(0, 30).map((coin: any, index: number) => 
-          convertPumpFunToToken(coin, index, 'new')
-        )
-        // Only use Pump.fun tokens if Solana Tracker failed or returned no data
-        if (!hasSolanaTrackerTokens) {
-        setRealTokens(convertedTokens)
-          console.log('✅ Pump.fun tokens loaded (fallback):', convertedTokens.length)
+        if (bonkFunMCResult.status === 'fulfilled') {
+          const convertedBonkFunMCTokens = bonkFunMCResult.value.slice(0, 30).map((coin, index) => 
+            convertBonkFunToToken(coin, index)
+          )
+          setBonkFunMCTokens(convertedBonkFunMCTokens)
+          console.log('✅ Bonk.fun MC tokens loaded:', convertedBonkFunMCTokens.length)
         }
-      }
 
-      if (pumpFunMCResult.status === 'fulfilled') {
-        const convertedMCTokens = pumpFunMCResult.value.slice(0, 30).map((coin: any, index: number) => 
-          convertPumpFunToToken(coin, index, 'about-to-graduate')
-        )
-        setMcTokens(convertedMCTokens)
-        console.log('✅ Pump.fun MC tokens loaded:', convertedMCTokens.length)
-      }
+        if (bonkFunGraduatedResult.status === 'fulfilled') {
+          const convertedBonkFunGraduatedTokens = bonkFunGraduatedResult.value.slice(0, 30).map((coin, index) => 
+            convertBonkFunToToken(coin, index)
+          )
+          setBonkFunGraduatedTokens(convertedBonkFunGraduatedTokens)
+          console.log('✅ Bonk.fun graduated tokens loaded:', convertedBonkFunGraduatedTokens.length)
+        }
 
-      if (pumpFunGraduatedResult.status === 'fulfilled') {
-        const convertedGraduatedTokens = pumpFunGraduatedResult.value.slice(0, 30).map((coin: any, index: number) => 
-          convertPumpFunToToken(coin, index, 'migrated')
-        )
-        setGraduatedTokens(convertedGraduatedTokens)
-        console.log('✅ Pump.fun graduated tokens loaded:', convertedGraduatedTokens.length)
-      }
+        if (moonItResult.status === 'fulfilled') {
+          const convertedMoonItTokens = moonItResult.value.slice(0, 30).map((token, index) => 
+            convertMoonItToToken(token, index)
+          )
+          setMoonItTokens(convertedMoonItTokens)
+          console.log('✅ Moon.it tokens loaded:', convertedMoonItTokens.length)
+        }
 
-      if (pumpFunMigratedResult.status === 'fulfilled') {
-        const convertedMigratedTokens = pumpFunMigratedResult.value.slice(0, 30).map((coin: any, index: number) => 
-          convertPumpFunToToken(coin, index, 'migrated')
-        )
-        setMigratedTokens(convertedMigratedTokens)
-        console.log('✅ Pump.fun migrated tokens loaded:', convertedMigratedTokens.length)
-      }
+        if (moonItMCResult.status === 'fulfilled') {
+          const convertedMoonItMCTokens = moonItMCResult.value.slice(0, 30).map((token, index) => 
+            convertMoonItToToken(token, index)
+          )
+          setMoonItMCTokens(convertedMoonItMCTokens)
+          console.log('✅ Moon.it MC tokens loaded:', convertedMoonItMCTokens.length)
+        }
 
-      if (bonkFunResult.status === 'fulfilled') {
-        const convertedBonkFunTokens = bonkFunResult.value.slice(0, 30).map((coin: any, index: number) => 
-          convertBonkFunToToken(coin, index)
-        )
-        // Filter out Bonk.fun tokens older than 3 days
-        const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000)
-        const filteredBonkFunTokens = convertedBonkFunTokens.filter((token: any) => {
-          const tokenAge = parseTimeToMinutes(token.age)
-          const tokenAgeInMs = tokenAge * 60 * 1000
-          const tokenCreatedAt = Date.now() - tokenAgeInMs
-          return tokenCreatedAt > threeDaysAgo
-        })
-        setBonkFunTokens(filteredBonkFunTokens)
-        console.log('✅ Bonk.fun tokens loaded:', filteredBonkFunTokens.length, '(filtered from', convertedBonkFunTokens.length, 'to exclude tokens >3 days old)')
-      }
+        if (moonItGraduatedResult.status === 'fulfilled') {
+          const convertedMoonItGraduatedTokens = moonItGraduatedResult.value.slice(0, 30).map((token, index) => 
+            convertMoonItToToken(token, index)
+          )
+          setMoonItGraduatedTokens(convertedMoonItGraduatedTokens)
+          console.log('✅ Moon.it graduated tokens loaded:', convertedMoonItGraduatedTokens.length)
+        }
 
-      if (bonkFunMCResult.status === 'fulfilled') {
-        const convertedBonkFunMCTokens = bonkFunMCResult.value.slice(0, 30).map((coin: any, index: number) =>
-          convertBonkFunToToken(coin, index)
-        )
-        // Filter out Bonk.fun MC tokens older than 3 days
-        const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000)
-        const filteredBonkFunMCTokens = convertedBonkFunMCTokens.filter((token: any) => {
-          const tokenAge = parseTimeToMinutes(token.age)
-          const tokenAgeInMs = tokenAge * 60 * 1000
-          const tokenCreatedAt = Date.now() - tokenAgeInMs
-          return tokenCreatedAt > threeDaysAgo
-        })
-        setBonkFunMCTokens(filteredBonkFunMCTokens)
-        console.log('✅ Bonk.fun MC tokens loaded:', filteredBonkFunMCTokens.length, '(filtered from', convertedBonkFunMCTokens.length, 'to exclude tokens >3 days old)')
+        console.log('🚀 All SolanaTracker data loaded!')
+      } catch (error) {
+        console.error('Error fetching SolanaTracker data:', error)
+        setError('Failed to load token data')
       }
-
-      if (bonkFunGraduatedResult.status === 'fulfilled') {
-        const convertedBonkFunGraduatedTokens = bonkFunGraduatedResult.value.slice(0, 30).map((coin: any, index: number) => 
-          convertBonkFunToToken(coin, index)
-        )
-        // Filter out Bonk.fun graduated tokens older than 3 days
-        const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000)
-        const filteredBonkFunGraduatedTokens = convertedBonkFunGraduatedTokens.filter((token: any) => {
-          const tokenAge = parseTimeToMinutes(token.age)
-          const tokenAgeInMs = tokenAge * 60 * 1000
-          const tokenCreatedAt = Date.now() - tokenAgeInMs
-          return tokenCreatedAt > threeDaysAgo
-        })
-        setBonkFunGraduatedTokens(filteredBonkFunGraduatedTokens)
-        console.log('✅ Bonk.fun graduated tokens loaded:', filteredBonkFunGraduatedTokens.length, '(filtered from', convertedBonkFunGraduatedTokens.length, 'to exclude tokens >3 days old)')
-      }
-
-      if (moonItResult.status === 'fulfilled') {
-        const convertedMoonItTokens = moonItResult.value.slice(0, 30).map((coin: any, index: number) => 
-          convertMoonItToToken(coin, index)
-        )
-        // Filter out Moon.it tokens older than 3 days
-        const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000)
-        const filteredMoonItTokens = convertedMoonItTokens.filter((token: any) => {
-          const tokenAge = parseTimeToMinutes(token.age)
-          const tokenAgeInMs = tokenAge * 60 * 1000
-          const tokenCreatedAt = Date.now() - tokenAgeInMs
-          return tokenCreatedAt > threeDaysAgo
-        })
-        setMoonItTokens(filteredMoonItTokens)
-        console.log('✅ Moon.it tokens loaded:', filteredMoonItTokens.length, '(filtered from', convertedMoonItTokens.length, 'to exclude tokens >3 days old)')
-      }
-
-      if (moonItMCResult.status === 'fulfilled') {
-        const convertedMoonItMCTokens = moonItMCResult.value.slice(0, 30).map((coin: any, index: number) => 
-          convertMoonItToToken(coin, index)
-        )
-        // Filter out Moon.it MC tokens older than 3 days
-        const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000)
-        const filteredMoonItMCTokens = convertedMoonItMCTokens.filter((token: any) => {
-          const tokenAge = parseTimeToMinutes(token.age)
-          const tokenAgeInMs = tokenAge * 60 * 1000
-          const tokenCreatedAt = Date.now() - tokenAgeInMs
-          return tokenCreatedAt > threeDaysAgo
-        })
-        setMoonItMCTokens(filteredMoonItMCTokens)
-        console.log('✅ Moon.it MC tokens loaded:', filteredMoonItMCTokens.length, '(filtered from', convertedMoonItMCTokens.length, 'to exclude tokens >3 days old)')
-      }
-
-      if (moonItGraduatedResult.status === 'fulfilled') {
-        const convertedMoonItGraduatedTokens = moonItGraduatedResult.value.slice(0, 30).map((coin: any, index: number) => 
-          convertMoonItToToken(coin, index)
-        )
-        // Filter out Moon.it graduated tokens older than 3 days
-        const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000)
-        const filteredMoonItGraduatedTokens = convertedMoonItGraduatedTokens.filter((token: any) => {
-          const tokenAge = parseTimeToMinutes(token.age)
-          const tokenAgeInMs = tokenAge * 60 * 1000
-          const tokenCreatedAt = Date.now() - tokenAgeInMs
-          return tokenCreatedAt > threeDaysAgo
-        })
-        setMoonItGraduatedTokens(filteredMoonItGraduatedTokens)
-        console.log('✅ Moon.it graduated tokens loaded:', filteredMoonItGraduatedTokens.length, '(filtered from', convertedMoonItGraduatedTokens.length, 'to exclude tokens >3 days old)')
-      }
-
-      console.log('🚀 All trading data loaded in parallel!')
     }
+
+    fetchSolanaTrackerData()
+  }, [])
 
     const fetchData = async () => {
       try {
         console.log('Fetching Pump.fun data...')
         const pumpFunCoins = await fetchPumpFunTokens()
         console.log('Received coins:', pumpFunCoins.length)
-        const convertedTokens = pumpFunCoins.slice(0, 30).map((coin: any, index: number) => 
+        const convertedTokens = pumpFunCoins.slice(0, 30).map((coin, index) => 
           convertPumpFunToToken(coin, index, 'new')
         )
         console.log('Converted tokens:', convertedTokens.length)
@@ -792,7 +579,7 @@ export function TrenchesPage() {
         console.log('Fetching Pump.fun MC data...')
         const pumpFunMCCoins = await fetchPumpFunMCTokens()
         console.log('Received MC coins:', pumpFunMCCoins.length)
-        const convertedMCTokens = pumpFunMCCoins.slice(0, 30).map((coin: any, index: number) => 
+        const convertedMCTokens = pumpFunMCCoins.slice(0, 30).map((coin, index) => 
           convertPumpFunToToken(coin, index, 'about-to-graduate')
         )
         console.log('Converted MC tokens:', convertedMCTokens.length)
@@ -811,7 +598,7 @@ export function TrenchesPage() {
         console.log('Fetching Pump.fun graduated data...')
         const pumpFunGraduatedCoins = await fetchPumpFunGraduatedTokens()
         console.log('Received graduated coins:', pumpFunGraduatedCoins.length)
-        const convertedGraduatedTokens = pumpFunGraduatedCoins.slice(0, 30).map((coin: any, index: number) => 
+        const convertedGraduatedTokens = pumpFunGraduatedCoins.slice(0, 30).map((coin, index) => 
           convertPumpFunToToken(coin, index, 'migrated')
         )
         console.log('Converted graduated tokens:', convertedGraduatedTokens.length)
@@ -873,16 +660,8 @@ export function TrenchesPage() {
         const convertedBonkFunTokens = bonkFunTokensData.slice(0, 30).map((token, index) => 
           convertBonkFunToToken(token, index)
         )
-        // Filter out Bonk.fun tokens older than 3 days
-        const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000)
-        const filteredBonkFunTokens = convertedBonkFunTokens.filter((token: any) => {
-          const tokenAge = parseTimeToMinutes(token.age)
-          const tokenAgeInMs = tokenAge * 60 * 1000
-          const tokenCreatedAt = Date.now() - tokenAgeInMs
-          return tokenCreatedAt > threeDaysAgo
-        })
-        console.log('Converted bonk.fun tokens:', filteredBonkFunTokens.length, '(filtered from', convertedBonkFunTokens.length, 'to exclude tokens >3 days old)')
-        setBonkFunTokens(filteredBonkFunTokens)
+        console.log('Converted bonk.fun tokens:', convertedBonkFunTokens.length)
+        setBonkFunTokens(convertedBonkFunTokens)
         setError(null) // Clear any previous errors
       } catch (error) {
         console.error('Error fetching bonk.fun data:', error)
@@ -901,16 +680,8 @@ export function TrenchesPage() {
         const convertedBonkFunMCTokens = bonkFunMCTokensData.slice(0, 30).map((token, index) =>
           convertBonkFunToToken(token, index)
         )
-        // Filter out Bonk.fun MC tokens older than 3 days
-        const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000)
-        const filteredBonkFunMCTokens = convertedBonkFunMCTokens.filter((token: any) => {
-          const tokenAge = parseTimeToMinutes(token.age)
-          const tokenAgeInMs = tokenAge * 60 * 1000
-          const tokenCreatedAt = Date.now() - tokenAgeInMs
-          return tokenCreatedAt > threeDaysAgo
-        })
-        console.log('Converted bonk.fun MC tokens:', filteredBonkFunMCTokens.length, '(filtered from', convertedBonkFunMCTokens.length, 'to exclude tokens >3 days old)')
-        setBonkFunMCTokens(filteredBonkFunMCTokens)
+        console.log('Converted bonk.fun MC tokens:', convertedBonkFunMCTokens.length)
+        setBonkFunMCTokens(convertedBonkFunMCTokens)
         setError(null) // Clear any previous errors
       } catch (error) {
         console.error('Error fetching bonk.fun MC data:', error)
@@ -928,16 +699,8 @@ export function TrenchesPage() {
         const convertedBonkFunGraduatedTokens = bonkFunGraduatedTokensData.slice(0, 30).map((token, index) => 
           convertBonkFunToToken(token, index)
         )
-        // Filter out Bonk.fun graduated tokens older than 3 days
-        const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000)
-        const filteredBonkFunGraduatedTokens = convertedBonkFunGraduatedTokens.filter((token: any) => {
-          const tokenAge = parseTimeToMinutes(token.age)
-          const tokenAgeInMs = tokenAge * 60 * 1000
-          const tokenCreatedAt = Date.now() - tokenAgeInMs
-          return tokenCreatedAt > threeDaysAgo
-        })
-        console.log('Converted bonk.fun graduated tokens:', filteredBonkFunGraduatedTokens.length, '(filtered from', convertedBonkFunGraduatedTokens.length, 'to exclude tokens >3 days old)')
-        setBonkFunGraduatedTokens(filteredBonkFunGraduatedTokens)
+        console.log('Converted bonk.fun graduated tokens:', convertedBonkFunGraduatedTokens.length)
+        setBonkFunGraduatedTokens(convertedBonkFunGraduatedTokens)
         setError(null) // Clear any previous errors
       } catch (error) {
         console.error('Error fetching bonk.fun graduated data:', error)
@@ -955,16 +718,8 @@ export function TrenchesPage() {
         const convertedMoonItTokens = moonItTokensData.slice(0, 30).map((token, index) => 
           convertMoonItToToken(token, index)
         )
-        // Filter out Moon.it tokens older than 3 days
-        const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000)
-        const filteredMoonItTokens = convertedMoonItTokens.filter((token: any) => {
-          const tokenAge = parseTimeToMinutes(token.age)
-          const tokenAgeInMs = tokenAge * 60 * 1000
-          const tokenCreatedAt = Date.now() - tokenAgeInMs
-          return tokenCreatedAt > threeDaysAgo
-        })
-        console.log('Converted moon.it tokens:', filteredMoonItTokens.length, '(filtered from', convertedMoonItTokens.length, 'to exclude tokens >3 days old)')
-        setMoonItTokens(filteredMoonItTokens)
+        console.log('Converted moon.it tokens:', convertedMoonItTokens.length)
+        setMoonItTokens(convertedMoonItTokens)
         setError(null) // Clear any previous errors
       } catch (error) {
         console.error('Error fetching moon.it data:', error)
@@ -982,16 +737,8 @@ export function TrenchesPage() {
         const convertedMoonItMCTokens = moonItMCTokensData.slice(0, 30).map((token, index) => 
           convertMoonItToToken(token, index)
         )
-        // Filter out Moon.it MC tokens older than 3 days
-        const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000)
-        const filteredMoonItMCTokens = convertedMoonItMCTokens.filter((token: any) => {
-          const tokenAge = parseTimeToMinutes(token.age)
-          const tokenAgeInMs = tokenAge * 60 * 1000
-          const tokenCreatedAt = Date.now() - tokenAgeInMs
-          return tokenCreatedAt > threeDaysAgo
-        })
-        console.log('Converted moon.it MC tokens:', filteredMoonItMCTokens.length, '(filtered from', convertedMoonItMCTokens.length, 'to exclude tokens >3 days old)')
-        setMoonItMCTokens(filteredMoonItMCTokens)
+        console.log('Converted moon.it MC tokens:', convertedMoonItMCTokens.length)
+        setMoonItMCTokens(convertedMoonItMCTokens)
         setError(null) // Clear any previous errors
       } catch (error) {
         console.error('Error fetching moon.it MC data:', error)
@@ -1009,16 +756,8 @@ export function TrenchesPage() {
         const convertedMoonItGraduatedTokens = moonItGraduatedTokensData.slice(0, 30).map((token, index) => 
           convertMoonItToToken(token, index)
         )
-        // Filter out Moon.it graduated tokens older than 3 days
-        const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000)
-        const filteredMoonItGraduatedTokens = convertedMoonItGraduatedTokens.filter((token: any) => {
-          const tokenAge = parseTimeToMinutes(token.age)
-          const tokenAgeInMs = tokenAge * 60 * 1000
-          const tokenCreatedAt = Date.now() - tokenAgeInMs
-          return tokenCreatedAt > threeDaysAgo
-        })
-        console.log('Converted moon.it graduated tokens:', filteredMoonItGraduatedTokens.length, '(filtered from', convertedMoonItGraduatedTokens.length, 'to exclude tokens >3 days old)')
-        setMoonItGraduatedTokens(filteredMoonItGraduatedTokens)
+        console.log('Converted moon.it graduated tokens:', convertedMoonItGraduatedTokens.length)
+        setMoonItGraduatedTokens(convertedMoonItGraduatedTokens)
         setError(null) // Clear any previous errors
       } catch (error) {
         console.error('Error fetching moon.it graduated data:', error)
@@ -1031,11 +770,11 @@ export function TrenchesPage() {
     // Initial parallel fetch for immediate trading data
     fetchAllDataInParallel()
 
-    // Set up auto-refresh every 1 second for ultra-fast trading updates
+    // Set up auto-refresh every 2 seconds for ultra-fast trading updates
     const interval = setInterval(() => {
       console.log('Auto-refreshing token data in parallel...')
       fetchAllDataInParallel()
-    }, 1000) // 1 second for real-time trading
+    }, 2000) // 2 seconds for real-time trading
 
     // Cleanup interval on component unmount
     return () => clearInterval(interval)
@@ -1086,7 +825,7 @@ export function TrenchesPage() {
 
   // Memoized filter function for better performance
   const applyFilters = useCallback((tokens: TrenchesToken[]) => {
-    return tokens.filter((token: any) => {
+    return tokens.filter(token => {
       const platformMap = {
         'pump.fun': 'pumpfun',
         'bonk.fun': 'bonk',
@@ -1097,19 +836,10 @@ export function TrenchesPage() {
         'orca': 'orca',
         'meteora': 'meteora',
         'raydium': 'raydium',
-        'jupiter': 'jupiter',
-        'birdeye': 'birdeye',
-        'dexscreener': 'dexscreener',
-        'solscan': 'solscan',
-        'solana': 'solana',
-        'trends.fun': 'trends',
-        'rupert': 'rupert',
-        'bags.fm': 'bagsfm',
-        'believe.app': 'believeapp',
-        'unknown': 'unknown'
+        'jupiter': 'jupiter'
       }
-      const platformKey = platformMap[token.platform as keyof typeof platformMap] as keyof typeof filters.launchpads
-      if (!platformKey || !filters.launchpads[platformKey]) return false
+      const platformKey = platformMap[token.platform] as keyof typeof filters.launchpads
+      if (!filters.launchpads[platformKey]) return false
 
       if (filters.atLeastOneSocial && !token.hasTwitter && !token.hasTelegram && !token.hasWebsite) {
         return false
@@ -1153,46 +883,40 @@ export function TrenchesPage() {
 
   // Memoized token processing for each category
   const newTokens = useMemo(() => {
-    // Combine all tokens and sort by time (newest first)
     const combinedTokens = [...realTokens, ...bonkFunTokens, ...moonItTokens]
-    console.log('🔍 NEW tokens - combined:', combinedTokens.length, 'realTokens (SolanaTracker):', realTokens.length, 'bonkFun:', bonkFunTokens.length, 'moonIt:', moonItTokens.length)
-    
+    console.log('🔍 NEW tokens - combined:', combinedTokens.length, 'realTokens:', realTokens.length, 'bonkFun:', bonkFunTokens.length, 'moonIt:', moonItTokens.length)
+    // Temporarily remove 3-day filtering to test if that's the issue
     const filteredTokens = applyFilters(combinedTokens)
     console.log('🔍 NEW tokens - after filtering:', filteredTokens.length)
-    
-    // Sort all tokens by time (newest first)
-    const sortedTokens = filteredTokens.sort((a, b) => {
-        const aTime = parseTimeToMinutes(a.age)
-        const bTime = parseTimeToMinutes(b.age)
-      return aTime - bTime // Newest first (lowest time = newest)
-      })
-    
-    return sortedTokens.slice(0, 30)
-  }, [realTokens, bonkFunTokens, moonItTokens, applyFilters, parseTimeToMinutes])
-
-  const mcCategoryTokens = useMemo(() => {
-    // Focus on graduating/migrating tokens, not market cap
-    const combinedGraduatingTokens = [...solanaTrackerGraduatingTokens, ...graduatedTokens, ...migratedTokens, ...bonkFunGraduatedTokens, ...moonItGraduatedTokens]
-    console.log('🔍 GRADUATING tokens - combined:', combinedGraduatingTokens.length, 'solanaTrackerGraduating:', solanaTrackerGraduatingTokens.length, 'graduated:', graduatedTokens.length, 'migrated:', migratedTokens.length, 'bonkFunGraduated:', bonkFunGraduatedTokens.length, 'moonItGraduated:', moonItGraduatedTokens.length)
-    
-    const filteredGraduatingTokens = applyFilters(combinedGraduatingTokens)
-    console.log('🔍 GRADUATING tokens - after filtering:', filteredGraduatingTokens.length)
-    
-    // Sort by time (newest first) for graduating tokens
-    return filteredGraduatingTokens
+    return filteredTokens
       .sort((a, b) => {
         const aTime = parseTimeToMinutes(a.age)
         const bTime = parseTimeToMinutes(b.age)
-        return aTime - bTime // Newest first
+        return aTime - bTime
       })
       .slice(0, 30)
-  }, [solanaTrackerGraduatingTokens, graduatedTokens, migratedTokens, bonkFunGraduatedTokens, moonItGraduatedTokens, applyFilters, parseTimeToMinutes])
+  }, [realTokens, bonkFunTokens, moonItTokens, applyFilters, parseTimeToMinutes])
+
+  const mcCategoryTokens = useMemo(() => {
+    const combinedMCTokens = [...mcTokens, ...bonkFunMCTokens, ...moonItMCTokens, ...graduatedTokens]
+    console.log('🔍 MC tokens - combined:', combinedMCTokens.length, 'mcTokens:', mcTokens.length, 'bonkFunMC:', bonkFunMCTokens.length, 'moonItMC:', moonItMCTokens.length, 'graduated:', graduatedTokens.length)
+    // Temporarily remove 3-day filtering to test if that's the issue
+    const filteredMCTokens = applyFilters(combinedMCTokens)
+    console.log('🔍 MC tokens - after filtering:', filteredMCTokens.length)
+    return filteredMCTokens
+      .sort((a, b) => {
+        const aMC = parseMarketCap(a.mc)
+        const bMC = parseMarketCap(b.mc)
+        return bMC - aMC
+      })
+      .slice(0, 30)
+  }, [mcTokens, bonkFunMCTokens, moonItMCTokens, graduatedTokens, applyFilters, parseTimeToMinutes, parseMarketCap])
 
   const graduatedCategoryTokens = useMemo(() => {
-    const combinedGraduatedTokens = [...solanaTrackerGraduatedTokens, ...migratedTokens, ...bonkFunGraduatedTokens, ...moonItGraduatedTokens]
-    console.log('🔍 GRADUATED tokens - combined:', combinedGraduatedTokens.length, 'solanaTrackerGraduated:', solanaTrackerGraduatedTokens.length, 'migrated:', migratedTokens.length, 'bonkFunGraduated:', bonkFunGraduatedTokens.length, 'moonItGraduated:', moonItGraduatedTokens.length)
+    const combinedGraduatedTokens = [...migratedTokens, ...bonkFunGraduatedTokens, ...moonItGraduatedTokens]
+    console.log('🔍 GRADUATED tokens - combined:', combinedGraduatedTokens.length, 'migrated:', migratedTokens.length, 'bonkFunGraduated:', bonkFunGraduatedTokens.length, 'moonItGraduated:', moonItGraduatedTokens.length)
     // For graduating tokens, show all tokens regardless of age since they are actively graduating
-    const recentGraduatedTokens = combinedGraduatedTokens.filter((token: any) => {
+    const recentGraduatedTokens = combinedGraduatedTokens.filter(token => {
       // If token has graduationDate, it's a graduating token - show all
       if (token.graduationDate) {
         return true
@@ -1213,7 +937,7 @@ export function TrenchesPage() {
         return aTime - bTime
       })
       .slice(0, 30)
-  }, [solanaTrackerGraduatedTokens, migratedTokens, bonkFunGraduatedTokens, moonItGraduatedTokens, applyFilters, parseTimeToMinutes])
+  }, [migratedTokens, bonkFunGraduatedTokens, moonItGraduatedTokens, applyFilters, parseTimeToMinutes])
 
   // Memoized filter handler
   const handleFiltersChange = useCallback((newFilters: FilterState) => {
@@ -1363,7 +1087,7 @@ export function TrenchesPage() {
             </div>
             <div>
               <TrenchesColumn 
-                title="% MC" 
+                title="Graduating" 
                 tokens={mcCategoryTokens} 
                 onFiltersChange={handleFiltersChange}
                 initialFilters={filters}
@@ -1373,7 +1097,7 @@ export function TrenchesPage() {
             </div>
             <div className="px-1">
               <TrenchesColumn 
-                title="Migrated" 
+                title="Graduated" 
                 tokens={graduatedCategoryTokens} 
                 onFiltersChange={handleFiltersChange}
                 initialFilters={filters}
@@ -1396,7 +1120,7 @@ export function TrenchesPage() {
             </div>
             <div>
               <TrenchesColumn 
-                title="% MC" 
+                title="Graduating" 
                 tokens={bscMcTokens} 
                 onFiltersChange={handleFiltersChange}
                 initialFilters={filters}
@@ -1406,7 +1130,7 @@ export function TrenchesPage() {
             </div>
             <div className="px-1">
               <TrenchesColumn 
-                title="Migrated" 
+                title="Graduated" 
                 tokens={bscGraduatedTokens} 
                 onFiltersChange={handleFiltersChange}
                 initialFilters={filters}

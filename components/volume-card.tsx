@@ -365,7 +365,7 @@ export function VolumeCard({ isOpen, onClose }: { isOpen: boolean; onClose: () =
                   {formatNumber(fallbackStats.volume)}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Demo data
+                  Fallback data
                 </p>
               </>
             )}
@@ -397,7 +397,7 @@ export function VolumeCard({ isOpen, onClose }: { isOpen: boolean; onClose: () =
                   {fallbackStats.traders.toLocaleString()}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Demo data
+                  Fallback data
                 </p>
               </>
             )}
@@ -440,7 +440,7 @@ export function VolumeCard({ isOpen, onClose }: { isOpen: boolean; onClose: () =
                 <div className="bg-blue-500 w-[40%]"></div>
           </div>
           <p className="text-right text-xs mt-1 text-gray-500 dark:text-gray-500">
-                {formatNumber(fallbackStats.volume)} <span className="text-blue-400">Demo Data</span>
+                {formatNumber(fallbackStats.volume)} <span className="text-blue-400">Fallback Data</span>
           </p>
             </>
           )}

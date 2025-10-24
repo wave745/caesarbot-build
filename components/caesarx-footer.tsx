@@ -16,11 +16,13 @@ import {
   Activity,
   X,
   Globe,
-  RefreshCw
+  RefreshCw,
+  ArrowRightLeft
 } from 'lucide-react'
 import { FooterLiveDataService, FooterLiveData } from '@/lib/services/footer-live-data'
 import { WatchlistCard } from './watchlist-card'
 import { VolumeCard } from './volume-card'
+import { BridgeModal } from './bridge-modal'
 
 interface SystemStats {
   fps: number
@@ -65,6 +67,7 @@ export function CaesarXFooter() {
   const [liveDataService] = useState(() => FooterLiveDataService.getInstance())
   const [showWatchlist, setShowWatchlist] = useState(false)
   const [showVolume, setShowVolume] = useState(false)
+  const [showBridge, setShowBridge] = useState(false)
 
   // Update live data using the service
   const updateLiveData = async () => {
@@ -118,6 +121,8 @@ export function CaesarXFooter() {
       setShowWatchlist(!showWatchlist)
     } else if (tracker === 'volume') {
       setShowVolume(!showVolume)
+    } else if (tracker === 'bridge') {
+      setShowBridge(!showBridge)
     }
     setActiveTrackers(prev => 
       prev.includes(tracker) 
@@ -212,6 +217,16 @@ export function CaesarXFooter() {
           <Activity className="w-3 h-3" />
           <span>Volume</span>
         </button>
+
+        <button 
+          onClick={() => toggleTracker('bridge')}
+          className={`flex items-center gap-1 hover:text-white transition-colors ${
+            activeTrackers.includes('bridge') ? 'text-green-400' : 'text-gray-400'
+          }`}
+        >
+          <ArrowRightLeft className="w-3 h-3" />
+          <span>Quick Bridge</span>
+        </button>
       </div>
 
       {/* Center Section - Live System Stats */}
@@ -291,6 +306,12 @@ export function CaesarXFooter() {
       <VolumeCard 
         isOpen={showVolume} 
         onClose={() => setShowVolume(false)} 
+      />
+      
+      {/* Bridge Modal */}
+      <BridgeModal 
+        isOpen={showBridge} 
+        onClose={() => setShowBridge(false)} 
       />
     </>
   )

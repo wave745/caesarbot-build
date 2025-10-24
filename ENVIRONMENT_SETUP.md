@@ -25,6 +25,9 @@ NEXT_PUBLIC_HELIUS_RPC_URL=https://mainnet.helius-rpc.com
 # CaesarX API Configuration
 NEXT_PUBLIC_CAESARX_API_URL=http://localhost:3001
 
+# SolanaTracker API Configuration
+SOLANATRACKER_API_KEY=your_solanatracker_api_key_here
+
 # Next.js Configuration
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
@@ -46,5 +49,6 @@ The following services have been updated to use environment variables:
 4. **MoralisComprehensiveService** - Already using `MORALIS_API_KEY`
 5. **PumpPortalService** - Uses `PUMPPORTAL_API_KEY`
 6. **BitqueryService** - Uses `BITQUERY_API_KEY`
+7. **SolanaTrackerService** - Uses `SOLANATRACKER_API_KEY`
 
 All hardcoded API keys have been removed from the codebase.

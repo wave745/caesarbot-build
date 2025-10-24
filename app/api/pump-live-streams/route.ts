@@ -47,46 +47,7 @@ export async function GET(request: NextRequest) {
     console.error('API: Error fetching live streams:', error)
     
     // Return fallback data instead of error
-    const fallbackData = [
-      {
-        mint: 'fallback-demo-token',
-        name: 'Demo Live Stream',
-        symbol: 'DEMO',
-        description: 'This is a fallback token shown when the API is unavailable',
-        image_uri: '/icons/platforms/pump.fun-logo.svg',
-        twitter: null,
-        telegram: null,
-        bonding_curve: 'fallback',
-        created_timestamp: Date.now(),
-        complete: false,
-        virtual_sol_reserves: 100000000000,
-        virtual_token_reserves: 1000000000000000,
-        total_supply: 1000000000000000,
-        show_name: true,
-        last_trade_timestamp: Date.now(),
-        king_of_the_hill_timestamp: Date.now(),
-        market_cap: 1000,
-        nsfw: false,
-        is_banned: false,
-        is_currently_live: true,
-        initialized: true,
-        video_uri: null,
-        updated_at: Math.floor(Date.now() / 1000),
-        pump_swap_pool: null,
-        ath_market_cap: 1000,
-        ath_market_cap_timestamp: Date.now(),
-        banner_uri: null,
-        hide_banner: false,
-        livestream_downrank_score: 0,
-        program: 'pump',
-        platform: null,
-        thumbnail: '/icons/platforms/pump.fun-logo.svg',
-        thumbnail_updated_at: Date.now(),
-        num_participants: 1,
-        downrank_score: 0,
-        usd_market_cap: 1000
-      }
-    ]
+    const fallbackData = []
     
     return NextResponse.json({
       success: false,

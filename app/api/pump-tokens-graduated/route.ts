@@ -1,22 +1,21 @@
 import { NextResponse } from 'next/server'
+import { fetchPumpFunGraduatedTokens } from '@/lib/pump-api'
 
 export async function GET() {
   try {
-    const response = await fetch('https://advanced-api-v2.pump.fun/coins/graduated?sortBy=creationTime', {
-      headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'CaesarX/1.0'
-      }
-    })
+    console.log('Fetching multi-platform graduated tokens using SolanaTracker integration...')
     
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
+    const tokens = await fetchPumpFunGraduatedTokens()
+    console.log(`Successfully fetched ${tokens.length} multi-platform graduated tokens`)
     
-    const data = await response.json()
-    return NextResponse.json(data)
+    return NextResponse.json({ coins: tokens })
+    
   } catch (error) {
-    console.error('Error fetching Pump.fun graduated tokens:', error)
-    return NextResponse.json({ error: 'Failed to fetch graduated tokens' }, { status: 500 })
+    console.error('Error fetching multi-platform graduated tokens:', error)
+    return NextResponse.json({ 
+      error: 'Failed to fetch graduated tokens',
+      details: error instanceof Error ? error.message : 'Unknown error',
+      coins: [] // Return empty array to prevent client crashes
+    }, { status: 500 })
   }
 }

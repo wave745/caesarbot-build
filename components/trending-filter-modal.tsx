@@ -25,6 +25,20 @@ interface FilterState {
     bagsfm: boolean
     believeapp: boolean
     moonit: boolean
+    pumpswap: boolean
+    moonshot: boolean
+    boop: boolean
+    orca: boolean
+    meteora: boolean
+    raydium: boolean
+    jupiter: boolean
+    birdeye: boolean
+    dexscreener: boolean
+    solscan: boolean
+    solana: boolean
+    trends: boolean
+    rupert: boolean
+    unknown: boolean
   }
   
   // Checkbox filters
@@ -69,12 +83,18 @@ interface TrendingFilterModalProps {
 }
 
 const launchpadData = [
-  { id: 'pumpfun', name: 'Pumpfun', color: 'bg-green-500', icon: '/icons/platforms/pump.fun-logo.svg' },
-  { id: 'bonk', name: 'Bonk', color: 'bg-orange-500', icon: '/icons/platforms/bonk.fun-logo.svg' },
-  { id: 'metdbc', name: 'MET-DBC', color: 'bg-cyan-500', icon: '/icons/platforms/meteora.ag(met-dbc)-logo.png' },
-  { id: 'bagsfm', name: 'Bags.fm', color: 'bg-purple-500', icon: '/icons/platforms/bags.fm-logo.png' },
-  { id: 'believeapp', name: 'Believe.app', color: 'bg-blue-500', icon: '/icons/platforms/believe.app-logo.png' },
-  { id: 'moonit', name: 'Moon.it', color: 'bg-pink-500', icon: '/icons/platforms/moon.it-logo.png' }
+  { id: 'pumpfun', name: 'Pump.fun', color: 'bg-green-500', icon: '/icons/platforms/pump.fun-logo.svg' },
+  { id: 'bonk', name: 'Bonk.fun', color: 'bg-orange-500', icon: '/icons/platforms/bonk.fun-logo.svg' },
+  { id: 'moonit', name: 'Moon.it', color: 'bg-yellow-500', icon: '/icons/platforms/moon.it-logo.png' },
+  { id: 'pumpswap', name: 'Pumpswap', color: 'bg-blue-500', icon: '/icons/platforms/pumpswap-logo.svg' },
+  { id: 'moonshot', name: 'Moonshot', color: 'bg-purple-500', icon: '/icons/platforms/moonshot-logo.svg' },
+  { id: 'boop', name: 'Boop.fun', color: 'bg-blue-400', icon: '/icons/platforms/boop.fun-logo.svg' },
+  { id: 'orca', name: 'Orca', color: 'bg-teal-500', icon: '/icons/platforms/orca.so-logo.svg' },
+  { id: 'meteora', name: 'Meteora', color: 'bg-red-500', icon: '/icons/platforms/meteora.ag(met-dbc)-logo.png' },
+  { id: 'raydium', name: 'Raydium', color: 'bg-red-600', icon: '/icons/platforms/raydium-launchlab-logo.svg' },
+  { id: 'bagsfm', name: 'Bags.fm', color: 'bg-green-600', icon: '/icons/platforms/bags.fm-logo.png' },
+  { id: 'believeapp', name: 'Believe.app', color: 'bg-green-500', icon: '/icons/platforms/believe.app-logo.png' },
+  { id: 'jupiter', name: 'Jupiter', color: 'bg-blue-500', icon: '/icons/platforms/jupiter-ag-jup-logo.svg' }
 ]
 
 export function TrendingFilterModal({ isOpen, onClose, onApply, initialFilters, selectedChain = 'solana' }: TrendingFilterModalProps) {
@@ -86,7 +106,21 @@ export function TrendingFilterModal({ isOpen, onClose, onApply, initialFilters, 
       metdbc: true,
       bagsfm: true,
       believeapp: true,
-      moonit: true
+      moonit: true,
+      pumpswap: true,
+      moonshot: true,
+      boop: true,
+      orca: true,
+      meteora: true,
+      raydium: true,
+      jupiter: true,
+      birdeye: true,
+      dexscreener: true,
+      solscan: true,
+      solana: true,
+      trends: true,
+      rupert: true,
+      unknown: true
     },
     atLeastOneSocial: false,
     originalSocials: false,
@@ -152,10 +186,16 @@ export function TrendingFilterModal({ isOpen, onClose, onApply, initialFilters, 
       launchpads: {
         pumpfun: false,
         bonk: false,
-        metdbc: false,
+        moonit: false,
+        pumpswap: false,
+        moonshot: false,
+        boop: false,
+        orca: false,
+        meteora: false,
+        raydium: false,
         bagsfm: false,
         believeapp: false,
-        moonit: false
+        jupiter: false
       },
       atLeastOneSocial: false,
       originalSocials: false,
@@ -231,26 +271,38 @@ export function TrendingFilterModal({ isOpen, onClose, onApply, initialFilters, 
                   </Button>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-3 gap-3">
                   {launchpadData.map((launchpad) => (
                     <button
                       key={launchpad.id}
                       onClick={() => updateFilter(`launchpads.${launchpad.id}`, !filters.launchpads[launchpad.id as keyof typeof filters.launchpads])}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-all duration-300 ${
+                      className={`flex items-center gap-2 px-3 py-2 rounded-full border transition-all duration-300 text-xs ${
                         filters.launchpads[launchpad.id as keyof typeof filters.launchpads]
                           ? launchpad.id === 'pumpfun' 
                             ? 'border-green-500 bg-green-500/10'
                             : launchpad.id === 'bonk'
                             ? 'border-orange-500 bg-orange-500/10'
-                            : launchpad.id === 'metdbc'
-                            ? 'border-cyan-500 bg-cyan-500/10'
-                            : launchpad.id === 'bagsfm'
-                            ? 'border-purple-500 bg-purple-500/10'
-                            : launchpad.id === 'believeapp'
+                            : launchpad.id === 'moonit'
+                            ? 'border-yellow-500 bg-yellow-500/10'
+                            : launchpad.id === 'pumpswap'
                             ? 'border-blue-500 bg-blue-500/10'
-                            : 'border-pink-500 bg-pink-500/10'
-                          : launchpad.id === 'metdbc'
-                          ? 'border-[#282828] hover:border-cyan-400 hover:shadow-[0_0_20px_rgba(34,211,238,0.3)] hover:bg-cyan-500/5'
+                            : launchpad.id === 'moonshot'
+                            ? 'border-purple-500 bg-purple-500/10'
+                            : launchpad.id === 'boop'
+                            ? 'border-blue-400 bg-blue-400/10'
+                            : launchpad.id === 'orca'
+                            ? 'border-teal-500 bg-teal-500/10'
+                            : launchpad.id === 'meteora'
+                            ? 'border-red-500 bg-red-500/10'
+                            : launchpad.id === 'raydium'
+                            ? 'border-red-600 bg-red-600/10'
+                            : launchpad.id === 'bagsfm'
+                            ? 'border-green-600 bg-green-600/10'
+                            : launchpad.id === 'believeapp'
+                            ? 'border-green-500 bg-green-500/10'
+                            : launchpad.id === 'jupiter'
+                            ? 'border-blue-500 bg-blue-500/10'
+                            : 'border-green-500 bg-green-500/10'
                           : 'border-[#282828] hover:border-gray-600'
                       }`}
                     >

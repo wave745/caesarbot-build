@@ -195,24 +195,3 @@ export function TrenchesCard({ token, isHovered = false }: TrenchesCardProps) {
   )
 }
 
-// Example usage with mock data
-export const mockTrenchesToken: TrenchesToken = {
-  id: "rspin-1",
-  symbol: "RSPIN",
-  name: "Roger Spins",
-  image: "/placeholder-token.png",
-  marketCap: 4100,
-  volume: 0,
-  fees: "0",
-  holders: 99,
-  age: "3d",
-  address: "Cs7...pump",
-  social: "roger_spins",
-  status: 'live',
-  engagementIndicators: [
-    { value: "+ 37%", color: "text-pink-400", icon: "👥" },
-    { value: "5%", color: "text-green-400", icon: "👨‍🍳" },
-    { value: "1.0%", color: "text-green-400", icon: "🎯" },
-    { value: "32%", color: "text-pink-400", icon: "☁️" }
-  ]
-}

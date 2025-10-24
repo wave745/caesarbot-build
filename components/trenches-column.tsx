@@ -10,6 +10,7 @@ import Image from "next/image"
 import { TrendingFilterModal } from "@/components/trending-filter-modal"
 import { useColumnSound } from "@/hooks/use-column-sound"
 import { SoundSelector } from "@/components/sound-selector"
+import { getLaunchpadColor } from "@/components/echo-customize-modal"
 
 interface TrenchesToken {
   id: string
@@ -31,7 +32,8 @@ interface TrenchesToken {
   top10Holders: number
   snipers: number
   insiders: number
-  platform: 'pump.fun' | 'bonk.fun' | 'moon.it'
+  platform: 'pump.fun' | 'bonk.fun' | 'moon.it' | 'pumpswap' | 'moonshot' | 'boop.fun' | 'orca' | 'meteora' | 'raydium' | 'jupiter' | 'birdeye' | 'dexscreener' | 'solscan' | 'solana' | 'trends.fun' | 'rupert' | 'bags.fm' | 'believe.app' | 'unknown'
+  platformLogo?: string
   buyAmount: string
   // Pump.fun specific fields
   coinMint?: string
@@ -60,6 +62,20 @@ interface FilterState {
     bagsfm: boolean
     believeapp: boolean
     moonit: boolean
+    pumpswap: boolean
+    moonshot: boolean
+    boop: boolean
+    orca: boolean
+    meteora: boolean
+    raydium: boolean
+    jupiter: boolean
+    birdeye: boolean
+    dexscreener: boolean
+    solscan: boolean
+    solana: boolean
+    trends: boolean
+    rupert: boolean
+    unknown: boolean
   }
   atLeastOneSocial: boolean
   originalSocials: boolean
@@ -96,9 +112,10 @@ interface TrenchesColumnProps {
   onFiltersChange?: (filters: FilterState) => void
   initialFilters?: FilterState
   selectedChain?: 'solana' | 'bnb'
+  echoSettings?: any
 }
 
-export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange, initialFilters, selectedChain = 'solana' }: TrenchesColumnProps) {
+export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange, initialFilters, selectedChain = 'solana', echoSettings }: TrenchesColumnProps) {
   const [solAmount, setSolAmount] = useState("5")
   const [isEditing, setIsEditing] = useState(false)
   const [showPresets, setShowPresets] = useState(false)
@@ -111,7 +128,21 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
       metdbc: false,
       bagsfm: false,
       believeapp: false,
-      moonit: true
+      moonit: true,
+      pumpswap: true,
+      moonshot: true,
+      boop: true,
+      orca: true,
+      meteora: true,
+      raydium: true,
+      jupiter: true,
+      birdeye: true,
+      dexscreener: true,
+      solscan: true,
+      solana: true,
+      trends: true,
+      rupert: true,
+      unknown: true
     },
     atLeastOneSocial: false,
     originalSocials: false,
@@ -337,7 +368,7 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
 
       {/* Tokens List */}
       <div 
-        className="flex flex-col divide-y divide-zinc-800 overflow-y-auto max-h-[85vh] custom-scrollbar pr-2"
+        className="flex flex-col divide-y divide-zinc-800 overflow-y-auto max-h-[85vh] custom-scrollbar"
         style={{
           scrollbarWidth: 'thin',
           scrollbarColor: '#18181b #09090b',
@@ -351,7 +382,7 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
           </div>
         ) : (
           tokens.map((token, idx) => (
-            <TrenchesTokenCard key={`${token.platform}-${token.id}-${idx}`} token={token} solAmount={solAmount} />
+            <TrenchesTokenCard key={`${token.platform}-${token.id}-${idx}`} token={token} solAmount={solAmount} echoSettings={echoSettings} />
           ))
         )}
       </div>
@@ -368,7 +399,7 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
   )
 }
 
-const TrenchesTokenCard = memo(function TrenchesTokenCard({ token, solAmount }: { token: TrenchesToken; solAmount: string }) {
+const TrenchesTokenCard = memo(function TrenchesTokenCard({ token, solAmount, echoSettings }: { token: TrenchesToken; solAmount: string; echoSettings?: any }) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'migrated': return 'border-red-500/60'
@@ -385,8 +416,16 @@ const TrenchesTokenCard = memo(function TrenchesTokenCard({ token, solAmount }: 
     return 'text-zinc-400'
   }
 
+  // Get background color based on settings
+  const getBackgroundColor = () => {
+    if (echoSettings?.toggles?.backgroundColor && echoSettings?.toggles?.launchpadColorMatching) {
+      return getLaunchpadColor(token.platform)
+    }
+    return 'hover:bg-zinc-900/40'
+  }
+
   return (
-    <div className="p-2 hover:bg-zinc-900/40 transition-all cursor-pointer min-h-[140px]">
+    <div className={`p-2 transition-all cursor-pointer min-h-[140px] w-full ${getBackgroundColor()}`}>
       <div className="flex items-start gap-3 h-full">
         {/* Left: Large Token Icon and Contract Address */}
         <div className="flex flex-col items-start">
@@ -397,21 +436,69 @@ const TrenchesTokenCard = memo(function TrenchesTokenCard({ token, solAmount }: 
                 alt={token.name}
                 className="w-full h-full object-cover"
                 onError={(e) => {
-                  e.currentTarget.src = `https://ui-avatars.com/api/?name=${token.symbol}&background=6366f1&color=fff&size=64`
+                  console.log('Image failed to load:', token.image);
+                  // Try multiple fallback strategies
+                  if (e.currentTarget.src.includes('solanatracker.io')) {
+                    // If Solana Tracker image fails, try direct URL
+                    const directUrl = token.image?.replace('https://image.solanatracker.io/proxy?url=', '');
+                    if (directUrl) {
+                      e.currentTarget.src = decodeURIComponent(directUrl);
+                    } else {
+                      e.currentTarget.src = `https://ui-avatars.com/api/?name=${token.symbol}&background=6366f1&color=fff&size=64`;
+                    }
+                  } else {
+                    e.currentTarget.src = `https://ui-avatars.com/api/?name=${token.symbol}&background=6366f1&color=fff&size=64`;
+                  }
+                }}
+                onLoad={() => {
+                  console.log('Image loaded successfully:', token.image);
                 }}
               />
             </div>
+            
             {/* Pill icon overlay */}
             <div className="absolute -bottom-1 -right-1 w-5 h-5">
               <Image 
                 src={
-                  token.platform === 'bonk.fun' ? "/icons/platforms/bonk.fun-logo.svg" :
-                  token.platform === 'moon.it' ? "/icons/platforms/moon.it-logo.png" :
+                  token.platformLogo || (
+                    token.platform === 'bonk.fun' ? "/icons/platforms/bonk.fun-logo.svg" :
+                    token.platform === 'moon.it' ? "/icons/platforms/moon.it-logo.png" :
+                    token.platform === 'pumpswap' ? "/icons/platforms/pumpswap-logo.svg" :
+                    token.platform === 'moonshot' ? "/icons/platforms/moonshot-logo.svg" :
+                    token.platform === 'boop.fun' ? "/icons/platforms/boop.fun-logo.svg" :
+                    token.platform === 'orca' ? "/icons/platforms/orca.so-logo.svg" :
+                    token.platform === 'meteora' ? "/icons/platforms/meteora.ag(met-dbc)-logo.png" :
+                    token.platform === 'raydium' ? "/icons/platforms/raydium-launchlab-logo.svg" :
+                    token.platform === 'jupiter' ? "/icons/platforms/jupiter-ag-jup-logo.svg" :
+                    token.platform === 'birdeye' ? "/icons/platforms/birdeye-logo.svg" :
+                    token.platform === 'dexscreener' ? "/icons/platforms/dexscreener-logo.svg" :
+                    token.platform === 'solscan' ? "/icons/platforms/solscan-logo.svg" :
+                    token.platform === 'solana' ? "/icons/platforms/solana-logo.svg" :
+                    token.platform === 'trends.fun' ? "/icons/platforms/trends.fun-logo.svg" :
+                  token.platform === 'rupert' ? "/icons/platforms/rupert-logo.svg" :
+                  token.platform === 'bags.fm' ? "/icons/platforms/bags.fm-logo.png" :
+                  token.platform === 'believe.app' ? "/icons/platforms/believe.app-logo.png" :
                   "/icons/platforms/pump.fun-logo.svg"
+                  )
                 } 
                 alt={
                   token.platform === 'bonk.fun' ? "Bonk.fun" :
                   token.platform === 'moon.it' ? "Moon.it" :
+                  token.platform === 'pumpswap' ? "PumpSwap" :
+                  token.platform === 'moonshot' ? "Moonshot" :
+                  token.platform === 'boop.fun' ? "Boop.fun" :
+                  token.platform === 'orca' ? "Orca" :
+                  token.platform === 'meteora' ? "Meteora" :
+                  token.platform === 'raydium' ? "Raydium Launchpad" :
+                  token.platform === 'jupiter' ? "Jupiter" :
+                  token.platform === 'birdeye' ? "Birdeye" :
+                  token.platform === 'dexscreener' ? "DexScreener" :
+                  token.platform === 'solscan' ? "Solscan" :
+                  token.platform === 'solana' ? "Solana" :
+                  token.platform === 'trends.fun' ? "Trends.fun" :
+                  token.platform === 'rupert' ? "Rupert" :
+                  token.platform === 'bags.fm' ? "Bags.fm" :
+                  token.platform === 'believe.app' ? "Believe.app" :
                   "Pump.fun"
                 } 
                 width={20} 
@@ -422,15 +509,31 @@ const TrenchesTokenCard = memo(function TrenchesTokenCard({ token, solAmount }: 
           </div>
           
           {/* Contract Address under the icon */}
-          <div className="flex items-center gap-1 text-zinc-500 text-xs mt-1">
-            <span className="cursor-pointer hover:text-white transition-colors">
-              {token.contractAddress}
+          <div className="flex items-center gap-1 text-zinc-500 text-xs mt-1 w-16">
+            <span 
+              className="cursor-pointer hover:text-white transition-colors font-mono text-center flex-1"
+              onClick={() => {
+                if (token.contractAddress) {
+                  navigator.clipboard.writeText(token.contractAddress);
+                }
+              }}
+              title={token.contractAddress}
+            >
+              {(() => {
+                if (!token.contractAddress) return 'N/A';
+                if (token.contractAddress.length < 7) return token.contractAddress;
+                
+                // Clean the contract address to remove any extra spaces or characters
+                const cleanAddress = token.contractAddress.trim().replace(/\s+/g, '');
+                console.log('Contract Address Debug:', {
+                  original: token.contractAddress,
+                  clean: cleanAddress,
+                  length: cleanAddress.length
+                });
+                
+                return `${cleanAddress.substring(0, 3)}...${cleanAddress.substring(cleanAddress.length - 4)}`;
+              })()}
             </span>
-            <Copy 
-              size={10} 
-              className="cursor-pointer hover:text-white transition-colors opacity-60 hover:opacity-100" 
-              onClick={() => navigator.clipboard.writeText(token.contractAddress)}
-            />
           </div>
         </div>
 
@@ -574,8 +677,15 @@ const TrenchesTokenCard = memo(function TrenchesTokenCard({ token, solAmount }: 
               <span className="text-white">{token.volume}</span>
             </div>
             <div className="flex items-center gap-1">
-              <span className="text-zinc-400">F</span>
-              <span className="text-white">≈ {token.fee}</span>
+              <div className="flex items-center gap-1">
+                <span className="text-zinc-400">F</span>
+                <img 
+                  src="/sol-logo.png" 
+                  alt="Solana" 
+                  className="w-2 h-2 mt-0.5"
+                />
+              </div>
+              <span className="text-white">{token.fee}</span>
             </div>
           </div>
           

@@ -7,7 +7,7 @@ export interface PumpFunCoin {
   creationTime: number
   numHolders: number
   marketCap: number
-  volume: number
+  volume: number | string
   currentMarketPrice: number
   bondingCurveProgress: number
   sniperCount: number
@@ -34,6 +34,11 @@ export interface PumpFunCoin {
   transactions: number
   sniperOwnedPercentage: number
   topHoldersPercentage: number
+  platform?: string
+  platformLogo?: string
+  totalFees?: number | string
+  tradingFees?: number | string
+  tipsFees?: number | string
 }
 
 export interface PumpFunResponse {
@@ -195,110 +200,429 @@ export interface MoonItResponse {
   }
 }
 
+// Cache for SolanaTracker responses to improve loading speed
+const solanaTrackerCache = new Map<string, { data: any, timestamp: number }>()
+const CACHE_DURATION_MAIN = 10000 // 10 seconds cache
+
+// Helper function to convert SolanaTracker data to PumpFunCoin format
+function convertSolanaTrackerToPumpFunCoins(data: any[]): PumpFunCoin[] {
+  return data.map((token: any, index: number) => {
+    // Determine platform based on the token data
+    let platform = 'pump.fun'
+    let platformLogo = '/icons/platforms/pump.fun-logo.svg'
+    
+    if (token.token?.createdOn) {
+      const createdOn = token.token.createdOn.toLowerCase()
+      if (createdOn.includes('pump.fun')) {
+        platform = 'pump.fun'
+        platformLogo = '/icons/platforms/pump.fun-logo.svg'
+      } else if (createdOn.includes('bonk.fun')) {
+        platform = 'bonk.fun'
+        platformLogo = '/icons/platforms/bonk.fun-logo.svg'
+      } else if (createdOn.includes('moon.it')) {
+        platform = 'moon.it'
+        platformLogo = '/icons/platforms/moon.it-logo.png'
+      } else if (createdOn.includes('meteora')) {
+        platform = 'meteora'
+        platformLogo = '/icons/platforms/meteora.ag(met-dbc)-logo.png'
+      } else if (createdOn.includes('pumpswap')) {
+        platform = 'pumpswap'
+        platformLogo = '/icons/platforms/pumpswap-logo.svg'
+      } else if (createdOn.includes('moonshot')) {
+        platform = 'moonshot'
+        platformLogo = '/icons/platforms/moonshot-logo.svg'
+      } else if (createdOn.includes('boop')) {
+        platform = 'boop'
+        platformLogo = '/icons/platforms/boop-logo.svg'
+      } else if (createdOn.includes('orca')) {
+        platform = 'orca'
+        platformLogo = '/icons/platforms/orca-logo.svg'
+      } else if (createdOn.includes('raydium')) {
+        platform = 'raydium'
+        platformLogo = '/icons/platforms/raydium-logo.svg'
+      } else if (createdOn.includes('jupiter')) {
+        platform = 'jupiter'
+        platformLogo = '/icons/platforms/jupiter-logo.svg'
+      }
+    }
+    
+    // Also check pools[0].market for additional platform detection
+    if (token.pools?.[0]?.market) {
+      const market = token.pools[0].market.toLowerCase()
+      if (market.includes('pump.fun')) {
+        platform = 'pump.fun'
+        platformLogo = '/icons/platforms/pump.fun-logo.svg'
+      } else if (market.includes('bonk.fun')) {
+        platform = 'bonk.fun'
+        platformLogo = '/icons/platforms/bonk.fun-logo.svg'
+      } else if (market.includes('moon.it')) {
+        platform = 'moon.it'
+        platformLogo = '/icons/platforms/moon.it-logo.png'
+      }
+    }
+    
+    return {
+      coinMint: token.token?.mint || token.mint || `token-${index}`,
+      dev: token.token?.dev || token.dev || 'Unknown',
+      name: token.token?.name || token.name || 'Unknown Token',
+      ticker: token.token?.symbol || token.symbol || 'UNKNOWN',
+      imageUrl: token.token?.image || token.image || '/placeholder-token.png',
+      creationTime: token.token?.createdAt ? new Date(token.token.createdAt).getTime() : Date.now(),
+      numHolders: token.token?.holders || token.holders || 0,
+      marketCap: token.pools?.[0]?.marketCap?.usd || token.marketCap || 0,
+      volume: formatVolume(token.pools?.[0]?.txns?.volume || token.txns?.volume || token.pools?.[0]?.txns?.volume24h || token.pools?.[0]?.volume || token.txns?.volume24h || token.volume || token.pools?.[0]?.volume24h || token.volume24h || 0),
+      currentMarketPrice: token.pools?.[0]?.price?.usd || token.price || 0,
+      bondingCurveProgress: token.pools?.[0]?.bondingCurveProgress || token.bondingCurveProgress || 0,
+      sniperCount: token.sniperCount || 0,
+      graduationDate: token.graduationDate || null,
+      holders: token.holders || [],
+      allTimeHighMarketCap: token.pools?.[0]?.marketCap?.usd || token.marketCap || 0,
+      poolAddress: token.pools?.[0]?.address || token.poolAddress || '',
+      twitter: token.token?.twitter || token.twitter || null,
+      telegram: token.token?.telegram || token.telegram || null,
+      website: token.token?.website || token.website || null,
+      hasTwitter: !!(token.token?.twitter || token.twitter),
+      hasTelegram: !!(token.token?.telegram || token.telegram),
+      hasWebsite: !!(token.token?.website || token.website),
+      hasSocial: !!(token.token?.twitter || token.twitter || token.token?.telegram || token.telegram),
+      twitterReuseCount: 0,
+      devHoldingsPercentage: token.devHoldingsPercentage || 0,
+      buyTransactions: token.buyTransactions || 0,
+      sellTransactions: token.sellTransactions || 0,
+      transactions: token.transactions || 0,
+      sniperOwnedPercentage: token.sniperOwnedPercentage || 0,
+      topHoldersPercentage: token.topHoldersPercentage || 0,
+      platform,
+      platformLogo,
+      totalFees: formatFees(token.risk?.fees?.total || 0),
+      tradingFees: formatFees(token.risk?.fees?.totalTrading || 0),
+      tipsFees: formatFees(token.risk?.fees?.totalTips || 0)
+    }
+  })
+}
+
 export async function fetchPumpFunTokens(): Promise<PumpFunCoin[]> {
   try {
-    console.log('Starting API call to our proxy...')
-    const response = await fetch('/api/pump-tokens', {
+    console.log('Starting direct API call to SolanaTracker for multi-platform tokens...')
+    
+    // Check cache first
+    const cacheKey = 'tokens-latest'
+    const cached = solanaTrackerCache.get(cacheKey)
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION_MAIN) {
+      console.log('Using cached SolanaTracker data for immediate display')
+      return convertSolanaTrackerToPumpFunCoins(cached.data)
+    }
+    
+    // Call SolanaTracker API directly with aggressive timeout for immediate trading
+    const response = await fetch('https://data.solanatracker.io/tokens/latest', {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-      }
+        'x-api-key': process.env.SOLANATRACKER_API_KEY || '',
+        'User-Agent': 'CaesarX/1.0'
+      },
+      signal: AbortSignal.timeout(8000) // 8 second timeout for better reliability
     })
     
-    console.log('Response status:', response.status)
+    console.log('SolanaTracker response status:', response.status)
+    
+    if (!response.ok) {
+      console.warn('SolanaTracker API returned error:', response.status)
+      // Fallback to original pump.fun API
+      return await fetchPumpFunTokensFallback()
+    }
     
     const data = await response.json()
     
-    if (!response.ok) {
-      console.warn('API returned error:', data)
-      // If the API returns an error but includes coins array, use it
-      if (data && data.coins && Array.isArray(data.coins)) {
-        console.log('Using fallback data from error response:', data.coins.length, 'coins')
-        return data.coins
-      }
-      throw new Error(`HTTP error! status: ${response.status}: ${data?.error || 'Unknown error'}`)
-    }
+    // Store in cache for immediate future requests
+    solanaTrackerCache.set(cacheKey, { data, timestamp: Date.now() })
     
     // Check if the response has the expected structure
-    if (!data.coins || !Array.isArray(data.coins)) {
-      console.warn('Invalid response structure:', data)
-      return []
+    if (!Array.isArray(data)) {
+      console.warn('Invalid SolanaTracker response structure:', data)
+      return await fetchPumpFunTokensFallback()
     }
     
-    console.log('Successfully fetched data:', data.coins.length, 'coins')
-    return data.coins
+    // Convert SolanaTracker tokens to PumpFunCoin format using helper function
+    const convertedTokens = convertSolanaTrackerToPumpFunCoins(data)
+    
+    console.log('Successfully converted SolanaTracker data:', convertedTokens.length, 'tokens')
+    return convertedTokens
   } catch (error) {
-    console.warn('Error fetching Pump.fun tokens:', error)
-    console.warn('Error details:', error instanceof Error ? error.message : 'Unknown error')
+    console.warn('Error fetching tokens from SolanaTracker:', error)
+    console.warn('Falling back to original pump.fun API')
+    return await fetchPumpFunTokensFallback()
+  }
+}
+
+// Fallback function - return empty array to avoid circular dependency
+async function fetchPumpFunTokensFallback(): Promise<PumpFunCoin[]> {
+  try {
+    console.log('SolanaTracker API failed, returning empty array for fallback...')
+    return []
+  } catch (error) {
+    console.warn('Error in fallback:', error)
     return []
   }
 }
 
 export async function fetchPumpFunMCTokens(): Promise<PumpFunCoin[]> {
   try {
-    console.log('Starting API call to MC proxy...')
-    const response = await fetch('/api/pump-tokens-mc', {
+    console.log('Starting direct API call to SolanaTracker for graduating tokens...')
+    
+    // Check cache first
+    const cacheKey = 'tokens-graduating'
+    const cached = solanaTrackerCache.get(cacheKey)
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION_MAIN) {
+      console.log('Using cached SolanaTracker graduating data for immediate display')
+      return convertSolanaTrackerToPumpFunCoins(cached.data)
+    }
+    
+    // Call SolanaTracker API directly for graduating tokens
+    const response = await fetch('https://data.solanatracker.io/tokens/multi/graduating', {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
+        'x-api-key': process.env.SOLANATRACKER_API_KEY || '',
+        'User-Agent': 'CaesarX/1.0'
       }
     })
     
-    console.log('MC Response status:', response.status)
+    console.log('SolanaTracker Graduating response status:', response.status)
+    
+    if (!response.ok) {
+      console.warn('SolanaTracker Graduating API returned error:', response.status)
+      // Fallback to original MC API
+      return await fetchPumpFunMCTokensFallback()
+    }
     
     const data = await response.json()
     
-    if (!response.ok) {
-      console.warn('MC API returned error:', data)
-      if (data && data.coins && Array.isArray(data.coins)) {
-        console.log('Using fallback MC data from error response:', data.coins.length, 'coins')
-        return data.coins
-      }
-      throw new Error(`HTTP error! status: ${response.status}: ${data?.error || 'Unknown error'}`)
+    // Store in cache for immediate future requests
+    solanaTrackerCache.set(cacheKey, { data, timestamp: Date.now() })
+    
+    // Check if the response has the expected structure
+    if (!Array.isArray(data)) {
+      console.warn('Invalid SolanaTracker Graduating response structure:', data)
+      return await fetchPumpFunMCTokensFallback()
     }
     
-    if (!data.coins || !Array.isArray(data.coins)) {
-      console.warn('Invalid MC response structure:', data)
-      return []
-    }
+    // Convert graduating tokens to PumpFunCoin format using helper function
+    const convertedTokens = convertSolanaTrackerToPumpFunCoins(data)
     
-    console.log('Successfully fetched MC data:', data.coins.length, 'coins')
-    return data.coins
+    console.log('Successfully converted SolanaTracker Graduating data:', convertedTokens.length, 'tokens')
+    return convertedTokens
   } catch (error) {
-    console.warn('Error fetching Pump.fun MC tokens:', error)
-    console.warn('Error details:', error instanceof Error ? error.message : 'Unknown error')
-    return []
+    console.warn('Error fetching graduating tokens from SolanaTracker:', error)
+    console.warn('Falling back to original API')
+    return await fetchPumpFunMCTokensFallback()
   }
 }
 
 export async function fetchPumpFunGraduatedTokens(): Promise<PumpFunCoin[]> {
   try {
-    console.log('Starting API call to graduated proxy...')
-    const response = await fetch('/api/pump-tokens-graduated', {
+    console.log('Starting direct API call to SolanaTracker for graduated tokens...')
+    
+    // Check cache first
+    const cacheKey = 'tokens-graduated'
+    const cached = solanaTrackerCache.get(cacheKey)
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION_MAIN) {
+      console.log('Using cached SolanaTracker graduated data for immediate display')
+      return convertSolanaTrackerToPumpFunCoins(cached.data)
+    }
+    
+    // Call SolanaTracker API directly for graduated tokens
+    const response = await fetch('https://data.solanatracker.io/tokens/multi/graduated', {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
-      }
-      })
-      
-    console.log('Graduated Response status:', response.status)
+        'x-api-key': process.env.SOLANATRACKER_API_KEY || '',
+        'User-Agent': 'CaesarX/1.0'
+      },
+      signal: AbortSignal.timeout(8000) // 8 second timeout for better reliability
+    })
+    
+    console.log('SolanaTracker Graduating response status:', response.status)
+    
+    if (!response.ok) {
+      console.warn('SolanaTracker Graduating API returned error:', response.status)
+      // Fallback to original pump.fun graduated API
+      return await fetchPumpFunGraduatedTokensFallback()
+    }
+    
+    const data = await response.json()
+    
+    // Store in cache for immediate future requests
+    solanaTrackerCache.set(cacheKey, { data, timestamp: Date.now() })
+    
+    // Check if the response has the expected structure
+    if (!Array.isArray(data)) {
+      console.warn('Invalid SolanaTracker Graduated response structure:', data)
+      return await fetchPumpFunGraduatedTokensFallback()
+    }
+    
+    // Convert graduated tokens to PumpFunCoin format using helper function
+    const graduatedTokens = convertSolanaTrackerToPumpFunCoins(data.slice(0, 30))
+    
+    console.log('Successfully converted SolanaTracker Graduated data:', graduatedTokens.length, 'tokens')
+    return graduatedTokens
+  } catch (error) {
+    console.warn('Error fetching graduated tokens from SolanaTracker:', error)
+    console.warn('Falling back to original pump.fun graduated API')
+    return await fetchPumpFunGraduatedTokensFallback()
+  }
+}
+
+// Function to fetch graduated/migrated tokens from SolanaTracker
+// CACHE BUSTER - Force rebuild for import fix - v3
+export async function fetchPumpFunMigratedTokens(): Promise<PumpFunCoin[]> {
+  try {
+    console.log('Starting direct API call to SolanaTracker for migrated tokens...')
+    
+    // Call SolanaTracker API directly for migrated tokens
+    const response = await fetch('https://data.solanatracker.io/tokens/multi/graduated', {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.SOLANATRACKER_API_KEY || '',
+        'User-Agent': 'CaesarX/1.0'
+      },
+      signal: AbortSignal.timeout(8000) // 8 second timeout for better reliability
+    })
+    
+    console.log('SolanaTracker Migrated response status:', response.status)
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+      console.warn('SolanaTracker Migrated API returned error:', response.status)
+      // Fallback to empty array for now
+      return []
+    }
+    
+    const data = await response.json()
+    
+    // Check if the response has the expected structure
+    if (!Array.isArray(data)) {
+      console.warn('Invalid SolanaTracker Migrated response structure:', data)
+      return []
+    }
+    
+    // Convert migrated tokens to PumpFunCoin format
+    const migratedTokens = data.slice(0, 30).map((token: any, index: number) => {
+      // Determine platform based on the token data
+      let platform = 'pump.fun'
+      let platformLogo = '/icons/platforms/pump.fun-logo.svg'
+      
+      if (token.token?.createdOn) {
+        const createdOn = token.token.createdOn.toLowerCase()
+        if (createdOn.includes('pump.fun')) {
+          platform = 'pump.fun'
+          platformLogo = '/icons/platforms/pump.fun-logo.svg'
+        } else if (createdOn.includes('bonk.fun')) {
+          platform = 'bonk.fun'
+          platformLogo = '/icons/platforms/bonk.fun-logo.svg'
+        } else if (createdOn.includes('moon.it')) {
+          platform = 'moon.it'
+          platformLogo = '/icons/platforms/moon.it-logo.png'
+        }
       }
-
-    const data: PumpFunResponse = await response.json()
-    console.log('Successfully fetched graduated data:', data.coins.length, 'coins')
-    return data.coins
+      
+      // Check pools for platform identification
+      if (token.pools && token.pools.length > 0) {
+        const pool = token.pools[0]
+        if (pool.market === 'meteora-dyn-v2' || pool.market === 'meteora-curve' || pool.market === 'meteora-dyn') {
+          platform = 'meteora'
+          platformLogo = '/icons/platforms/meteora.ag(met-dbc)-logo.png'
+        } else if (pool.market === 'raydium-clmm' || pool.market === 'raydium-launchpad') {
+          platform = 'raydium'
+          platformLogo = '/icons/platforms/raydium-launchlab-logo.svg'
+        } else if (pool.market === 'pumpfun-amm') {
+          platform = 'pumpswap'
+          platformLogo = '/icons/platforms/pumpswap-logo.svg'
+        }
+      }
+      
+      return {
+        coinMint: token.token?.mint || '',
+        dev: token.token?.creation?.creator || '',
+        name: token.token?.name || '',
+        ticker: token.token?.symbol || '',
+        imageUrl: token.token?.image || '',
+        creationTime: token.token?.creation?.created_time ? token.token.creation.created_time * 1000 : Date.now(),
+        numHolders: token.holders || 0,
+        marketCap: token.pools?.[0]?.marketCap?.usd || 0,
+        volume: formatVolume(token.pools?.[0]?.txns?.volume || token.txns?.volume || token.pools?.[0]?.txns?.volume24h || token.pools?.[0]?.volume || token.txns?.volume24h || token.volume || token.pools?.[0]?.volume24h || token.volume24h || 0),
+        currentMarketPrice: token.pools?.[0]?.price?.usd || 0,
+        bondingCurveProgress: token.pools?.[0]?.curvePercentage || 0,
+        sniperCount: token.risk?.snipers?.count || 0,
+        graduationDate: new Date().toISOString(), // Mark as migrated
+        holders: [],
+        allTimeHighMarketCap: token.pools?.[0]?.marketCap?.usd || 0,
+        poolAddress: token.pools?.[0]?.poolId || null,
+        twitter: token.token?.twitter || null,
+        telegram: token.token?.telegram || null,
+        website: token.token?.website || null,
+        hasTwitter: !!token.token?.twitter,
+        hasTelegram: !!token.token?.telegram,
+        hasWebsite: !!token.token?.website,
+        hasSocial: !!(token.token?.twitter || token.token?.telegram || token.token?.website),
+        twitterReuseCount: 0,
+        devHoldingsPercentage: token.risk?.dev?.percentage || 0,
+        buyTransactions: token.buys || 0,
+        sellTransactions: token.sells || 0,
+        transactions: token.txns || 0,
+        sniperOwnedPercentage: token.risk?.snipers?.totalPercentage || 0,
+        topHoldersPercentage: token.risk?.top10 || 0,
+        platform: platform,
+        platformLogo: platformLogo,
+        totalFees: formatFees(token.risk?.fees?.total || 0),
+        tradingFees: formatFees(token.risk?.fees?.totalTrading || 0),
+        tipsFees: formatFees(token.risk?.fees?.totalTips || 0)
+      }
+    })
+    
+    console.log('Successfully converted SolanaTracker Migrated data:', migratedTokens.length, 'tokens')
+    return migratedTokens
   } catch (error) {
-    console.warn('Error fetching Pump.fun graduated tokens:', error)
-    console.warn('Error details:', error instanceof Error ? error.message : 'Unknown error')
+    console.warn('Error fetching migrated tokens from SolanaTracker:', error)
+    console.warn('Falling back to empty array')
     return []
   }
 }
+
+// Alias function to ensure import works
+export const fetchMigratedTokens = fetchPumpFunMigratedTokens
+
+// Alternative function with different name to bypass cache issues
+export async function fetchMigratedTokensAlt(): Promise<PumpFunCoin[]> {
+  return await fetchPumpFunMigratedTokens()
+}
+
+// Fallback function for graduated tokens - return empty array to avoid circular dependency
+async function fetchPumpFunGraduatedTokensFallback(): Promise<PumpFunCoin[]> {
+  try {
+    console.log('SolanaTracker Graduated API failed, returning empty array for fallback...')
+    return []
+  } catch (error) {
+    console.warn('Error in graduated fallback:', error)
+    return []
+  }
+}
+
+// Fallback function to original MC API
+async function fetchPumpFunMCTokensFallback(): Promise<PumpFunCoin[]> {
+  try {
+    console.log('SolanaTracker MC API failed, returning empty array for fallback...')
+    return []
+  } catch (error) {
+    console.warn('Error in MC fallback:', error)
+    return []
+  }
+}
+
 
 export async function fetchBonkFunTokens(): Promise<BonkFunToken[]> {
   try {
@@ -560,21 +884,21 @@ export async function fetchMoonItGraduatedTokens(): Promise<MoonItToken[]> {
 
 export function formatMarketCap(marketCap: number): string {
   if (marketCap >= 1000000) {
-    return `$${(marketCap / 1000000).toFixed(1)}M`
+    return `$${Math.round(marketCap / 1000000 * 10) / 10}M`
   } else if (marketCap >= 1000) {
-    return `$${(marketCap / 1000).toFixed(1)}K`
+    return `$${Math.round(marketCap / 1000 * 10) / 10}K`
   } else {
-    return `$${marketCap.toFixed(0)}`
+    return `$${Math.round(marketCap)}`
   }
 }
 
 // Cache for SOL price to avoid repeated API calls
 let solPriceCache: { price: number; timestamp: number } | null = null
-const CACHE_DURATION = 30 * 1000 // 30 seconds
+const CACHE_DURATION_SECOND = 30 * 1000 // 30 seconds
 
 async function getSolPrice(): Promise<number> {
   // Check cache first
-  if (solPriceCache && Date.now() - solPriceCache.timestamp < CACHE_DURATION) {
+  if (solPriceCache && Date.now() - solPriceCache.timestamp < CACHE_DURATION_SECOND) {
     return solPriceCache.price
   }
 
@@ -615,38 +939,53 @@ async function getSolPrice(): Promise<number> {
 }
 
 // Synchronous volume formatting with cached SOL price
-export function formatVolume(volumeInSol: number): string {
+export function formatVolume(volumeInUsd: number | string): string {
   try {
-    // Use cached SOL price if available, otherwise use a reasonable default
-    let solPrice = 220 // Default SOL price
-    
-    // Try to get from global cache first (client-side)
-    if (typeof window !== 'undefined' && (window as any).solPriceCache) {
-      solPrice = (window as any).solPriceCache.price
-    } else if (solPriceCache?.price) {
-      // Fallback to module cache (server-side)
-      solPrice = solPriceCache.price
+    // If it's already a formatted string, return it
+    if (typeof volumeInUsd === 'string') {
+      return volumeInUsd
     }
     
-    const volumeInUsd = volumeInSol * solPrice
+    // If it's a number, format it
+    const volume = Number(volumeInUsd)
+    if (!Number.isFinite(volume) || volume < 0) {
+      return '$0'
+    }
     
-    if (volumeInUsd >= 1000000) {
-      return `$${(volumeInUsd / 1000000).toFixed(1)}M`
-    } else if (volumeInUsd >= 1000) {
-      return `$${(volumeInUsd / 1000).toFixed(1)}K`
+    // Volume from SolanaTracker API is already in USD, no conversion needed
+    if (volume >= 1000000) {
+      return `$${Math.round(volume / 1000000 * 10) / 10}M`
+    } else if (volume >= 1000) {
+      return `$${Math.round(volume / 1000 * 10) / 10}K`
     } else {
-      return `$${volumeInUsd.toFixed(0)}`
+      return `$${Math.round(volume)}`
     }
   } catch (error) {
-    console.warn('Error converting volume to USD:', error)
-    // Fallback to treating as USD if conversion fails
-    if (volumeInSol >= 1000000) {
-      return `$${(volumeInSol / 1000000).toFixed(1)}M`
-    } else if (volumeInSol >= 1000) {
-      return `$${(volumeInSol / 1000).toFixed(1)}K`
-    } else {
-      return `$${volumeInSol.toFixed(0)}`
+    console.warn('Error formatting volume:', error)
+    return typeof volumeInUsd === 'string' ? volumeInUsd : '$0'
+  }
+}
+
+export function formatFees(fees: number): string {
+  try {
+    if (fees === 0) {
+      return '0'
     }
+    
+    // Always limit to maximum 3 decimal places, no scientific notation
+    if (fees >= 1) {
+      return Math.round(fees * 100) / 100 + ''
+    } else if (fees >= 0.01) {
+      return Math.round(fees * 1000) / 1000 + ''
+    } else if (fees >= 0.001) {
+      return Math.round(fees * 1000) / 1000 + ''
+    } else {
+      // For very small numbers, just show 3 decimal places (will show 0.000)
+      return Math.round(fees * 1000) / 1000 + ''
+    }
+  } catch (error) {
+    console.warn('Error formatting fees:', error)
+    return fees.toString()
   }
 }
 

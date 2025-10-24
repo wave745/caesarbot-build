@@ -98,10 +98,10 @@ export class FooterLiveDataService {
   async getWalletBalance(): Promise<{ solBalance: number; usdValue: number }> {
     try {
       // This would integrate with your wallet connection system
-      // For now, return mock data that could be enhanced with real wallet data
+      // Return zero balance if no wallet connected
       return {
-        solBalance: 232.48,
-        usdValue: 95520
+        solBalance: 0,
+        usdValue: 0
       }
     } catch (error) {
       console.error('Error fetching wallet balance:', error)
