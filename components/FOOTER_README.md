@@ -12,7 +12,6 @@ A professional terminal-style footer bar inspired by Padre's design, providing r
 ### Interactive Trackers
 - **Watchlist**: Track favorite tokens
 - **Wallet Tracker**: Monitor wallet balances
-- **PnL Tracker**: Track profit and loss
 - **Price Alerts**: Set up price notifications
 - **X Tracker**: Social media monitoring
 - **Trenches**: Advanced tracking features

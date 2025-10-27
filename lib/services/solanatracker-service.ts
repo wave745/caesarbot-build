@@ -264,7 +264,17 @@ export class SolanaTrackerService {
         graduationDate: item.graduationDate || null,
         buyTransactions: item.pools?.[0]?.txns?.buys || item.buyTransactions || 0,
         sellTransactions: item.pools?.[0]?.txns?.sells || item.sellTransactions || 0,
-        sniperCount: item.sniperCount || 0
+        sniperCount: item.sniperCount || 0,
+        // Extract risk data from the risk object
+        top10HoldersPercentage: item.risk?.top10 || 0,
+        devPercentage: item.risk?.dev?.percentage || 0,
+        devAmount: item.risk?.dev?.amount || 0,
+        insidersCount: item.risk?.insiders?.count || 0,
+        insidersTotalBalance: item.risk?.insiders?.totalBalance || 0,
+        insidersTotalPercentage: item.risk?.insiders?.totalPercentage || 0,
+        snipersCount: item.risk?.snipers?.count || 0,
+        snipersTotalBalance: item.risk?.snipers?.totalBalance || 0,
+        snipersTotalPercentage: item.risk?.snipers?.totalPercentage || 0
       }
     })
   }

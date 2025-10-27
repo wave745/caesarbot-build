@@ -24,7 +24,6 @@ export default function FooterDemoPage() {
                 <ul className="space-y-1 text-gray-300">
                   <li>• Watchlist tracker</li>
                   <li>• Wallet tracker</li>
-                  <li>• PnL tracker</li>
                   <li>• Price alerts</li>
                   <li>• X (Twitter) tracker</li>
                   <li>• Trenches tracker</li>

@@ -250,7 +250,7 @@ const convertSolanaTrackerToToken = (token: any, index: number, status: 'new' | 
     tag: token.name, // Using name as tag for now
     contractAddress: token.contractAddress || '',
     migratedTokens: status === 'migrated' ? 1 : 0,
-    devSold: (token.devHoldingsPercentage || 0) === 0,
+    devSold: (token.devPercentage || token.devHoldingsPercentage || 0) === 0,
     top10Holders: Math.round(token.topHoldersPercentage || 0),
     snipers: Math.round((token.sniperOwnedPercentage || 0) * 100) / 100,
     insiders: 0, // Not provided in Solana Tracker API
@@ -274,7 +274,17 @@ const convertSolanaTrackerToToken = (token: any, index: number, status: 'new' | 
     hasWebsite: token.hasWebsite || false,
     twitter: token.twitter || null,
     telegram: token.telegram || null,
-    website: token.website || null
+    website: token.website || null,
+    // Risk data fields
+    top10HoldersPercentage: token.top10HoldersPercentage || 0,
+    devPercentage: token.devPercentage || 0,
+    devAmount: token.devAmount || 0,
+    insidersCount: token.insidersCount || 0,
+    insidersTotalBalance: token.insidersTotalBalance || 0,
+    insidersTotalPercentage: token.insidersTotalPercentage || 0,
+    snipersCount: token.snipersCount || 0,
+    snipersTotalBalance: token.snipersTotalBalance || 0,
+    snipersTotalPercentage: token.snipersTotalPercentage || 0
   }
 }
 
@@ -422,22 +432,37 @@ export function TrenchesPage() {
     return `${seconds}s`
   }
 
-  // Live time updater for token age display
+  // Live time updater for token age display - optimized for performance
   useEffect(() => {
+    let animationFrameId: number
+    
     const updateTime = () => {
       setCurrentTime(Date.now())
+      animationFrameId = requestAnimationFrame(updateTime)
     }
     
-    updateTime()
-    const interval = setInterval(updateTime, 1000) // Update every second
-    return () => clearInterval(interval)
+    // Start the animation loop
+    animationFrameId = requestAnimationFrame(updateTime)
+    
+    return () => {
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId)
+      }
+    }
   }, [])
 
-  // Background SOL price fetcher to keep cache updated
+  // Background SOL price fetcher to keep cache updated - optimized
   useEffect(() => {
+    let isUpdating = false
+    
     const updateSolPrice = async () => {
+      if (isUpdating) return // Prevent concurrent updates
+      isUpdating = true
+      
       try {
-        const response = await fetch('/api/moralis/token-prices?tokenAddresses=So11111111111111111111111111111111111111112&chain=solana')
+        const response = await fetch('/api/moralis/token-prices?tokenAddresses=So11111111111111111111111111111111111111112&chain=solana', {
+          signal: AbortSignal.timeout(5000) // 5 second timeout
+        })
         if (response.ok) {
           const data = await response.json()
           if (data.success && data.data && data.data.length > 0) {
@@ -452,6 +477,8 @@ export function TrenchesPage() {
         }
       } catch (error) {
         console.warn('Background SOL price update failed:', error)
+      } finally {
+        isUpdating = false
       }
     }
 
@@ -465,9 +492,16 @@ export function TrenchesPage() {
   // Fetch all trading data in parallel for immediate loading with live updates every 1 second
   // CACHE BUSTER - Force file change to resolve fetchPumpFunMigratedTokens error
   useEffect(() => {
+    let isFetching = false // Prevent concurrent fetches
+    let fetchTimeout: NodeJS.Timeout | null = null
+    
     const fetchAllDataInParallel = async () => {
-      console.log('🚀 Fetching all trading data in parallel for immediate loading...')
-      setLastUpdateTime(Date.now())
+      if (isFetching) return // Skip if already fetching
+      isFetching = true
+      
+      try {
+        console.log('🚀 Fetching all trading data in parallel for immediate loading...')
+        setLastUpdateTime(Date.now())
       
       // Fetch migrated tokens through API route to avoid exposing API keys
       const fetchMigratedTokensInline = async () => {
@@ -766,6 +800,12 @@ export function TrenchesPage() {
       }
 
       console.log('🚀 All trading data loaded in parallel!')
+      
+      } catch (error) {
+        console.error('Error in fetchAllDataInParallel:', error)
+      } finally {
+        isFetching = false // Always reset fetching flag
+      }
     }
 
     const fetchData = async () => {
@@ -1031,14 +1071,27 @@ export function TrenchesPage() {
     // Initial parallel fetch for immediate trading data
     fetchAllDataInParallel()
 
-    // Set up auto-refresh every 1 second for ultra-fast trading updates
+    // Set up optimized auto-refresh with staggered updates to prevent API overload
     const interval = setInterval(() => {
-      console.log('Auto-refreshing token data in parallel...')
-      fetchAllDataInParallel()
+      // Clear any pending timeout
+      if (fetchTimeout) {
+        clearTimeout(fetchTimeout)
+      }
+      
+      // Use timeout to prevent overlapping requests
+      fetchTimeout = setTimeout(() => {
+        console.log('Auto-refreshing token data in parallel...')
+        fetchAllDataInParallel()
+      }, 100) // Small delay to prevent overlapping
     }, 1000) // 1 second for real-time trading
 
-    // Cleanup interval on component unmount
-    return () => clearInterval(interval)
+    // Cleanup interval and timeout on component unmount
+    return () => {
+      clearInterval(interval)
+      if (fetchTimeout) {
+        clearTimeout(fetchTimeout)
+      }
+    }
   }, [])
 
   // Removed all mock data - only showing real data from API

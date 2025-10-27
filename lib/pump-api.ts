@@ -313,27 +313,26 @@ export async function fetchPumpFunTokens(): Promise<PumpFunCoin[]> {
       return convertSolanaTrackerToPumpFunCoins(cached.data)
     }
     
-    // Call SolanaTracker API directly with aggressive timeout for immediate trading
-    const response = await fetch('https://data.solanatracker.io/tokens/latest', {
+    // Call through our backend API route which has the API key
+    const response = await fetch('/api/solanatracker/tokens?type=new&limit=30', {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.SOLANATRACKER_API_KEY || '',
-        'User-Agent': 'CaesarX/1.0'
+        'Content-Type': 'application/json'
       },
       signal: AbortSignal.timeout(8000) // 8 second timeout for better reliability
     })
     
-    console.log('SolanaTracker response status:', response.status)
+    console.log('SolanaTracker proxy response status:', response.status)
     
     if (!response.ok) {
-      console.warn('SolanaTracker API returned error:', response.status)
+      console.warn('SolanaTracker proxy returned error:', response.status)
       // Fallback to original pump.fun API
       return await fetchPumpFunTokensFallback()
     }
     
-    const data = await response.json()
+    const responseData = await response.json()
+    const data = responseData.data || []
     
     // Store in cache for immediate future requests
     solanaTrackerCache.set(cacheKey, { data, timestamp: Date.now() })
@@ -379,26 +378,26 @@ export async function fetchPumpFunMCTokens(): Promise<PumpFunCoin[]> {
       return convertSolanaTrackerToPumpFunCoins(cached.data)
     }
     
-    // Call SolanaTracker API directly for graduating tokens
-    const response = await fetch('https://data.solanatracker.io/tokens/multi/graduating', {
+    // Call through our backend API route which has the API key
+    const response = await fetch('/api/solanatracker/tokens?type=graduating&limit=30', {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.SOLANATRACKER_API_KEY || '',
-        'User-Agent': 'CaesarX/1.0'
-      }
+        'Content-Type': 'application/json'
+      },
+      signal: AbortSignal.timeout(8000)
     })
     
-    console.log('SolanaTracker Graduating response status:', response.status)
+    console.log('SolanaTracker Graduating proxy response status:', response.status)
     
     if (!response.ok) {
-      console.warn('SolanaTracker Graduating API returned error:', response.status)
+      console.warn('SolanaTracker Graduating proxy returned error:', response.status)
       // Fallback to original MC API
       return await fetchPumpFunMCTokensFallback()
     }
     
-    const data = await response.json()
+    const responseData = await response.json()
+    const data = responseData.data || []
     
     // Store in cache for immediate future requests
     solanaTrackerCache.set(cacheKey, { data, timestamp: Date.now() })
@@ -433,27 +432,26 @@ export async function fetchPumpFunGraduatedTokens(): Promise<PumpFunCoin[]> {
       return convertSolanaTrackerToPumpFunCoins(cached.data)
     }
     
-    // Call SolanaTracker API directly for graduated tokens
-    const response = await fetch('https://data.solanatracker.io/tokens/multi/graduated', {
+    // Call through our backend API route which has the API key
+    const response = await fetch('/api/solanatracker/tokens?type=graduated&limit=30', {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        'x-api-key': process.env.SOLANATRACKER_API_KEY || '',
-        'User-Agent': 'CaesarX/1.0'
+          'Content-Type': 'application/json'
       },
       signal: AbortSignal.timeout(8000) // 8 second timeout for better reliability
     })
     
-    console.log('SolanaTracker Graduating response status:', response.status)
+    console.log('SolanaTracker Graduated proxy response status:', response.status)
     
     if (!response.ok) {
-      console.warn('SolanaTracker Graduating API returned error:', response.status)
+      console.warn('SolanaTracker Graduated proxy returned error:', response.status)
       // Fallback to original pump.fun graduated API
       return await fetchPumpFunGraduatedTokensFallback()
     }
     
-    const data = await response.json()
+    const responseData = await response.json()
+    const data = responseData.data || []
     
     // Store in cache for immediate future requests
     solanaTrackerCache.set(cacheKey, { data, timestamp: Date.now() })
@@ -482,27 +480,26 @@ export async function fetchPumpFunMigratedTokens(): Promise<PumpFunCoin[]> {
   try {
     console.log('Starting direct API call to SolanaTracker for migrated tokens...')
     
-    // Call SolanaTracker API directly for migrated tokens
-    const response = await fetch('https://data.solanatracker.io/tokens/multi/graduated', {
+    // Call through our backend API route which has the API key
+    const response = await fetch('/api/solanatracker/tokens?type=graduated&limit=30', {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.SOLANATRACKER_API_KEY || '',
-        'User-Agent': 'CaesarX/1.0'
+        'Content-Type': 'application/json'
       },
       signal: AbortSignal.timeout(8000) // 8 second timeout for better reliability
     })
     
-    console.log('SolanaTracker Migrated response status:', response.status)
+    console.log('SolanaTracker Migrated proxy response status:', response.status)
 
       if (!response.ok) {
-      console.warn('SolanaTracker Migrated API returned error:', response.status)
+      console.warn('SolanaTracker Migrated proxy returned error:', response.status)
       // Fallback to empty array for now
       return []
     }
     
-    const data = await response.json()
+    const responseData = await response.json()
+    const data = responseData.data || []
     
     // Check if the response has the expected structure
     if (!Array.isArray(data)) {

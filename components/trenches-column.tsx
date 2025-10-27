@@ -627,7 +627,7 @@ const TrenchesTokenCard = memo(function TrenchesTokenCard({ token, solAmount, ec
                 height={10} 
                 className="opacity-80 brightness-0 invert"
               />
-              <span className="text-green-400">+{token.top10Holders}%</span>
+              <span className="text-green-400">+{(token.top10HoldersPercentage ?? token.top10Holders ?? 0).toFixed(1)}%</span>
             </div>
             <div className="flex items-center gap-1 px-2 py-1 rounded border border-green-400/30">
               <Image 
@@ -638,7 +638,7 @@ const TrenchesTokenCard = memo(function TrenchesTokenCard({ token, solAmount, ec
                 className="opacity-80 brightness-0 invert"
               />
               <span className="text-green-400">
-                {token.devSold ? 'DS' : token.devHoldingsPercentage ? `${token.devHoldingsPercentage.toFixed(1)}%` : '0.0%'}
+                {token.devSold ? 'DS' : `${(token.devPercentage ?? token.devHoldingsPercentage ?? 0).toFixed(1)}%`}
               </span>
             </div>
             <div className="flex items-center gap-1 px-2 py-1 rounded border border-green-400/30">
@@ -649,7 +649,7 @@ const TrenchesTokenCard = memo(function TrenchesTokenCard({ token, solAmount, ec
                 height={10} 
                 className="opacity-80 brightness-0 invert"
               />
-              <span className="text-white">{token.snipers}%</span>
+              <span className="text-white">{(token.snipersTotalPercentage ?? token.snipers ?? 0).toFixed(1)}%</span>
             </div>
             <div className="flex items-center gap-1 px-2 py-1 rounded border border-green-400/30">
               <Image 
@@ -659,7 +659,7 @@ const TrenchesTokenCard = memo(function TrenchesTokenCard({ token, solAmount, ec
                 height={10} 
                 className="opacity-80 brightness-0 invert"
               />
-              <span className="text-white">{token.insiders}%</span>
+              <span className="text-white">{(token.insidersTotalPercentage ?? token.insiders ?? 0).toFixed(1)}%</span>
             </div>
           </div>
         </div>
