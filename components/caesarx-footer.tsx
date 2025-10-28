@@ -123,6 +123,9 @@ export function CaesarXFooter() {
       setShowVolume(!showVolume)
     } else if (tracker === 'bridge') {
       setShowBridge(!showBridge)
+    } else if (tracker === 'pnl') {
+      // PnL tracker button - no modal functionality
+      console.log('PnL Tracker clicked - functionality to be implemented')
     }
     setActiveTrackers(prev => 
       prev.includes(tracker) 
@@ -186,12 +189,20 @@ export function CaesarXFooter() {
           <span>Wallet Tracker</span>
         </button>
 
-
+        <button 
+          onClick={() => toggleTracker('pnl')}
+          className={`flex items-center gap-1 hover:text-white transition-colors ${
+            activeTrackers.includes('pnl') ? 'text-green-400' : 'text-gray-400'
+          }`}
+        >
+          <TrendingUp className="w-3 h-3" />
+          <span>PnL Tracker</span>
+        </button>
 
         <button 
-          onClick={() => toggleTracker('trenches')}
+          onClick={() => toggleTracker('echo')}
           className={`flex items-center gap-1 hover:text-white transition-colors ${
-            activeTrackers.includes('trenches') ? 'text-green-400' : 'text-gray-400'
+            activeTrackers.includes('echo') ? 'text-green-400' : 'text-gray-400'
           }`}
         >
           <Shield className="w-3 h-3" />
