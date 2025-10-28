@@ -7,6 +7,7 @@ import {
   Settings,
   RefreshCw
 } from 'lucide-react'
+import { PnLSettingsModal } from './pnl-settings-modal'
 
 interface PnLTrackerModalProps {
   isOpen: boolean
@@ -15,6 +16,11 @@ interface PnLTrackerModalProps {
 
 export function PnLTrackerModal({ isOpen, onClose }: PnLTrackerModalProps) {
   const [size, setSize] = useState({ width: 280, height: 110 })
+  const [showSettings, setShowSettings] = useState(false)
+  const [showUSDValues, setShowUSDValues] = useState(true)
+  const [backgroundImage, setBackgroundImage] = useState<string | null>(null)
+  const [opacity, setOpacity] = useState(50)
+  const [blur, setBlur] = useState(10)
 
   if (!isOpen) return null
 
@@ -49,7 +55,16 @@ export function PnLTrackerModal({ isOpen, onClose }: PnLTrackerModalProps) {
           {/* Header - Drag Handle */}
           <div className="drag-handle flex items-center justify-between px-3 py-2 bg-gradient-to-r from-black/40 to-black/20 cursor-move select-none">
             <div className="flex items-center gap-2">
-              <Settings className="w-3.5 h-3.5 text-gray-400" />
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowSettings(true)
+                }}
+                className="p-0.5 hover:bg-white/10 rounded transition-colors"
+                title="Settings"
+              >
+                <Settings className="w-3.5 h-3.5 text-gray-400 hover:text-white" />
+              </button>
             </div>
             
             <div className="flex items-center gap-1">
@@ -71,8 +86,25 @@ export function PnLTrackerModal({ isOpen, onClose }: PnLTrackerModalProps) {
           </div>
 
           {/* Content */}
-          <div className="flex-1 p-3 overflow-auto">
-            {/* Empty content area ready for your data */}
+          <div className="flex-1 p-3 overflow-auto relative">
+            {/* Background Image */}
+            {backgroundImage && (
+              <div 
+                className="absolute inset-0 rounded-b-lg"
+                style={{
+                  backgroundImage: `url(${backgroundImage})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  opacity: opacity / 100,
+                  filter: `blur(${blur}px)`,
+                  zIndex: 0
+                }}
+              />
+            )}
+            {/* Content layer */}
+            <div className="relative z-10">
+              {/* Empty content area ready for your data */}
+            </div>
           </div>
 
           {/* Resize Indicator - Bottom Right Corner */}
@@ -81,6 +113,20 @@ export function PnLTrackerModal({ isOpen, onClose }: PnLTrackerModalProps) {
           </div>
         </div>
       </Rnd>
+
+      {/* Settings Modal */}
+      <PnLSettingsModal
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        showUSDValues={showUSDValues}
+        onToggleUSDValues={setShowUSDValues}
+        backgroundImage={backgroundImage}
+        onBackgroundImageChange={setBackgroundImage}
+        opacity={opacity}
+        onOpacityChange={setOpacity}
+        blur={blur}
+        onBlurChange={setBlur}
+      />
     </div>
   )
 }
