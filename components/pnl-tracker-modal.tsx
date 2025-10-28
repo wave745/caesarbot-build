@@ -4,8 +4,7 @@ import React, { useState } from 'react'
 import { Rnd } from 'react-rnd'
 import { 
   X, 
-  Move, 
-  TrendingUp,
+  Settings,
   Minus,
   Square
 } from 'lucide-react'
@@ -22,7 +21,7 @@ export function PnLTrackerModal({ isOpen, onClose }: PnLTrackerModalProps) {
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-[100] pointer-events-none">
+    <div className="fixed inset-0 z-[100] pointer-events-none" onClick={onClose}>
       <Rnd
         default={{
           x: window.innerWidth / 2 - 140,
@@ -44,16 +43,15 @@ export function PnLTrackerModal({ isOpen, onClose }: PnLTrackerModalProps) {
           })
         }}
         className="pointer-events-auto"
+        onClick={(e: React.MouseEvent) => e.stopPropagation()}
       >
         <div 
           className={`w-full h-full bg-black/80 backdrop-blur-md border border-[#2a2a2a] rounded-lg shadow-2xl flex flex-col overflow-hidden transition-all duration-200 hover:border-[#3a3a3a]`}
         >
           {/* Header - Drag Handle */}
-          <div className="drag-handle flex items-center justify-between px-3 py-2 border-b border-[#2a2a2a] bg-gradient-to-r from-black/40 to-black/20 cursor-move select-none">
+          <div className="drag-handle flex items-center justify-between px-3 py-2 bg-gradient-to-r from-black/40 to-black/20 cursor-move select-none">
             <div className="flex items-center gap-2">
-              <Move className="w-3.5 h-3.5 text-gray-400" />
-              <TrendingUp className="w-3.5 h-3.5 text-green-400" />
-              <span className="text-xs font-semibold text-white tracking-wide">PnL Tracker</span>
+              <Settings className="w-3.5 h-3.5 text-gray-400" />
             </div>
             
             <div className="flex items-center gap-1">
