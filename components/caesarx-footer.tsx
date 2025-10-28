@@ -23,6 +23,7 @@ import { FooterLiveDataService, FooterLiveData } from '@/lib/services/footer-liv
 import { WatchlistCard } from './watchlist-card'
 import { VolumeCard } from './volume-card'
 import { BridgeModal } from './bridge-modal'
+import { PnLTrackerModal } from './pnl-tracker-modal'
 
 interface SystemStats {
   fps: number
@@ -68,6 +69,7 @@ export function CaesarXFooter() {
   const [showWatchlist, setShowWatchlist] = useState(false)
   const [showVolume, setShowVolume] = useState(false)
   const [showBridge, setShowBridge] = useState(false)
+  const [showPnL, setShowPnL] = useState(false)
 
   // Update live data using the service
   const updateLiveData = async () => {
@@ -124,8 +126,7 @@ export function CaesarXFooter() {
     } else if (tracker === 'bridge') {
       setShowBridge(!showBridge)
     } else if (tracker === 'pnl') {
-      // PnL tracker button - no modal functionality
-      console.log('PnL Tracker clicked - functionality to be implemented')
+      setShowPnL(!showPnL)
     }
     setActiveTrackers(prev => 
       prev.includes(tracker) 
@@ -313,6 +314,12 @@ export function CaesarXFooter() {
       <BridgeModal 
         isOpen={showBridge} 
         onClose={() => setShowBridge(false)} 
+      />
+      
+      {/* PnL Tracker Modal */}
+      <PnLTrackerModal 
+        isOpen={showPnL} 
+        onClose={() => setShowPnL(false)} 
       />
     </>
   )
