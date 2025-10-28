@@ -6,8 +6,6 @@ import {
   X, 
   Move, 
   TrendingUp,
-  TrendingDown,
-  DollarSign,
   Minus,
   Square
 } from 'lucide-react'
@@ -83,61 +81,14 @@ export function PnLTrackerModal({ isOpen, onClose }: PnLTrackerModalProps) {
           {/* Content */}
           {!isMinimized && (
             <div className="flex-1 p-3 overflow-auto">
-              <div className="space-y-3">
-                {/* PnL Summary */}
-                <div className="grid grid-cols-2 gap-2">
-                  {/* Total PnL */}
-                  <div className="bg-gradient-to-br from-green-500/10 to-transparent p-2.5 rounded-lg border border-green-500/20">
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <TrendingUp className="w-3 h-3 text-green-400" />
-                      <span className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">Total PnL</span>
-                    </div>
-                    <div className="text-lg font-bold text-green-400">+$0.00</div>
-                    <div className="text-[10px] text-green-400/70">+0.00%</div>
-                  </div>
-
-                  {/* Today's PnL */}
-                  <div className="bg-gradient-to-br from-blue-500/10 to-transparent p-2.5 rounded-lg border border-blue-500/20">
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <DollarSign className="w-3 h-3 text-blue-400" />
-                      <span className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">Today</span>
-                    </div>
-                    <div className="text-lg font-bold text-blue-400">$0.00</div>
-                    <div className="text-[10px] text-blue-400/70">0.00%</div>
-                  </div>
-                </div>
-
-                {/* Recent Trades Section - Only shows when expanded */}
-                {size.height > 150 && (
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between px-1">
-                      <span className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">Recent Trades</span>
-                      <span className="text-[9px] text-gray-500">0 trades</span>
-                    </div>
-                    
-                    {/* Placeholder for when no data */}
-                    <div className="flex flex-col items-center justify-center py-6 text-center">
-                      <TrendingUp className="w-8 h-8 text-gray-600 mb-2" />
-                      <p className="text-xs text-gray-500">No trades yet</p>
-                      <p className="text-[10px] text-gray-600 mt-1">Connect wallet to track PnL</p>
-                    </div>
-                  </div>
-                )}
-              </div>
+              {/* Empty content area ready for your data */}
             </div>
           )}
 
           {/* Minimized State */}
           {isMinimized && (
-            <div className="flex items-center justify-center p-2 gap-4">
-              <div className="flex items-center gap-1.5">
-                <span className="text-[10px] text-gray-400">PnL:</span>
-                <span className="text-xs font-bold text-green-400">+$0.00</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-[10px] text-gray-400">Today:</span>
-                <span className="text-xs font-bold text-blue-400">$0.00</span>
-              </div>
+            <div className="flex items-center justify-center p-2">
+              {/* Empty minimized state */}
             </div>
           )}
 
