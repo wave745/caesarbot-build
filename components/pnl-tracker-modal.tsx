@@ -5,8 +5,7 @@ import { Rnd } from 'react-rnd'
 import { 
   X, 
   Settings,
-  Minus,
-  Square
+  RefreshCw
 } from 'lucide-react'
 
 interface PnLTrackerModalProps {
@@ -15,7 +14,6 @@ interface PnLTrackerModalProps {
 }
 
 export function PnLTrackerModal({ isOpen, onClose }: PnLTrackerModalProps) {
-  const [isMinimized, setIsMinimized] = useState(false)
   const [size, setSize] = useState({ width: 280, height: 110 })
 
   if (!isOpen) return null
@@ -34,7 +32,7 @@ export function PnLTrackerModal({ isOpen, onClose }: PnLTrackerModalProps) {
         maxWidth={1920}
         maxHeight={1080}
         bounds="parent"
-        enableResizing={!isMinimized}
+        enableResizing={true}
         dragHandleClassName="drag-handle"
         onResizeStop={(e, direction, ref, delta, position) => {
           setSize({
@@ -56,15 +54,11 @@ export function PnLTrackerModal({ isOpen, onClose }: PnLTrackerModalProps) {
             
             <div className="flex items-center gap-1">
               <button
-                onClick={() => setIsMinimized(!isMinimized)}
+                onClick={() => {}}
                 className="p-1 hover:bg-white/10 rounded transition-colors"
-                title={isMinimized ? "Expand" : "Minimize"}
+                title="Refresh"
               >
-                {isMinimized ? (
-                  <Square className="w-3 h-3 text-gray-400 hover:text-white" />
-                ) : (
-                  <Minus className="w-3 h-3 text-gray-400 hover:text-white" />
-                )}
+                <RefreshCw className="w-3 h-3 text-gray-400 hover:text-white" />
               </button>
               <button
                 onClick={onClose}
@@ -77,25 +71,14 @@ export function PnLTrackerModal({ isOpen, onClose }: PnLTrackerModalProps) {
           </div>
 
           {/* Content */}
-          {!isMinimized && (
-            <div className="flex-1 p-3 overflow-auto">
-              {/* Empty content area ready for your data */}
-            </div>
-          )}
-
-          {/* Minimized State */}
-          {isMinimized && (
-            <div className="flex items-center justify-center p-2">
-              {/* Empty minimized state */}
-            </div>
-          )}
+          <div className="flex-1 p-3 overflow-auto">
+            {/* Empty content area ready for your data */}
+          </div>
 
           {/* Resize Indicator - Bottom Right Corner */}
-          {!isMinimized && (
-            <div className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize">
-              <div className="absolute bottom-1 right-1 w-2 h-2 border-r-2 border-b-2 border-gray-600/50" />
-            </div>
-          )}
+          <div className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize">
+            <div className="absolute bottom-1 right-1 w-2 h-2 border-r-2 border-b-2 border-gray-600/50" />
+          </div>
         </div>
       </Rnd>
     </div>
