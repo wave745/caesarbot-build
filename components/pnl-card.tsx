@@ -279,72 +279,82 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
                 )}
               </div>
               
-              {/* Image Preview */}
-              {backgroundImage && (
-                <div className="mb-3 rounded-lg overflow-hidden h-24 relative">
-                  <div
-                    className="absolute inset-0"
-                    style={{
-                      backgroundImage: `url(${backgroundImage})`,
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
-                      opacity: opacity / 100,
-                      filter: `blur(${blur}px)`,
-                    }}
-                  />
-                </div>
-              )}
-              
-              {/* Upload Area */}
-              {!backgroundImage && (
-                <label 
-                  className="border-2 border-dashed border-gray-600 hover:border-cyan-400 rounded-lg p-5 text-center cursor-pointer transition-colors block"
-                  onDrop={handleDrop}
-                  onDragOver={(e) => e.preventDefault()}
-                >
-                  <input 
-                    ref={fileInputRef}
-                    type="file" 
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                  />
-                  <span className="text-gray-400 text-sm">Select or drag and drop an image here</span>
-                </label>
-              )}
+              {/* Upload/Preview Area */}
+              <div className="mb-3">
+                {backgroundImage ? (
+                  /* Image Preview with Blur and Opacity */
+                  <div className="rounded-lg overflow-hidden h-32 relative bg-black">
+                    <div
+                      className="absolute inset-0"
+                      style={{
+                        backgroundImage: `url(${backgroundImage})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        filter: `blur(${blur}px)`,
+                      }}
+                    />
+                    <div
+                      className="absolute inset-0"
+                      style={{
+                        backgroundColor: `rgba(0,0,0,${1 - opacity/100})`,
+                      }}
+                    />
+                  </div>
+                ) : (
+                  /* Upload Area */
+                  <label 
+                    className="border-2 border-dashed border-gray-600 hover:border-cyan-400 rounded-lg p-8 text-center cursor-pointer transition-colors block"
+                    onDrop={handleDrop}
+                    onDragOver={(e) => e.preventDefault()}
+                  >
+                    <input 
+                      ref={fileInputRef}
+                      type="file" 
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                    <span className="text-gray-400 text-sm">Select or drag and drop an image here</span>
+                  </label>
+                )}
+              </div>
             </div>
 
             {/* Opacity Slider */}
-            <div>
-              <label className="flex items-center justify-between text-white mb-2">
-                <span>Opacity</span>
-                <span>{opacity}%</span>
-              </label>
-              <input 
-                type="range" 
-                min="0" 
-                max="100" 
-                value={opacity}
-                onChange={(e) => setOpacity(Number(e.target.value))}
-                className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-400"
-              />
-            </div>
+            {backgroundImage && (
+              <div>
+                <label className="flex items-center justify-between text-white mb-2">
+                  <span>Opacity</span>
+                  <span>{opacity}%</span>
+                </label>
+                <input 
+                  type="range" 
+                  min="0" 
+                  max="100" 
+                  value={opacity}
+                  onChange={(e) => setOpacity(Number(e.target.value))}
+                  className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-400"
+                />
+              </div>
+            )}
 
             {/* Blur Slider */}
-            <div>
-              <label className="flex items-center justify-between text-white mb-2">
-                <span>Blur</span>
-                <span>{blur}px</span>
-              </label>
-              <input 
-                type="range" 
-                min="0" 
-                max="20" 
-                value={blur}
-                onChange={(e) => setBlur(Number(e.target.value))}
-                className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-400"
-              />
-            </div>
+            {backgroundImage && (
+              <div>
+                <label className="flex items-center justify-between text-white mb-2">
+                  <span>Blur</span>
+                  <span>{blur}px</span>
+                </label>
+                <input 
+                  type="range" 
+                  min="0" 
+                  max="20" 
+                  value={blur}
+                  onChange={(e) => setBlur(Number(e.target.value))}
+                  className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-400"
+                />
+              </div>
+            )}
 
             {/* Export PNG Button */}
             <button 
