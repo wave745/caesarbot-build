@@ -118,8 +118,8 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
           className="relative rounded-[20px] overflow-hidden text-white h-full w-full border border-gray-700/30"
           style={{
             background: backgroundImage 
-              ? `linear-gradient(135deg, rgba(10,10,20,${opacity/100}), rgba(20,20,30,${opacity/100})), url(${backgroundImage})`
-              : `rgba(10,10,20,0.85)`,
+              ? `linear-gradient(135deg, rgba(0,0,0,${opacity/100}), rgba(0,0,0,${opacity/100})), url(${backgroundImage})`
+              : `rgba(0,0,0,0.95)`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             backdropFilter: `blur(${blur}px)`,
@@ -211,7 +211,7 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
 
       {/* Settings Panel */}
       {showSettings && (
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 bg-[#1e1e2d]/95 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] flex flex-col">
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 bg-black/95 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] flex flex-col">
           {/* Settings Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700">
             <h3 className="text-white font-semibold">Settings</h3>
