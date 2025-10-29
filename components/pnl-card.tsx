@@ -26,7 +26,7 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
 
   const [showSettings, setShowSettings] = useState(false)
   const [showUSD, setShowUSD] = useState(true)
-  const [backgroundImage, setBackgroundImage] = useState<string>('/caesarx-main-pnlcard-BG.jpg')
+  const [customBackgroundImage, setCustomBackgroundImage] = useState<string | null>(null)
   const [opacity, setOpacity] = useState(23)
   const [blur, setBlur] = useState(5)
   const [cardSize, setCardSize] = useState({ width: 380, height: 200 })
@@ -36,6 +36,11 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
   const cardRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   
+  // Default background that's always present
+  const defaultBackground = '/caesarx-main-pnlcard-BG.jpg'
+  const backgroundImage = customBackgroundImage || defaultBackground
+  const isCustomBackground = customBackgroundImage !== null
+  
   // Calculate scale factor based on current size vs default size (380x200)
   const scale = Math.min(cardSize.width / 380, cardSize.height / 200)
 
@@ -44,7 +49,7 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
     if (file && file.type.startsWith('image/')) {
       const reader = new FileReader()
       reader.onload = (ev) => {
-        setBackgroundImage(ev.target?.result as string)
+        setCustomBackgroundImage(ev.target?.result as string)
       }
       reader.readAsDataURL(file)
     }
@@ -56,7 +61,7 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
     if (file && file.type.startsWith('image/')) {
       const reader = new FileReader()
       reader.onload = (ev) => {
-        setBackgroundImage(ev.target?.result as string)
+        setCustomBackgroundImage(ev.target?.result as string)
       }
       reader.readAsDataURL(file)
     }
@@ -133,32 +138,32 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
           ref={cardRef}
           className="relative overflow-hidden text-white h-full w-full border border-gray-700/30"
           style={{
-            background: !backgroundImage ? `rgba(0,0,0,0.95)` : 'transparent',
+            background: 'transparent',
           }}
           onMouseEnter={() => setIsHovering(true)}
           onMouseLeave={() => setIsHovering(false)}
         >
           {/* Background Image Layer */}
-          {backgroundImage && (
-            <>
-              <div
-                className="absolute inset-0"
-                style={{
-                  backgroundImage: `url(${backgroundImage})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                  filter: `blur(${blur}px)`,
-                  transform: 'scale(1.1)',
-                }}
-              />
+          <>
+            <div
+              className="absolute inset-0"
+              style={{
+                backgroundImage: `url(${backgroundImage})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                filter: isCustomBackground ? `blur(${blur}px)` : 'none',
+                transform: isCustomBackground ? 'scale(1.1)' : 'none',
+              }}
+            />
+            {isCustomBackground && (
               <div
                 className="absolute inset-0"
                 style={{
                   backgroundColor: `rgba(0,0,0,${1 - opacity/100})`,
                 }}
               />
-            </>
-          )}
+            )}
+          </>
           
           {/* Content Layer */}
           <div className="relative z-10 h-full w-full">
@@ -301,10 +306,10 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
             <div>
               <div className="flex items-center justify-between text-white mb-2">
                 <span>Custom Background</span>
-                {backgroundImage && (
+                {isCustomBackground && (
                   <button
                     onClick={() => {
-                      setBackgroundImage('')
+                      setCustomBackgroundImage(null)
                       if (fileInputRef.current) {
                         fileInputRef.current.value = ''
                       }
@@ -318,7 +323,7 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
               
               {/* Upload/Preview Area */}
               <div className="mb-3">
-                {backgroundImage ? (
+                {isCustomBackground ? (
                   /* Image Preview with Blur and Opacity */
                   <div className="rounded-lg overflow-hidden h-32 relative bg-black">
                     <div
@@ -357,8 +362,8 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
               </div>
             </div>
 
-            {/* Opacity Slider */}
-            {backgroundImage && (
+            {/* Opacity Slider - Only for custom backgrounds */}
+            {isCustomBackground && (
               <div>
                 <label className="flex items-center justify-between text-white mb-2">
                   <span>Opacity</span>
@@ -375,8 +380,8 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
               </div>
             )}
 
-            {/* Blur Slider */}
-            {backgroundImage && (
+            {/* Blur Slider - Only for custom backgrounds */}
+            {isCustomBackground && (
               <div>
                 <label className="flex items-center justify-between text-white mb-2">
                   <span>Blur</span>
