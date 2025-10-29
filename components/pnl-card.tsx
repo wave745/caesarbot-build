@@ -269,7 +269,7 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
                 maxWidth: `${scale * 28}rem`
               }}
             >
-              <span>Balance SOL</span>
+              <span>Balance {selectedChain === 'sol' ? 'SOL' : 'BNB'}</span>
               <span className={pnlData.pnlPercentage >= 0 ? 'text-green-400' : 'text-red-400'}>
                 {pnlData.pnlPercentage >= 0 ? '+' : ''}{pnlData.pnlPercentage.toFixed(2)}%
               </span>
@@ -286,8 +286,8 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
             >
               <div className="flex items-center" style={{ gap: `${scale * 0.5}rem` }}>
                 <img 
-                  src="/sol-logo.png" 
-                  alt="SOL" 
+                  src={selectedChain === 'sol' ? '/sol-logo.png' : '/bnb-chain-binance-smart-chain-logo.svg'} 
+                  alt={selectedChain === 'sol' ? 'SOL' : 'BNB'} 
                   style={{ 
                     width: `${scale * 1.8}rem`, 
                     height: `${scale * 1.8}rem`,
@@ -298,8 +298,8 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
               </div>
               <div className="flex items-center" style={{ gap: `${scale * 0.5}rem` }}>
                 <img 
-                  src="/sol-logo.png" 
-                  alt="SOL" 
+                  src={selectedChain === 'sol' ? '/sol-logo.png' : '/bnb-chain-binance-smart-chain-logo.svg'} 
+                  alt={selectedChain === 'sol' ? 'SOL' : 'BNB'} 
                   style={{ 
                     width: `${scale * 1.8}rem`, 
                     height: `${scale * 1.8}rem`,
