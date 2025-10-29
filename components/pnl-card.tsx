@@ -31,6 +31,7 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
   const [blur, setBlur] = useState(5)
   const [cardSize, setCardSize] = useState({ width: 380, height: 200 })
   const [isHovering, setIsHovering] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
   
   const cardRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -81,16 +82,22 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
     }
   }
 
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    // Only close if we're not dragging and the click is directly on the backdrop
+    if (!isDragging && e.target === e.currentTarget) {
+      onClose()
+    }
+  }
+
   if (!isOpen) return null
 
   return (
     <div 
       className="fixed inset-0 bg-transparent z-[9999] flex items-center justify-center p-4"
-      onClick={onClose}
+      onMouseDown={handleBackdropClick}
     >
       {/* PnL Card */}
       <Rnd
-        onClick={(e: React.MouseEvent) => e.stopPropagation()}
         default={{
           x: window.innerWidth / 2 - 190,
           y: window.innerHeight / 2 - 100,
@@ -111,6 +118,8 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
           topLeft: true,
         }}
         dragHandleClassName="drag-handle"
+        onDragStart={() => setIsDragging(true)}
+        onDragStop={() => setTimeout(() => setIsDragging(false), 100)}
         onResize={(e, direction, ref) => {
           setCardSize({
             width: ref.offsetWidth,
