@@ -26,7 +26,7 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
 
   const [showSettings, setShowSettings] = useState(false)
   const [showUSD, setShowUSD] = useState(true)
-  const [backgroundImage, setBackgroundImage] = useState<string>('')
+  const [backgroundImage, setBackgroundImage] = useState<string>('/caesarx-main-pnlcard-BG.jpg')
   const [opacity, setOpacity] = useState(23)
   const [blur, setBlur] = useState(5)
   const [cardSize, setCardSize] = useState({ width: 380, height: 200 })
