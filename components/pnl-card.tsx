@@ -117,14 +117,33 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
           ref={cardRef}
           className="relative rounded-[20px] overflow-hidden text-white h-full w-full border border-gray-700/30"
           style={{
-            background: backgroundImage 
-              ? `linear-gradient(135deg, rgba(0,0,0,${opacity/100}), rgba(0,0,0,${opacity/100})), url(${backgroundImage})`
-              : `rgba(0,0,0,0.95)`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backdropFilter: `blur(${blur}px)`,
+            background: !backgroundImage ? `rgba(0,0,0,0.95)` : 'transparent',
           }}
         >
+          {/* Background Image Layer */}
+          {backgroundImage && (
+            <>
+              <div
+                className="absolute inset-0"
+                style={{
+                  backgroundImage: `url(${backgroundImage})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  filter: `blur(${blur}px)`,
+                  transform: 'scale(1.1)',
+                }}
+              />
+              <div
+                className="absolute inset-0"
+                style={{
+                  backgroundColor: `rgba(0,0,0,${1 - opacity/100})`,
+                }}
+              />
+            </>
+          )}
+          
+          {/* Content Layer */}
+          <div className="relative z-10 h-full w-full">
           {/* Drag Handle & Controls */}
           <div 
             className="drag-handle absolute top-0 left-0 right-0 cursor-move flex items-center justify-end px-3"
@@ -206,6 +225,7 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
               </div>
             )}
           </div>
+          </div>
         </div>
       </Rnd>
 
@@ -242,21 +262,56 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
 
             {/* Custom Background */}
             <div>
-              <div className="text-white mb-2">Custom Background</div>
-              <label 
-                className="border-2 border-dashed border-gray-600 hover:border-cyan-400 rounded-lg p-5 text-center cursor-pointer transition-colors block"
-                onDrop={handleDrop}
-                onDragOver={(e) => e.preventDefault()}
-              >
-                <input 
-                  ref={fileInputRef}
-                  type="file" 
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
-                <span className="text-gray-400 text-sm">Select or drag and drop an image here</span>
-              </label>
+              <div className="flex items-center justify-between text-white mb-2">
+                <span>Custom Background</span>
+                {backgroundImage && (
+                  <button
+                    onClick={() => {
+                      setBackgroundImage('')
+                      if (fileInputRef.current) {
+                        fileInputRef.current.value = ''
+                      }
+                    }}
+                    className="text-red-400 hover:text-red-300 text-sm"
+                  >
+                    Delete
+                  </button>
+                )}
+              </div>
+              
+              {/* Image Preview */}
+              {backgroundImage && (
+                <div className="mb-3 rounded-lg overflow-hidden h-24 relative">
+                  <div
+                    className="absolute inset-0"
+                    style={{
+                      backgroundImage: `url(${backgroundImage})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      opacity: opacity / 100,
+                      filter: `blur(${blur}px)`,
+                    }}
+                  />
+                </div>
+              )}
+              
+              {/* Upload Area */}
+              {!backgroundImage && (
+                <label 
+                  className="border-2 border-dashed border-gray-600 hover:border-cyan-400 rounded-lg p-5 text-center cursor-pointer transition-colors block"
+                  onDrop={handleDrop}
+                  onDragOver={(e) => e.preventDefault()}
+                >
+                  <input 
+                    ref={fileInputRef}
+                    type="file" 
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                  <span className="text-gray-400 text-sm">Select or drag and drop an image here</span>
+                </label>
+              )}
             </div>
 
             {/* Opacity Slider */}
