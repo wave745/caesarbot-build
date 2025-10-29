@@ -35,6 +35,7 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
   const [isHovering, setIsHovering] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
   
   const cardRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -43,6 +44,16 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
   const defaultBackground = '/caesarx-main-pnlcard-BG.jpg'
   const backgroundImage = customBackgroundImage || defaultBackground
   const isCustomBackground = customBackgroundImage !== null
+  
+  // Detect mobile device
+  React.useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
   
   // Calculate scale factor based on current size vs default size (380x200)
   const scale = Math.min(cardSize.width / 380, cardSize.height / 200)
@@ -97,16 +108,20 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
     }
   }
 
-  // Initialize position on mount
+  // Initialize position and size on mount
   React.useEffect(() => {
     if (isOpen && !isInitialized) {
+      const width = isMobile ? Math.min(window.innerWidth - 32, 340) : 380
+      const height = isMobile ? 180 : 200
+      
+      setCardSize({ width, height })
       setCardPosition({
-        x: window.innerWidth / 2 - 190,
-        y: window.innerHeight / 2 - 100,
+        x: window.innerWidth / 2 - width / 2,
+        y: window.innerHeight / 2 - height / 2,
       })
       setIsInitialized(true)
     }
-  }, [isOpen, isInitialized])
+  }, [isOpen, isInitialized, isMobile])
 
   if (!isOpen) return null
 
@@ -116,36 +131,240 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
       onMouseDown={handleBackdropClick}
     >
       {/* PnL Card */}
-      <Rnd
-        size={{ width: cardSize.width, height: cardSize.height }}
-        position={{ x: cardPosition.x, y: cardPosition.y }}
-        minWidth={300}
-        minHeight={180}
-        bounds="parent"
-        enableResizing={{
-          top: true,
-          right: true,
-          bottom: true,
-          left: true,
-          topRight: true,
-          bottomRight: true,
-          bottomLeft: true,
-          topLeft: true,
-        }}
-        dragHandleClassName="drag-handle"
-        onDragStart={() => setIsDragging(true)}
-        onDragStop={(e, d) => {
-          setCardPosition({ x: d.x, y: d.y })
-          setTimeout(() => setIsDragging(false), 100)
-        }}
-        onResize={(e, direction, ref, delta, position) => {
-          setCardSize({
-            width: ref.offsetWidth,
-            height: ref.offsetHeight,
-          })
-          setCardPosition(position)
-        }}
-      >
+      {isMobile ? (
+        // Mobile: Fixed centered card without drag/resize
+        <div
+          className="relative mx-auto"
+          style={{
+            width: `${cardSize.width}px`,
+            height: `${cardSize.height}px`,
+            maxWidth: 'calc(100vw - 2rem)',
+          }}
+          onMouseEnter={() => setIsHovering(true)}
+          onMouseLeave={() => setIsHovering(false)}
+          onTouchStart={() => setIsHovering(true)}
+        >
+          <div 
+            ref={cardRef}
+            className="relative overflow-hidden text-white h-full w-full border border-gray-700/30"
+            style={{
+              background: 'transparent',
+            }}
+          >
+            {/* Background Image Layer */}
+            <>
+              <div
+                className="absolute inset-0"
+                style={{
+                  backgroundImage: `url(${backgroundImage})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  filter: isCustomBackground ? `blur(${blur}px)` : 'none',
+                  transform: isCustomBackground ? 'scale(1.1)' : 'none',
+                }}
+              />
+              {isCustomBackground && (
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    backgroundColor: `rgba(0,0,0,${1 - opacity/100})`,
+                  }}
+                />
+              )}
+            </>
+            
+            {/* Mobile Content */}
+            <div className="relative z-10 h-full w-full">
+              {/* Chain Toggle - Top Left */}
+              <div 
+                className="absolute top-0 left-0 flex items-center gap-1 px-3 z-20 pointer-events-auto"
+                style={{ 
+                  height: `${scale * 2.5}rem`,
+                  paddingTop: `${scale * 0.5}rem`
+                }}
+              >
+                <div className="flex items-center gap-1 bg-black/40 rounded-lg p-1">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setSelectedChain('sol')
+                    }}
+                    className="transition-all duration-200 pointer-events-auto"
+                    style={{
+                      filter: selectedChain === 'sol' ? 'none' : 'grayscale(100%)',
+                      opacity: selectedChain === 'sol' ? 1 : 0.5,
+                    }}
+                  >
+                    <img 
+                      src="/sol-logo.png" 
+                      alt="Solana" 
+                      style={{ 
+                        width: `${scale * 1.5}rem`, 
+                        height: `${scale * 1.5}rem`,
+                        objectFit: 'contain',
+                      }} 
+                    />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setSelectedChain('bnb')
+                    }}
+                    className="transition-all duration-200 pointer-events-auto"
+                    style={{
+                      filter: selectedChain === 'bnb' ? 'none' : 'grayscale(100%)',
+                      opacity: selectedChain === 'bnb' ? 1 : 0.5,
+                    }}
+                  >
+                    <img 
+                      src="/bnb-chain-binance-smart-chain-logo.svg" 
+                      alt="BNB Chain" 
+                      style={{ 
+                        width: `${scale * 1.5}rem`, 
+                        height: `${scale * 1.5}rem`,
+                        objectFit: 'contain',
+                      }} 
+                    />
+                  </button>
+                </div>
+              </div>
+
+              {/* Mobile Controls */}
+              <div 
+                className="absolute top-0 right-0 flex items-center justify-end px-3"
+                style={{ height: `${scale * 2.5}rem` }}
+              >
+                <div className="flex items-center gap-2 z-10 pointer-events-auto">
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setShowSettings(!showSettings)
+                    }}
+                    className="text-gray-400 hover:text-white transition-colors p-1 rounded-lg bg-black/40 hover:bg-black/60 pointer-events-auto"
+                  >
+                    <Settings style={{ width: `${scale * 1}rem`, height: `${scale * 1}rem` }} />
+                  </button>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onClose()
+                    }}
+                    className="text-gray-400 hover:text-white transition-colors p-1 rounded-lg bg-black/40 hover:bg-black/60 pointer-events-auto"
+                  >
+                    <X style={{ width: `${scale * 1}rem`, height: `${scale * 1}rem` }} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Body */}
+              <div 
+                className="flex flex-col h-full items-center justify-center"
+                style={{ 
+                  paddingLeft: `${scale * 1.25}rem`,
+                  paddingRight: `${scale * 1.25}rem`,
+                  paddingTop: `${scale * 2.5}rem`,
+                  paddingBottom: `${scale * 1.5}rem`,
+                  gap: `${scale * 0.5}rem`
+                }}
+              >
+                {/* Top Row */}
+                <div 
+                  className="flex items-center justify-between opacity-80 w-full"
+                  style={{ 
+                    fontSize: `${scale * 0.875}rem`,
+                    maxWidth: `${scale * 28}rem`
+                  }}
+                >
+                  <span>Balance {selectedChain === 'sol' ? 'SOL' : 'BNB'}</span>
+                  <span className={pnlData.pnlPercentage >= 0 ? 'text-green-400' : 'text-red-400'}>
+                    {pnlData.pnlPercentage >= 0 ? '+' : ''}{pnlData.pnlPercentage.toFixed(2)}%
+                  </span>
+                </div>
+
+                {/* Main Values */}
+                <div 
+                  className="flex items-center justify-between w-full"
+                  style={{ 
+                    fontSize: `${scale * 2.25}rem`,
+                    maxWidth: `${scale * 28}rem`,
+                    gap: `${scale * 0.75}rem`
+                  }}
+                >
+                  <div className="flex items-center" style={{ gap: `${scale * 0.5}rem` }}>
+                    <img 
+                      src={selectedChain === 'sol' ? '/sol-logo.png' : '/bnb-chain-binance-smart-chain-logo.svg'} 
+                      alt={selectedChain === 'sol' ? 'SOL' : 'BNB'} 
+                      style={{ 
+                        width: `${scale * 1.8}rem`, 
+                        height: `${scale * 1.8}rem`,
+                        objectFit: 'contain'
+                      }} 
+                    />
+                    <span className="font-bold">{pnlData.balanceSOL.toFixed(3)}</span>
+                  </div>
+                  <div className="flex items-center" style={{ gap: `${scale * 0.5}rem` }}>
+                    <img 
+                      src={selectedChain === 'sol' ? '/sol-logo.png' : '/bnb-chain-binance-smart-chain-logo.svg'} 
+                      alt={selectedChain === 'sol' ? 'SOL' : 'BNB'} 
+                      style={{ 
+                        width: `${scale * 1.8}rem`, 
+                        height: `${scale * 1.8}rem`,
+                        objectFit: 'contain'
+                      }} 
+                    />
+                    <span className="font-bold">{pnlData.balanceUSD.toFixed(2)}</span>
+                  </div>
+                </div>
+
+                {/* Bottom Row */}
+                {showUSD && (
+                  <div 
+                    className="flex items-center justify-between opacity-70 w-full"
+                    style={{ 
+                      fontSize: `${scale * 0.875}rem`,
+                      maxWidth: `${scale * 28}rem`
+                    }}
+                  >
+                    <span>{pnlData.balanceUSD.toFixed(2)} USD</span>
+                    <span>{pnlData.pnlUSD >= 0 ? '+' : ''}{pnlData.pnlUSD.toFixed(2)}$</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        // Desktop: Draggable and resizable card
+        <Rnd
+          size={{ width: cardSize.width, height: cardSize.height }}
+          position={{ x: cardPosition.x, y: cardPosition.y }}
+          minWidth={300}
+          minHeight={180}
+          bounds="parent"
+          enableResizing={{
+            top: true,
+            right: true,
+            bottom: true,
+            left: true,
+            topRight: true,
+            bottomRight: true,
+            bottomLeft: true,
+            topLeft: true,
+          }}
+          dragHandleClassName="drag-handle"
+          onDragStart={() => setIsDragging(true)}
+          onDragStop={(e, d) => {
+            setCardPosition({ x: d.x, y: d.y })
+            setTimeout(() => setIsDragging(false), 100)
+          }}
+          onResize={(e, direction, ref, delta, position) => {
+            setCardSize({
+              width: ref.offsetWidth,
+              height: ref.offsetHeight,
+            })
+            setCardPosition(position)
+          }}
+        >
         <div 
           ref={cardRef}
           className="relative overflow-hidden text-white h-full w-full border border-gray-700/30"
@@ -344,6 +563,7 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
           </div>
         </div>
       </Rnd>
+      )}
 
       {/* Settings Panel */}
       {showSettings && (
