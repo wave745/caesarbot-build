@@ -218,7 +218,7 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
                     objectFit: 'contain'
                   }} 
                 />
-                <span className="font-medium">{pnlData.balanceSOL.toFixed(3)}</span>
+                <span className="font-bold">{pnlData.balanceSOL.toFixed(3)}</span>
               </div>
               {showUSD && (
                 <div className="flex items-center" style={{ gap: `${scale * 0.5}rem` }}>
@@ -231,7 +231,7 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
                       objectFit: 'contain'
                     }} 
                   />
-                  <span className="font-medium">{pnlData.balanceUSD.toFixed(2)}</span>
+                  <span className="font-bold">{pnlData.balanceUSD.toFixed(2)}</span>
                 </div>
               )}
             </div>
