@@ -30,6 +30,7 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
   const [opacity, setOpacity] = useState(23)
   const [blur, setBlur] = useState(5)
   const [cardSize, setCardSize] = useState({ width: 380, height: 200 })
+  const [isHovering, setIsHovering] = useState(false)
   
   const cardRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -119,6 +120,8 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
           style={{
             background: !backgroundImage ? `rgba(0,0,0,0.95)` : 'transparent',
           }}
+          onMouseEnter={() => setIsHovering(true)}
+          onMouseLeave={() => setIsHovering(false)}
         >
           {/* Background Image Layer */}
           {backgroundImage && (
@@ -149,20 +152,22 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
             className="drag-handle absolute top-0 left-0 right-0 cursor-move flex items-center justify-end px-3"
             style={{ height: `${scale * 2.5}rem` }}
           >
-            <div className="flex items-center gap-2 z-10">
-              <button 
-                onClick={() => setShowSettings(!showSettings)}
-                className="text-gray-400 hover:text-white transition-colors p-1 rounded-lg bg-black/40 hover:bg-black/60"
-              >
-                <Settings style={{ width: `${scale * 1}rem`, height: `${scale * 1}rem` }} />
-              </button>
-              <button 
-                onClick={onClose}
-                className="text-gray-400 hover:text-white transition-colors p-1 rounded-lg bg-black/40 hover:bg-black/60"
-              >
-                <X style={{ width: `${scale * 1}rem`, height: `${scale * 1}rem` }} />
-              </button>
-            </div>
+            {isHovering && (
+              <div className="flex items-center gap-2 z-10 transition-opacity duration-200">
+                <button 
+                  onClick={() => setShowSettings(!showSettings)}
+                  className="text-gray-400 hover:text-white transition-colors p-1 rounded-lg bg-black/40 hover:bg-black/60"
+                >
+                  <Settings style={{ width: `${scale * 1}rem`, height: `${scale * 1}rem` }} />
+                </button>
+                <button 
+                  onClick={onClose}
+                  className="text-gray-400 hover:text-white transition-colors p-1 rounded-lg bg-black/40 hover:bg-black/60"
+                >
+                  <X style={{ width: `${scale * 1}rem`, height: `${scale * 1}rem` }} />
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Body */}
