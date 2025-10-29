@@ -1,7 +1,8 @@
 "use client"
 
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef } from 'react'
 import { X, Settings, Download } from 'lucide-react'
+import { Rnd } from 'react-rnd'
 
 interface PnlCardProps {
   isOpen: boolean
@@ -28,12 +29,9 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
   const [backgroundImage, setBackgroundImage] = useState<string>('')
   const [opacity, setOpacity] = useState(23)
   const [blur, setBlur] = useState(5)
-  const [cardSize, setCardSize] = useState({ width: 420, height: 260 })
-  const [isResizing, setIsResizing] = useState(false)
   
   const cardRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const resizeStartRef = useRef({ x: 0, y: 0, width: 0, height: 0 })
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -58,43 +56,6 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
     }
   }
 
-  const handleResizeStart = (e: React.MouseEvent) => {
-    e.preventDefault()
-    setIsResizing(true)
-    resizeStartRef.current = {
-      x: e.clientX,
-      y: e.clientY,
-      width: cardSize.width,
-      height: cardSize.height
-    }
-  }
-
-  const handleResizeMove = (e: MouseEvent) => {
-    if (!isResizing) return
-    
-    const dx = e.clientX - resizeStartRef.current.x
-    const dy = e.clientY - resizeStartRef.current.y
-    
-    const newWidth = Math.max(300, resizeStartRef.current.width + dx)
-    const newHeight = Math.max(180, resizeStartRef.current.height + dy)
-    
-    setCardSize({ width: newWidth, height: newHeight })
-  }
-
-  const handleResizeEnd = () => {
-    setIsResizing(false)
-  }
-
-  useEffect(() => {
-    if (isResizing) {
-      document.addEventListener('mousemove', handleResizeMove)
-      document.addEventListener('mouseup', handleResizeEnd)
-      return () => {
-        document.removeEventListener('mousemove', handleResizeMove)
-        document.removeEventListener('mouseup', handleResizeEnd)
-      }
-    }
-  }, [isResizing])
 
   const exportToPNG = async () => {
     if (!cardRef.current) return
@@ -115,76 +76,98 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
     }
   }
 
-  const scale = Math.min(cardSize.width / 420, cardSize.height / 260)
-
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-[9999] flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/20 z-[9999] flex items-center justify-center p-4">
       {/* PnL Card */}
-      <div 
-        ref={cardRef}
-        className="relative rounded-[20px] overflow-hidden text-white transition-all border border-gray-800/50"
-        style={{
-          width: `${cardSize.width}px`,
-          height: `${cardSize.height}px`,
-          background: backgroundImage 
-            ? `linear-gradient(135deg, rgba(13,13,30,${opacity/100}), rgba(26,26,46,${opacity/100})), url(${backgroundImage})`
-            : `rgba(13,13,30,0.95)`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backdropFilter: `blur(${blur}px)`,
+      <Rnd
+        default={{
+          x: window.innerWidth / 2 - 210,
+          y: window.innerHeight / 2 - 130,
+          width: 420,
+          height: 260,
         }}
+        minWidth={300}
+        minHeight={180}
+        bounds="parent"
+        enableResizing={{
+          top: true,
+          right: true,
+          bottom: true,
+          left: true,
+          topRight: true,
+          bottomRight: true,
+          bottomLeft: true,
+          topLeft: true,
+        }}
+        dragHandleClassName="drag-handle"
       >
-        {/* Top-right Controls */}
-        <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
-          <button 
-            onClick={() => setShowSettings(!showSettings)}
-            className="text-gray-400 hover:text-white transition-colors p-1 rounded-lg bg-black/30 hover:bg-black/50"
-          >
-            <Settings className="w-4 h-4" />
-          </button>
-          <button 
-            onClick={onClose}
-            className="text-gray-400 hover:text-white transition-colors p-1 rounded-lg bg-black/30 hover:bg-black/50"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
+        <div 
+          ref={cardRef}
+          className="relative rounded-[20px] overflow-hidden text-white h-full w-full border border-gray-700/30"
+          style={{
+            background: backgroundImage 
+              ? `linear-gradient(135deg, rgba(10,10,20,${opacity/100}), rgba(20,20,30,${opacity/100})), url(${backgroundImage})`
+              : `rgba(10,10,20,0.85)`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backdropFilter: `blur(${blur}px)`,
+          }}
+        >
+          {/* Drag Handle & Controls */}
+          <div className="drag-handle absolute top-0 left-0 right-0 h-10 cursor-move flex items-center justify-between px-3">
+            <div className="text-xs text-gray-500 select-none">Drag to move</div>
+            <div className="flex items-center gap-2 z-10">
+              <button 
+                onClick={() => setShowSettings(!showSettings)}
+                className="text-gray-400 hover:text-white transition-colors p-1 rounded-lg bg-black/40 hover:bg-black/60"
+              >
+                <Settings className="w-4 h-4" />
+              </button>
+              <button 
+                onClick={onClose}
+                className="text-gray-400 hover:text-white transition-colors p-1 rounded-lg bg-black/40 hover:bg-black/60"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
 
-        {/* Body */}
-        <div className="px-5 py-6 flex flex-col gap-2">
+          {/* Body */}
+          <div className="px-5 pt-10 pb-6 flex flex-col gap-2 h-full items-center justify-center">
           {/* Top Row */}
-          <div className="flex items-center justify-between text-sm opacity-80">
+          <div className="flex items-center justify-between text-sm opacity-80 w-full max-w-md">
             <span>Balance SOL</span>
             <span className={pnlData.pnlPercentage >= 0 ? 'text-green-400' : 'text-red-400'}>
               {pnlData.pnlPercentage >= 0 ? '+' : ''}{pnlData.pnlPercentage.toFixed(2)}%
             </span>
           </div>
 
-          {/* Main Values */}
-          <div className="flex items-center justify-between gap-3" style={{ fontSize: `${2.8 * scale}rem`, lineHeight: 1 }}>
-            <div className="flex items-center gap-2">
-              <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-[#00ff88] to-[#00ffff]">≡</span>
-              <span className="font-medium">{pnlData.balanceSOL.toFixed(4)}</span>
-            </div>
-            {showUSD && (
+            {/* Main Values */}
+            <div className="flex items-center justify-between gap-3 text-4xl w-full max-w-md">
               <div className="flex items-center gap-2">
-                <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-[#ff00ff] to-[#00ffff]">≡</span>
-                <span className="font-medium">{pnlData.balanceUSD.toFixed(2)}</span>
+                <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-[#00ff88] to-[#00ffff]">≡</span>
+                <span className="font-medium">{pnlData.balanceSOL.toFixed(4)}</span>
+              </div>
+              {showUSD && (
+                <div className="flex items-center gap-2">
+                  <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-[#ff00ff] to-[#00ffff]">≡</span>
+                  <span className="font-medium">{pnlData.balanceUSD.toFixed(2)}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Bottom Row */}
+            {showUSD && (
+              <div className="flex items-center justify-between opacity-70 text-sm w-full max-w-md">
+                <span>{pnlData.balanceUSD.toFixed(2)} USD</span>
+                <span>{pnlData.pnlUSD >= 0 ? '+' : ''}{pnlData.pnlUSD.toFixed(2)}$</span>
               </div>
             )}
           </div>
-
-          {/* Bottom Row */}
-          {showUSD && (
-            <div className="flex items-center justify-between opacity-70" style={{ fontSize: `${0.9 * scale}rem` }}>
-              <span>{pnlData.balanceUSD.toFixed(2)} USD</span>
-              <span>{pnlData.pnlUSD >= 0 ? '+' : ''}{pnlData.pnlUSD.toFixed(2)}$</span>
-            </div>
-          )}
         </div>
-      </div>
+      </Rnd>
 
       {/* Settings Panel */}
       {showSettings && (
