@@ -213,8 +213,8 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
                   src="/sol-logo.png" 
                   alt="SOL" 
                   style={{ 
-                    width: `${scale * 1.6}rem`, 
-                    height: `${scale * 1.6}rem`,
+                    width: `${scale * 1.8}rem`, 
+                    height: `${scale * 1.8}rem`,
                     objectFit: 'contain'
                   }} 
                 />
@@ -226,8 +226,8 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
                     src="/sol-logo.png" 
                     alt="SOL" 
                     style={{ 
-                      width: `${scale * 1.6}rem`, 
-                      height: `${scale * 1.6}rem`,
+                      width: `${scale * 1.8}rem`, 
+                      height: `${scale * 1.8}rem`,
                       objectFit: 'contain'
                     }} 
                   />
