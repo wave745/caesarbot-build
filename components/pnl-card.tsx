@@ -259,8 +259,8 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
                   onChange={(e) => setShowUSD(e.target.checked)}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-gray-600 rounded-full peer-checked:bg-green-500 transition-colors"></div>
-                <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5"></div>
+                <div className="w-9 h-5 bg-gray-600 rounded-full peer-checked:bg-gradient-to-r peer-checked:from-yellow-500 peer-checked:to-orange-500 transition-colors"></div>
+                <div className="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-4"></div>
               </div>
               <span className="text-white">Show USD values</span>
             </label>
@@ -308,7 +308,7 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
                 ) : (
                   /* Upload Area */
                   <label 
-                    className="border-2 border-dashed border-[#1a1a1a] hover:border-cyan-400 rounded-lg p-8 text-center cursor-pointer transition-colors block"
+                    className="border-2 border-dashed border-[#1a1a1a] hover:border-yellow-500 rounded-lg p-8 text-center cursor-pointer transition-colors block"
                     onDrop={handleDrop}
                     onDragOver={(e) => e.preventDefault()}
                   >
@@ -338,7 +338,7 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
                   max="100" 
                   value={opacity}
                   onChange={(e) => setOpacity(Number(e.target.value))}
-                  className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-400"
+                  className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-yellow-500"
                 />
               </div>
             )}
@@ -356,7 +356,7 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
                   max="20" 
                   value={blur}
                   onChange={(e) => setBlur(Number(e.target.value))}
-                  className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-400"
+                  className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-yellow-500"
                 />
               </div>
             )}
@@ -364,7 +364,7 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
             {/* Export PNG Button */}
             <button 
               onClick={exportToPNG}
-              className="mt-3 px-4 py-2 bg-cyan-400 text-black rounded-lg font-semibold hover:bg-cyan-300 transition-colors flex items-center justify-center gap-2"
+              className="mt-3 px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-black rounded-lg font-semibold hover:from-yellow-400 hover:to-orange-400 transition-all duration-200 flex items-center justify-center gap-2"
             >
               <Download className="w-4 h-4" />
               Export PNG
