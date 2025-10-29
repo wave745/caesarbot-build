@@ -26,6 +26,7 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
 
   const [showSettings, setShowSettings] = useState(false)
   const [showUSD, setShowUSD] = useState(true)
+  const [selectedChain, setSelectedChain] = useState<'sol' | 'bnb'>('sol')
   const [customBackgroundImage, setCustomBackgroundImage] = useState<string | null>(null)
   const [opacity, setOpacity] = useState(23)
   const [blur, setBlur] = useState(5)
@@ -178,6 +179,54 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
           
           {/* Content Layer */}
           <div className="relative z-10 h-full w-full">
+          {/* Chain Toggle - Top Left */}
+          <div 
+            className="absolute top-0 left-0 flex items-center gap-1 px-3"
+            style={{ 
+              height: `${scale * 2.5}rem`,
+              paddingTop: `${scale * 0.5}rem`
+            }}
+          >
+            <div className="flex items-center gap-1 bg-black/40 rounded-lg p-1">
+              <button
+                onClick={() => setSelectedChain('sol')}
+                className="transition-all duration-200"
+                style={{
+                  filter: selectedChain === 'sol' ? 'none' : 'grayscale(100%)',
+                  opacity: selectedChain === 'sol' ? 1 : 0.5,
+                }}
+              >
+                <img 
+                  src="/sol-logo.png" 
+                  alt="Solana" 
+                  style={{ 
+                    width: `${scale * 1.5}rem`, 
+                    height: `${scale * 1.5}rem`,
+                    objectFit: 'contain',
+                  }} 
+                />
+              </button>
+              <button
+                onClick={() => setSelectedChain('bnb')}
+                className="transition-all duration-200"
+                style={{
+                  filter: selectedChain === 'bnb' ? 'none' : 'grayscale(100%)',
+                  opacity: selectedChain === 'bnb' ? 1 : 0.5,
+                }}
+              >
+                <img 
+                  src="/bnb-chain-binance-smart-chain-logo.svg" 
+                  alt="BNB Chain" 
+                  style={{ 
+                    width: `${scale * 1.5}rem`, 
+                    height: `${scale * 1.5}rem`,
+                    objectFit: 'contain',
+                  }} 
+                />
+              </button>
+            </div>
+          </div>
+
           {/* Drag Handle & Controls */}
           <div 
             className="drag-handle absolute top-0 left-0 right-0 cursor-move flex items-center justify-end px-3"
