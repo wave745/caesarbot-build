@@ -84,9 +84,13 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-transparent z-[9999] flex items-center justify-center p-4">
+    <div 
+      className="fixed inset-0 bg-transparent z-[9999] flex items-center justify-center p-4"
+      onClick={onClose}
+    >
       {/* PnL Card */}
       <Rnd
+        onClick={(e: React.MouseEvent) => e.stopPropagation()}
         default={{
           x: window.innerWidth / 2 - 190,
           y: window.innerHeight / 2 - 100,
@@ -209,8 +213,8 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
                   src="/sol-logo.png" 
                   alt="SOL" 
                   style={{ 
-                    width: `${scale * 1.5}rem`, 
-                    height: `${scale * 1.5}rem`,
+                    width: `${scale * 2.25}rem`, 
+                    height: `${scale * 2.25}rem`,
                     objectFit: 'contain'
                   }} 
                 />
@@ -222,8 +226,8 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
                     src="/sol-logo.png" 
                     alt="SOL" 
                     style={{ 
-                      width: `${scale * 1.5}rem`, 
-                      height: `${scale * 1.5}rem`,
+                      width: `${scale * 2.25}rem`, 
+                      height: `${scale * 2.25}rem`,
                       objectFit: 'contain'
                     }} 
                   />
@@ -252,7 +256,10 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
 
       {/* Settings Panel */}
       {showSettings && (
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 bg-[#0a0a0a] border border-[#1a1a1a] rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] flex flex-col">
+        <div 
+          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 bg-[#0a0a0a] border border-[#1a1a1a] rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] flex flex-col"
+          onClick={(e) => e.stopPropagation()}
+        >
           {/* Settings Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-[#1a1a1a]">
             <h3 className="text-white font-semibold">Settings</h3>
