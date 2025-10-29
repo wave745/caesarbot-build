@@ -18,7 +18,7 @@ interface PnlData {
 
 export function PnlCard({ isOpen, onClose }: PnlCardProps) {
   const [pnlData, setPnlData] = useState<PnlData>({
-    balanceSOL: 0.0000,
+    balanceSOL: 0.000,
     balanceUSD: 0.00,
     pnlPercentage: 0.00,
     pnlUSD: 0.00
@@ -205,12 +205,28 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
               }}
             >
               <div className="flex items-center" style={{ gap: `${scale * 0.5}rem` }}>
-                <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-[#00ff88] to-[#00ffff]">≡</span>
-                <span className="font-medium">{pnlData.balanceSOL.toFixed(4)}</span>
+                <img 
+                  src="/sol-logo.png" 
+                  alt="SOL" 
+                  style={{ 
+                    width: `${scale * 1.5}rem`, 
+                    height: `${scale * 1.5}rem`,
+                    objectFit: 'contain'
+                  }} 
+                />
+                <span className="font-medium">{pnlData.balanceSOL.toFixed(3)}</span>
               </div>
               {showUSD && (
                 <div className="flex items-center" style={{ gap: `${scale * 0.5}rem` }}>
-                  <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-[#ff00ff] to-[#00ffff]">≡</span>
+                  <img 
+                    src="/sol-logo.png" 
+                    alt="SOL" 
+                    style={{ 
+                      width: `${scale * 1.5}rem`, 
+                      height: `${scale * 1.5}rem`,
+                      objectFit: 'contain'
+                    }} 
+                  />
                   <span className="font-medium">{pnlData.balanceUSD.toFixed(2)}</span>
                 </div>
               )}
