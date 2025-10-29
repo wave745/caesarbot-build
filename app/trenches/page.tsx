@@ -1,5 +1,5 @@
-import { TrenchesPage } from "@/components/trenches-page"
+import { redirect } from 'next/navigation'
 
 export default function Trenches() {
-  return <TrenchesPage />
+  redirect('/echo')
 }

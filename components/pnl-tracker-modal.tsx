@@ -50,10 +50,10 @@ export function PnLTrackerModal({ isOpen, onClose }: PnLTrackerModalProps) {
         onClick={(e: React.MouseEvent) => e.stopPropagation()}
       >
         <div 
-          className={`w-full h-full bg-black/80 backdrop-blur-md border border-[#2a2a2a] rounded-lg shadow-2xl flex flex-col overflow-hidden transition-all duration-200 hover:border-[#3a3a3a]`}
+          className={`w-full h-full bg-transparent border border-transparent rounded-lg flex flex-col overflow-hidden transition-all duration-200 hover:border-[#3a3a3a]/20`}
         >
           {/* Header - Drag Handle */}
-          <div className="drag-handle flex items-center justify-between px-3 py-2 bg-gradient-to-r from-black/40 to-black/20 cursor-move select-none">
+          <div className="drag-handle flex items-center justify-between px-3 py-2 bg-transparent cursor-move select-none">
             <div className="flex items-center gap-2">
               <button
                 onClick={(e) => {

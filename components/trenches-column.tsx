@@ -259,7 +259,7 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
   return (
     <div className="bg-zinc-900/40 border border-zinc-800 rounded-xl flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
+      <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-1">
         <div className="flex items-center gap-3">
           <h2 className="font-semibold text-zinc-200 tracking-wide text-lg">
             {title}
@@ -617,54 +617,9 @@ const TrenchesTokenCard = memo(function TrenchesTokenCard({ token, solAmount, ec
             </div>
           </div>
 
-          {/* Bottom Row: Engagement Metrics */}
-          <div className="flex items-center gap-2 text-xs">
-            <div className="flex items-center gap-1 px-2 py-1 rounded border border-green-400/30">
-              <Image 
-                src="/icons/ui/top10H-icon.svg" 
-                alt="Top 10 Holders" 
-                width={10} 
-                height={10} 
-                className="opacity-80 brightness-0 invert"
-              />
-              <span className="text-green-400">+{(token.top10HoldersPercentage ?? token.top10Holders ?? 0).toFixed(1)}%</span>
-            </div>
-            <div className="flex items-center gap-1 px-2 py-1 rounded border border-green-400/30">
-              <Image 
-                src="/icons/ui/dev-holding-icon.svg" 
-                alt="Dev Holding" 
-                width={10} 
-                height={10} 
-                className="opacity-80 brightness-0 invert"
-              />
-              <span className="text-green-400">
-                {token.devSold ? 'DS' : `${(token.devPercentage ?? token.devHoldingsPercentage ?? 0).toFixed(1)}%`}
-              </span>
-            </div>
-            <div className="flex items-center gap-1 px-2 py-1 rounded border border-green-400/30">
-              <Image 
-                src="/icons/ui/snipers-icon.svg" 
-                alt="Snipers" 
-                width={10} 
-                height={10} 
-                className="opacity-80 brightness-0 invert"
-              />
-              <span className="text-white">{(token.snipersTotalPercentage ?? token.snipers ?? 0).toFixed(1)}%</span>
-            </div>
-            <div className="flex items-center gap-1 px-2 py-1 rounded border border-green-400/30">
-              <Image 
-                src="/icons/ui/insiders-icon.svg" 
-                alt="Insiders" 
-                width={10} 
-                height={10} 
-                className="opacity-80 brightness-0 invert"
-              />
-              <span className="text-white">{(token.insidersTotalPercentage ?? token.insiders ?? 0).toFixed(1)}%</span>
-            </div>
-          </div>
         </div>
 
-        {/* Right: Key Metrics and Buy Amount */}
+        {/* Right: Key Metrics */}
         <div className="flex flex-col items-end text-right text-xs flex-shrink-0">
           {/* Key Metrics */}
           <div className="mb-2">
@@ -688,19 +643,68 @@ const TrenchesTokenCard = memo(function TrenchesTokenCard({ token, solAmount, ec
               <span className="text-white">{token.fee}</span>
             </div>
           </div>
-          
-          {/* Buy Button */}
-          <button 
-            className="flex items-center gap-1 px-2 py-1 bg-zinc-800 hover:bg-zinc-700 rounded text-xs transition-colors"
-            onClick={() => {
-              // TODO: Implement buy functionality
-              console.log(`Buying ${solAmount} SOL worth of ${token.symbol}`)
-            }}
-          >
-            <Zap className="w-3 h-3 text-zinc-400" />
-            <span className="text-white text-xs">{solAmount}</span>
-          </button>
         </div>
+      </div>
+
+      {/* Bottom Row: Engagement Metrics and Buy Button */}
+      <div className="flex items-center justify-between mt-3">
+        {/* Engagement Metrics */}
+        <div className="flex items-center gap-1 text-xs">
+          <div className="flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full border border-gray-400/30 min-w-fit">
+            <Image 
+              src="/icons/ui/top10H-icon.svg" 
+              alt="Top 10 Holders" 
+              width={10} 
+              height={10} 
+              className="opacity-80 brightness-0 invert"
+            />
+            <span className="text-green-400 text-xs">+{(token.top10HoldersPercentage ?? token.top10Holders ?? 0).toFixed(1)}%</span>
+          </div>
+          <div className="flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full border border-gray-400/30 min-w-fit">
+            <Image 
+              src="/icons/ui/dev-holding-icon.svg" 
+              alt="Dev Holding" 
+              width={10} 
+              height={10} 
+              className="opacity-80 brightness-0 invert"
+            />
+            <span className="text-green-400 text-xs">
+              {token.devSold ? 'DS' : `${(token.devPercentage ?? token.devHoldingsPercentage ?? 0).toFixed(1)}%`}
+            </span>
+          </div>
+          <div className="flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full border border-gray-400/30 min-w-fit">
+            <Image 
+              src="/icons/ui/snipers-icon.svg" 
+              alt="Snipers" 
+              width={10} 
+              height={10} 
+              className="opacity-80 brightness-0 invert"
+            />
+            <span className="text-white text-xs">{(token.snipersTotalPercentage ?? token.snipers ?? 0).toFixed(1)}%</span>
+          </div>
+          <div className="flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full border border-gray-400/30 min-w-fit">
+            <Image 
+              src="/icons/ui/insiders-icon.svg" 
+              alt="Insiders" 
+              width={10} 
+              height={10} 
+              className="opacity-80 brightness-0 invert"
+            />
+            <span className="text-white text-xs">{(token.insidersTotalPercentage ?? token.insiders ?? 0).toFixed(1)}%</span>
+          </div>
+        </div>
+
+        {/* Buy Button */}
+        <button 
+          className="flex items-center gap-1 px-4 py-1.5 bg-zinc-800 hover:bg-zinc-700 rounded-full text-xs transition-colors"
+          onClick={() => {
+            // TODO: Implement buy functionality
+            console.log(`Buying ${solAmount} SOL worth of ${token.symbol}`)
+          }}
+        >
+          <Zap className="w-3 h-3 text-zinc-400" />
+          <span className="text-white text-xs">{solAmount}</span>
+        </button>
       </div>
     </div>
   )

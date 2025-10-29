@@ -26,7 +26,7 @@ export default function FooterDemoPage() {
                   <li>• Wallet tracker</li>
                   <li>• Price alerts</li>
                   <li>• X (Twitter) tracker</li>
-                  <li>• Trenches tracker</li>
+                  <li>• Echo tracker</li>
                   <li>• Alpha tracker</li>
                 </ul>
               </div>
