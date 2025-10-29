@@ -30,8 +30,10 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
   const [opacity, setOpacity] = useState(23)
   const [blur, setBlur] = useState(5)
   const [cardSize, setCardSize] = useState({ width: 380, height: 200 })
+  const [cardPosition, setCardPosition] = useState({ x: 0, y: 0 })
   const [isHovering, setIsHovering] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
+  const [isInitialized, setIsInitialized] = useState(false)
   
   const cardRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -94,6 +96,17 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
     }
   }
 
+  // Initialize position on mount
+  React.useEffect(() => {
+    if (isOpen && !isInitialized) {
+      setCardPosition({
+        x: window.innerWidth / 2 - 190,
+        y: window.innerHeight / 2 - 100,
+      })
+      setIsInitialized(true)
+    }
+  }, [isOpen, isInitialized])
+
   if (!isOpen) return null
 
   return (
@@ -103,12 +116,8 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
     >
       {/* PnL Card */}
       <Rnd
-        default={{
-          x: window.innerWidth / 2 - 190,
-          y: window.innerHeight / 2 - 100,
-          width: 380,
-          height: 200,
-        }}
+        size={{ width: cardSize.width, height: cardSize.height }}
+        position={{ x: cardPosition.x, y: cardPosition.y }}
         minWidth={300}
         minHeight={180}
         bounds="parent"
@@ -124,14 +133,16 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
         }}
         dragHandleClassName="drag-handle"
         onDragStart={() => setIsDragging(true)}
-        onDragStop={() => {
+        onDragStop={(e, d) => {
+          setCardPosition({ x: d.x, y: d.y })
           setTimeout(() => setIsDragging(false), 100)
         }}
-        onResize={(e, direction, ref) => {
+        onResize={(e, direction, ref, delta, position) => {
           setCardSize({
             width: ref.offsetWidth,
             height: ref.offsetHeight,
           })
+          setCardPosition(position)
         }}
       >
         <div 
