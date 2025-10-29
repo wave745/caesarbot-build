@@ -29,13 +29,13 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
   const [backgroundImage, setBackgroundImage] = useState<string>('')
   const [opacity, setOpacity] = useState(23)
   const [blur, setBlur] = useState(5)
-  const [cardSize, setCardSize] = useState({ width: 420, height: 260 })
+  const [cardSize, setCardSize] = useState({ width: 380, height: 200 })
   
   const cardRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   
-  // Calculate scale factor based on current size vs default size (420x260)
-  const scale = Math.min(cardSize.width / 420, cardSize.height / 260)
+  // Calculate scale factor based on current size vs default size (380x200)
+  const scale = Math.min(cardSize.width / 380, cardSize.height / 200)
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -87,10 +87,10 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
       {/* PnL Card */}
       <Rnd
         default={{
-          x: window.innerWidth / 2 - 210,
-          y: window.innerHeight / 2 - 130,
-          width: 420,
-          height: 260,
+          x: window.innerWidth / 2 - 190,
+          y: window.innerHeight / 2 - 100,
+          width: 380,
+          height: 200,
         }}
         minWidth={300}
         minHeight={180}
@@ -127,12 +127,9 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
         >
           {/* Drag Handle & Controls */}
           <div 
-            className="drag-handle absolute top-0 left-0 right-0 cursor-move flex items-center justify-between px-3"
+            className="drag-handle absolute top-0 left-0 right-0 cursor-move flex items-center justify-end px-3"
             style={{ height: `${scale * 2.5}rem` }}
           >
-            <div className="text-gray-500 select-none" style={{ fontSize: `${scale * 0.75}rem` }}>
-              Drag to move
-            </div>
             <div className="flex items-center gap-2 z-10">
               <button 
                 onClick={() => setShowSettings(!showSettings)}
