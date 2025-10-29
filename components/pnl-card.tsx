@@ -119,7 +119,9 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
         }}
         dragHandleClassName="drag-handle"
         onDragStart={() => setIsDragging(true)}
-        onDragStop={() => setTimeout(() => setIsDragging(false), 100)}
+        onDragStop={() => {
+          setTimeout(() => setIsDragging(false), 100)
+        }}
         onResize={(e, direction, ref) => {
           setCardSize({
             width: ref.offsetWidth,
@@ -229,20 +231,18 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
                 />
                 <span className="font-bold">{pnlData.balanceSOL.toFixed(3)}</span>
               </div>
-              {showUSD && (
-                <div className="flex items-center" style={{ gap: `${scale * 0.5}rem` }}>
-                  <img 
-                    src="/sol-logo.png" 
-                    alt="SOL" 
-                    style={{ 
-                      width: `${scale * 1.8}rem`, 
-                      height: `${scale * 1.8}rem`,
-                      objectFit: 'contain'
-                    }} 
-                  />
-                  <span className="font-bold">{pnlData.balanceUSD.toFixed(2)}</span>
-                </div>
-              )}
+              <div className="flex items-center" style={{ gap: `${scale * 0.5}rem` }}>
+                <img 
+                  src="/sol-logo.png" 
+                  alt="SOL" 
+                  style={{ 
+                    width: `${scale * 1.8}rem`, 
+                    height: `${scale * 1.8}rem`,
+                    objectFit: 'contain'
+                  }} 
+                />
+                <span className="font-bold">{pnlData.balanceUSD.toFixed(2)}</span>
+              </div>
             </div>
 
             {/* Bottom Row */}
