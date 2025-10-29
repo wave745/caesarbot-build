@@ -23,6 +23,7 @@ import { FooterLiveDataService, FooterLiveData } from '@/lib/services/footer-liv
 import { WatchlistCard } from './watchlist-card'
 import { VolumeCard } from './volume-card'
 import { BridgeModal } from './bridge-modal'
+import { PnlCard } from './pnl-card'
 
 interface SystemStats {
   fps: number
@@ -68,6 +69,7 @@ export function CaesarXFooter() {
   const [showWatchlist, setShowWatchlist] = useState(false)
   const [showVolume, setShowVolume] = useState(false)
   const [showBridge, setShowBridge] = useState(false)
+  const [showPnl, setShowPnl] = useState(false)
 
   // Update live data using the service
   const updateLiveData = async () => {
@@ -123,6 +125,8 @@ export function CaesarXFooter() {
       setShowVolume(!showVolume)
     } else if (tracker === 'bridge') {
       setShowBridge(!showBridge)
+    } else if (tracker === 'pnl') {
+      setShowPnl(!showPnl)
     }
     setActiveTrackers(prev => 
       prev.includes(tracker) 
@@ -217,6 +221,16 @@ export function CaesarXFooter() {
           <ArrowRightLeft className="w-3 h-3" />
           <span>Quick Bridge</span>
         </button>
+
+        <button 
+          onClick={() => toggleTracker('pnl')}
+          className={`flex items-center gap-1 hover:text-white transition-colors ${
+            activeTrackers.includes('pnl') ? 'text-green-400' : 'text-gray-400'
+          }`}
+        >
+          <TrendingUp className="w-3 h-3" />
+          <span>PnL Tracker</span>
+        </button>
       </div>
 
       {/* Center Section - Live System Stats */}
@@ -302,6 +316,12 @@ export function CaesarXFooter() {
       <BridgeModal 
         isOpen={showBridge} 
         onClose={() => setShowBridge(false)} 
+      />
+      
+      {/* PnL Card Modal */}
+      <PnlCard 
+        isOpen={showPnl} 
+        onClose={() => setShowPnl(false)} 
       />
     </>
   )

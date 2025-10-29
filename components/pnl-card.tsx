@@ -1,0 +1,293 @@
+"use client"
+
+import React, { useState, useRef, useEffect } from 'react'
+import { X, Settings, Download } from 'lucide-react'
+
+interface PnlCardProps {
+  isOpen: boolean
+  onClose: () => void
+}
+
+interface PnlData {
+  balanceSOL: number
+  balanceUSD: number
+  pnlPercentage: number
+  pnlUSD: number
+}
+
+export function PnlCard({ isOpen, onClose }: PnlCardProps) {
+  const [pnlData, setPnlData] = useState<PnlData>({
+    balanceSOL: 0.0000,
+    balanceUSD: 0.00,
+    pnlPercentage: 0.00,
+    pnlUSD: 0.00
+  })
+
+  const [showSettings, setShowSettings] = useState(false)
+  const [showUSD, setShowUSD] = useState(true)
+  const [backgroundImage, setBackgroundImage] = useState<string>('')
+  const [opacity, setOpacity] = useState(23)
+  const [blur, setBlur] = useState(5)
+  const [cardSize, setCardSize] = useState({ width: 420, height: 260 })
+  const [isResizing, setIsResizing] = useState(false)
+  
+  const cardRef = useRef<HTMLDivElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const resizeStartRef = useRef({ x: 0, y: 0, width: 0, height: 0 })
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader()
+      reader.onload = (ev) => {
+        setBackgroundImage(ev.target?.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    const file = e.dataTransfer.files[0]
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader()
+      reader.onload = (ev) => {
+        setBackgroundImage(ev.target?.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleResizeStart = (e: React.MouseEvent) => {
+    e.preventDefault()
+    setIsResizing(true)
+    resizeStartRef.current = {
+      x: e.clientX,
+      y: e.clientY,
+      width: cardSize.width,
+      height: cardSize.height
+    }
+  }
+
+  const handleResizeMove = (e: MouseEvent) => {
+    if (!isResizing) return
+    
+    const dx = e.clientX - resizeStartRef.current.x
+    const dy = e.clientY - resizeStartRef.current.y
+    
+    const newWidth = Math.max(300, resizeStartRef.current.width + dx)
+    const newHeight = Math.max(180, resizeStartRef.current.height + dy)
+    
+    setCardSize({ width: newWidth, height: newHeight })
+  }
+
+  const handleResizeEnd = () => {
+    setIsResizing(false)
+  }
+
+  useEffect(() => {
+    if (isResizing) {
+      document.addEventListener('mousemove', handleResizeMove)
+      document.addEventListener('mouseup', handleResizeEnd)
+      return () => {
+        document.removeEventListener('mousemove', handleResizeMove)
+        document.removeEventListener('mouseup', handleResizeEnd)
+      }
+    }
+  }, [isResizing])
+
+  const exportToPNG = async () => {
+    if (!cardRef.current) return
+    
+    try {
+      const html2canvas = (await import('html2canvas')).default
+      const canvas = await html2canvas(cardRef.current, {
+        backgroundColor: null,
+        scale: 2
+      })
+      
+      const link = document.createElement('a')
+      link.download = 'pnl-card.png'
+      link.href = canvas.toDataURL()
+      link.click()
+    } catch (error) {
+      console.error('Failed to export PNG:', error)
+    }
+  }
+
+  const scale = Math.min(cardSize.width / 420, cardSize.height / 260)
+
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+      {/* PnL Card */}
+      <div 
+        ref={cardRef}
+        className="relative rounded-[20px] overflow-hidden shadow-[0_12px_40px_rgba(0,255,255,0.15)] text-white transition-all"
+        style={{
+          width: `${cardSize.width}px`,
+          height: `${cardSize.height}px`,
+          background: backgroundImage 
+            ? `linear-gradient(135deg, rgba(13,13,30,${opacity/100}), rgba(26,26,46,${opacity/100})), url(${backgroundImage})`
+            : `linear-gradient(135deg, #0d0d1e, #1a1a2e)`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backdropFilter: `blur(${blur}px)`,
+        }}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 bg-white/[0.04]">
+          <div className="font-bold text-base">CaesarX</div>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => setShowSettings(!showSettings)}
+              className="text-gray-400 hover:text-white transition-colors"
+            >
+              <Settings className="w-4 h-4" />
+            </button>
+            <button 
+              onClick={onClose}
+              className="text-gray-400 hover:text-white transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="px-5 py-5 flex flex-col gap-2">
+          {/* Top Row */}
+          <div className="flex items-center justify-between text-sm opacity-80">
+            <span>Balance SOL</span>
+            <span className={pnlData.pnlPercentage >= 0 ? 'text-green-400' : 'text-red-400'}>
+              {pnlData.pnlPercentage >= 0 ? '+' : ''}{pnlData.pnlPercentage.toFixed(2)}%
+            </span>
+          </div>
+
+          {/* Main Values */}
+          <div className="flex items-center justify-between gap-3" style={{ fontSize: `${2.8 * scale}rem`, lineHeight: 1 }}>
+            <div className="flex items-center gap-2">
+              <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-[#00ff88] to-[#00ffff]">≡</span>
+              <span className="font-medium">{pnlData.balanceSOL.toFixed(4)}</span>
+            </div>
+            {showUSD && (
+              <div className="flex items-center gap-2">
+                <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-[#ff00ff] to-[#00ffff]">≡</span>
+                <span className="font-medium">{pnlData.balanceUSD.toFixed(2)}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Bottom Row */}
+          {showUSD && (
+            <div className="flex items-center justify-between opacity-70" style={{ fontSize: `${0.9 * scale}rem` }}>
+              <span>{pnlData.balanceUSD.toFixed(2)} USD</span>
+              <span>{pnlData.pnlUSD >= 0 ? '+' : ''}{pnlData.pnlUSD.toFixed(2)}$</span>
+            </div>
+          )}
+        </div>
+
+        {/* Resize Handle */}
+        <div 
+          className="absolute right-2 bottom-2 w-4 h-4 bg-cyan-400 rounded cursor-se-resize opacity-60 hover:opacity-100 transition-opacity"
+          onMouseDown={handleResizeStart}
+        />
+      </div>
+
+      {/* Settings Panel */}
+      {showSettings && (
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 bg-[#1e1e2d]/95 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] flex flex-col">
+          {/* Settings Header */}
+          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700">
+            <h3 className="text-white font-semibold">Settings</h3>
+            <button 
+              onClick={() => setShowSettings(false)}
+              className="text-gray-400 hover:text-white transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Settings Body */}
+          <div className="p-4 flex flex-col gap-4">
+            {/* USD Toggle */}
+            <label className="flex items-center gap-3 cursor-pointer">
+              <div className="relative">
+                <input 
+                  type="checkbox" 
+                  checked={showUSD}
+                  onChange={(e) => setShowUSD(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-600 rounded-full peer-checked:bg-green-500 transition-colors"></div>
+                <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5"></div>
+              </div>
+              <span className="text-white">Show USD values</span>
+            </label>
+
+            {/* Custom Background */}
+            <div>
+              <div className="text-white mb-2">Custom Background</div>
+              <label 
+                className="border-2 border-dashed border-gray-600 hover:border-cyan-400 rounded-lg p-5 text-center cursor-pointer transition-colors block"
+                onDrop={handleDrop}
+                onDragOver={(e) => e.preventDefault()}
+              >
+                <input 
+                  ref={fileInputRef}
+                  type="file" 
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+                <span className="text-gray-400 text-sm">Select or drag and drop an image here</span>
+              </label>
+            </div>
+
+            {/* Opacity Slider */}
+            <div>
+              <label className="flex items-center justify-between text-white mb-2">
+                <span>Opacity</span>
+                <span>{opacity}%</span>
+              </label>
+              <input 
+                type="range" 
+                min="0" 
+                max="100" 
+                value={opacity}
+                onChange={(e) => setOpacity(Number(e.target.value))}
+                className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-400"
+              />
+            </div>
+
+            {/* Blur Slider */}
+            <div>
+              <label className="flex items-center justify-between text-white mb-2">
+                <span>Blur</span>
+                <span>{blur}px</span>
+              </label>
+              <input 
+                type="range" 
+                min="0" 
+                max="20" 
+                value={blur}
+                onChange={(e) => setBlur(Number(e.target.value))}
+                className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-400"
+              />
+            </div>
+
+            {/* Export PNG Button */}
+            <button 
+              onClick={exportToPNG}
+              className="mt-3 px-4 py-2 bg-cyan-400 text-black rounded-lg font-semibold hover:bg-cyan-300 transition-colors flex items-center justify-center gap-2"
+            >
+              <Download className="w-4 h-4" />
+              Export PNG
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

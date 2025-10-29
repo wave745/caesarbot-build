@@ -1,0 +1,337 @@
+Below is a complete, copy-paste-ready implementation that gives you exactly the Padre.gg PnL card you see in the screenshots – no data needed yet.  It includes:Resizable modal (drag the bottom-right handle)  
+Font / layout scaling while resizing  
+Settings panel (USD toggle, custom background, opacity & blur sliders)  
+Background image with live opacity/blur preview  
+Export to PNG button  
+All visual effects (glow, gradients, icons)
+
+1. HTML – Add to <body> (anywhere)html
+
+<!-- PnL Card Modal -->
+<div id="pnlModal" class="pnl-modal">
+  <div id="pnlCard" class="pnl-card">
+    <!-- Header -->
+    <div class="card-header">
+      <div class="logo">Padre</div>
+      <button class="settings-btn">Settings</button>
+      <button class="close-btn">×</button>
+    </div>
+
+    <!-- Body -->
+    <div class="card-body">
+      <div class="row">
+        <div class="label">Balance SOL</div>
+        <div class="label right">0.00%</div>
+      </div>
+      <div class="row big">
+        <div class="value sol"><span class="icon">Solana</span>0.0000</div>
+        <div class="value usd"><span class="icon">Solana</span>0.00</div>
+      </div>
+      <div class="row small">
+        <div class="usd-label">0.00 USD</div>
+        <div class="usd-label right">0.00$</div>
+      </div>
+    </div>
+
+    <!-- Resize handle -->
+    <div class="resize-handle"></div>
+  </div>
+
+  <!-- Settings Panel (hidden by default) -->
+  <div id="settingsPanel" class="settings-panel">
+    <div class="sp-header">
+      <h3>Settings</h3>
+      <button class="sp-close">×</button>
+    </div>
+    <div class="sp-body">
+      <label class="toggle">
+        <input type="checkbox" id="showUsd" checked>
+        <span class="slider"></span> Show USD values
+      </label>
+
+      <div class="section">Custom Background</div>
+      <label class="drop-area" id="dropArea">
+        <input type="file" accept="image/*" id="bgInput" hidden>
+        Select or drag and drop an image here
+      </label>
+
+      <div class="slider-group">
+        <label>Opacity <span id="opVal">100</span>%</label>
+        <input type="range" id="opacitySlider" min="0" max="100" value="100">
+      </div>
+      <div class="slider-group">
+        <label>Blur <span id="blurVal">0</span>px</label>
+        <input type="range" id="blurSlider" min="0" max="20" value="0">
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Footer button (add to your footer navigator) -->
+<button id="openPnLBtn" class="footer-btn">PnL Card</button>
+
+2. CSS – Paste in <style> or your CSS filecss
+
+/* ---------- Modal ---------- */
+.pnl-modal {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.85);
+  justify-content: center; align-items: center;
+  z-index: 9999;
+  font-family: 'Inter', sans-serif;
+}
+.pnl-modal.open { display: flex; }
+
+/* ---------- Card ---------- */
+.pnl-card {
+  position: relative;
+  width: 420px; height: 260px;
+  background: linear-gradient(135deg, #0d0d1e, #1a1a2e);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgba(0,255,255,0.15);
+  color: white;
+  transition: all .15s ease;
+}
+
+/* Header */
+.card-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px;
+  font-size: 14px;
+  background: rgba(255,255,255,0.04);
+}
+.logo { font-weight: 700; font-size: 16px; }
+.settings-btn, .close-btn, .sp-close {
+  background: none; border: none; color: #aaa;
+  font-size: 18px; cursor: pointer;
+}
+.settings-btn:hover, .close-btn:hover { color: #fff; }
+
+/* Body */
+.card-body { padding: 20px; display: flex; flex-direction: column; gap: 8px; }
+.row { display: flex; justify-content: space-between; align-items: center; }
+.label { font-size: 14px; opacity: .8; }
+.right { text-align: right; }
+.big { font-size: 2.8rem; line-height: 1; gap: 12px; }
+.value { display: flex; align-items: center; gap: 6px; }
+.icon { 
+  width: 1.8em; height: 1.8em; 
+  background: linear-gradient(45deg, #00f5ff, #7000ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 900;
+}
+.sol .icon { background: linear-gradient(45deg, #00ff88, #00ffff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.usd .icon { background: linear-gradient(45deg, #ff00ff, #00ffff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.small { font-size: 0.9rem; opacity: .7; }
+
+/* Resize handle */
+.resize-handle {
+  position: absolute; right: 8px; bottom: 8px;
+  width: 16px; height: 16px;
+  background: #00ffff; border-radius: 4px;
+  cursor: se-resize; opacity: .6;
+}
+.pnl-card:hover .resize-handle { opacity: 1; }
+
+/* ---------- Settings Panel ---------- */
+.settings-panel {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  width: 320px; background: rgba(30,30,45,0.95);
+  border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  display: none; flex-direction: column;
+}
+.settings-panel.open { display: flex; }
+.sp-header { padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; }
+.sp-body { padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+
+/* Toggle */
+.toggle { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.slider {
+  position: relative; width: 44px; height: 24px;
+  background: #444; border-radius: 12px;
+  transition: .3s;
+}
+.slider::after {
+  content: ''; position: absolute; top: 3px; left: 3px;
+  width: 18px; height: 18px; background: #fff;
+  border-radius: 50%; transition: .3s;
+}
+input:checked + .slider { background: #00ff88; }
+input:checked + .slider::after { transform: translateX(20px); }
+
+/* Drop area */
+.drop-area {
+  border: 2px dashed #555; border-radius: 8px;
+  padding: 20px; text-align: center; cursor: pointer;
+  transition: .2s;
+}
+.drop-area.dragover { border-color: #00ffff; background: rgba(0,255,255,0.1); }
+
+/* Sliders */
+.slider-group { display: flex; flex-direction: column; gap: 4px; }
+.slider-group input[type=range] {
+  -webkit-appearance: none; height: 6px;
+  background: #333; border-radius: 3px;
+  outline: none;
+}
+.slider-group input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 16px; height: 16px;
+  background: #00ffff; border-radius: 50%; cursor: pointer;
+}
+
+/* Footer button */
+.footer-btn {
+  padding: 10px 16px; background: #1a1a2e; color: #fff;
+  border: none; border-radius: 8px; cursor: pointer;
+  font-weight: 600;
+}
+.footer-btn:hover { background: #252540; }
+
+3. JavaScript – Paste before </body>html
+
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+<script>
+/* ---------- Elements ---------- */
+const modal = document.getElementById('pnlModal');
+const card = document.getElementById('pnlCard');
+const settingsPanel = document.getElementById('settingsPanel');
+const openBtn = document.getElementById('openPnLBtn');
+const closeBtn = card.querySelector('.close-btn');
+const settingsBtn = card.querySelector('.settings-btn');
+const spClose = settingsPanel.querySelector('.sp-close');
+const showUsd = document.getElementById('showUsd');
+const usdRows = card.querySelectorAll('.usd-label');
+const solValue = card.querySelector('.sol');
+const usdValue = card.querySelector('.usd');
+const dropArea = document.getElementById('dropArea');
+const bgInput = document.getElementById('bgInput');
+const opacitySlider = document.getElementById('opacitySlider');
+const blurSlider = document.getElementById('blurSlider');
+const opVal = document.getElementById('opVal');
+const blurVal = document.getElementById('blurVal');
+const resizeHandle = card.querySelector('.resize-handle');
+
+/* ---------- Open / Close ---------- */
+openBtn.onclick = () => modal.classList.add('open');
+closeBtn.onclick = () => modal.classList.remove('open');
+spClose.onclick = () => settingsPanel.classList.remove('open');
+settingsBtn.onclick = () => settingsPanel.classList.add('open');
+
+/* ---------- Resize Logic ---------- */
+let resizing = false, startX, startY, startW, startH;
+resizeHandle.addEventListener('mousedown', e => {
+  resizing = true;
+  startX = e.clientX; startY = e.clientY;
+  startW = card.offsetWidth; startH = card.offsetHeight;
+  e.preventDefault();
+});
+document.addEventListener('mousemove', e => {
+  if (!resizing) return;
+  const dx = e.clientX - startX, dy = e.clientY - startY;
+  const w = Math.max(300, startW + dx);
+  const h = Math.max(180, startH + dy);
+  card.style.width = w + 'px';
+  card.style.height = h + 'px';
+
+  // Scale fonts proportionally
+  const baseW = 420, baseH = 260;
+  const scale = Math.min(w / baseW, h / baseH);
+  const bigFont = 2.8 * scale;
+  const smallFont = 0.9 * scale;
+  card.querySelectorAll('.big').forEach(el => el.style.fontSize = bigFont + 'rem');
+  card.querySelectorAll('.small').forEach(el => el.style.fontSize = smallFont + 'rem');
+});
+document.addEventListener('mouseup', () => resizing = false);
+
+/* ---------- USD Toggle ---------- */
+showUsd.onchange = () => {
+  const show = showUsd.checked;
+  usdRows.forEach(el => el.style.display = show ? 'block' : 'none');
+  usdValue.style.display = show ? 'flex' : 'none';
+};
+
+/* ---------- Background Upload ---------- */
+['dragenter', 'dragover'].forEach(ev => {
+  dropArea.addEventListener(ev, e => { e.preventDefault(); dropArea.classList.add('dragover'); });
+});
+['dragleave', 'drop'].forEach(ev => {
+  dropArea.addEventListener(ev, e => { e.preventDefault(); dropArea.classList.remove('dragover'); });
+});
+dropArea.addEventListener('drop', e => {
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) setBg(file);
+});
+bgInput.onchange = () => { if (bgInput.files[0]) setBg(bgInput.files[0]); };
+
+function setBg(file) {
+  const reader = new FileReader();
+  reader.onload = ev => {
+    card.style.backgroundImage = `url(${ev.target.result})`;
+    card.style.backgroundSize = 'cover';
+    card.style.backgroundPosition = 'center';
+  };
+  reader.readAsDataURL(file);
+}
+
+/* ---------- Opacity & Blur ---------- */
+opacitySlider.oninput = () => {
+  const v = opacitySlider.value;
+  opVal.textContent = v;
+  card.style.backgroundColor = `rgba(13,13,30,${v/100})`;
+};
+blurSlider.oninput = () => {
+  const v = blurSlider.value;
+  blurVal.textContent = v;
+  card.style.backdropFilter = `blur(${v}px)`;
+};
+
+/* ---------- Export PNG ---------- */
+function exportCard() {
+  html2canvas(card, {backgroundColor: null}).then(canvas => {
+    const a = document.createElement('a');
+    a.download = 'pnl-card.png';
+    a.href = canvas.toDataURL();
+    a.click();
+  });
+}
+
+/* Add export button inside settings */
+settingsPanel.querySelector('.sp-body').insertAdjacentHTML('beforeend', `
+  <button onclick="exportCard()" style="margin-top:12px;padding:8px 12px;background:#00ffff;color:#000;border:none;border-radius:6px;cursor:pointer;">
+    Export PNG
+  </button>
+`);
+</script>
+
+4. Footer Navigator Integration (Example)html
+
+<footer class="footer-nav">
+  <!-- your other buttons -->
+  <button id="openPnLBtn" class="footer-btn">PnL Card</button>
+</footer>
+
+ResultFeature
+Done
+Open from footer
+Yes
+Resizable + auto-scale fonts
+Yes
+USD toggle
+Yes
+Custom background (drag/drop)
+Yes
+Opacity & blur sliders (live)
+Yes
+Export PNG
+Yes
+Glow, gradients, icons
+Yes
+
+Just copy the HTML → CSS → JS into your project.
+No backend, no wallet data needed.
+When you’re ready, replace the static 0.0000 values with real data in updatePnLCard() (you can add later).Let me know if you want a React version or dark-mode toggle next!
+
