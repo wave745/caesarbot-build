@@ -131,7 +131,7 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
       >
         <div 
           ref={cardRef}
-          className="relative rounded-[20px] overflow-hidden text-white h-full w-full border border-gray-700/30"
+          className="relative overflow-hidden text-white h-full w-full border border-gray-700/30"
           style={{
             background: !backgroundImage ? `rgba(0,0,0,0.95)` : 'transparent',
           }}
