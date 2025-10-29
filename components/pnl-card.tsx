@@ -184,12 +184,6 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
             </div>
           )}
         </div>
-
-        {/* Resize Handle */}
-        <div 
-          className="absolute right-2 bottom-2 w-4 h-4 bg-cyan-400 rounded cursor-se-resize opacity-60 hover:opacity-100 transition-opacity"
-          onMouseDown={handleResizeStart}
-        />
       </div>
 
       {/* Settings Panel */}
