@@ -136,27 +136,24 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
           backdropFilter: `blur(${blur}px)`,
         }}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 bg-white/[0.04]">
-          <div className="font-bold text-base">CaesarX</div>
-          <div className="flex items-center gap-2">
-            <button 
-              onClick={() => setShowSettings(!showSettings)}
-              className="text-gray-400 hover:text-white transition-colors"
-            >
-              <Settings className="w-4 h-4" />
-            </button>
-            <button 
-              onClick={onClose}
-              className="text-gray-400 hover:text-white transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
+        {/* Top-right Controls */}
+        <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
+          <button 
+            onClick={() => setShowSettings(!showSettings)}
+            className="text-gray-400 hover:text-white transition-colors p-1 rounded-lg bg-black/30 hover:bg-black/50"
+          >
+            <Settings className="w-4 h-4" />
+          </button>
+          <button 
+            onClick={onClose}
+            className="text-gray-400 hover:text-white transition-colors p-1 rounded-lg bg-black/30 hover:bg-black/50"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
 
         {/* Body */}
-        <div className="px-5 py-5 flex flex-col gap-2">
+        <div className="px-5 py-6 flex flex-col gap-2">
           {/* Top Row */}
           <div className="flex items-center justify-between text-sm opacity-80">
             <span>Balance SOL</span>
