@@ -83,7 +83,7 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black/20 z-[9999] flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-transparent z-[9999] flex items-center justify-center p-4">
       {/* PnL Card */}
       <Rnd
         default={{
@@ -231,9 +231,9 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
 
       {/* Settings Panel */}
       {showSettings && (
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 bg-black/95 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] flex flex-col">
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 bg-[#0a0a0a] border border-[#1a1a1a] rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] flex flex-col">
           {/* Settings Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-[#1a1a1a]">
             <h3 className="text-white font-semibold">Settings</h3>
             <button 
               onClick={() => setShowSettings(false)}
@@ -303,7 +303,7 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
                 ) : (
                   /* Upload Area */
                   <label 
-                    className="border-2 border-dashed border-gray-600 hover:border-cyan-400 rounded-lg p-8 text-center cursor-pointer transition-colors block"
+                    className="border-2 border-dashed border-[#1a1a1a] hover:border-cyan-400 rounded-lg p-8 text-center cursor-pointer transition-colors block"
                     onDrop={handleDrop}
                     onDragOver={(e) => e.preventDefault()}
                   >
