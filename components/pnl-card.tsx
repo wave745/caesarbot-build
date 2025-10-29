@@ -120,17 +120,17 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/40 z-[9999] flex items-center justify-center p-4">
       {/* PnL Card */}
       <div 
         ref={cardRef}
-        className="relative rounded-[20px] overflow-hidden shadow-[0_12px_40px_rgba(0,255,255,0.15)] text-white transition-all"
+        className="relative rounded-[20px] overflow-hidden text-white transition-all border border-gray-800/50"
         style={{
           width: `${cardSize.width}px`,
           height: `${cardSize.height}px`,
           background: backgroundImage 
             ? `linear-gradient(135deg, rgba(13,13,30,${opacity/100}), rgba(26,26,46,${opacity/100})), url(${backgroundImage})`
-            : `linear-gradient(135deg, #0d0d1e, #1a1a2e)`,
+            : `rgba(13,13,30,0.95)`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backdropFilter: `blur(${blur}px)`,
