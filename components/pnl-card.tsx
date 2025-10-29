@@ -180,69 +180,86 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
           {/* Content Layer */}
           <div className="relative z-10 h-full w-full">
           {/* Chain Toggle - Top Left */}
-          <div 
-            className="absolute top-0 left-0 flex items-center gap-1 px-3"
-            style={{ 
-              height: `${scale * 2.5}rem`,
-              paddingTop: `${scale * 0.5}rem`
-            }}
-          >
-            <div className="flex items-center gap-1 bg-black/40 rounded-lg p-1">
-              <button
-                onClick={() => setSelectedChain('sol')}
-                className="transition-all duration-200"
-                style={{
-                  filter: selectedChain === 'sol' ? 'none' : 'grayscale(100%)',
-                  opacity: selectedChain === 'sol' ? 1 : 0.5,
-                }}
-              >
-                <img 
-                  src="/sol-logo.png" 
-                  alt="Solana" 
-                  style={{ 
-                    width: `${scale * 1.5}rem`, 
-                    height: `${scale * 1.5}rem`,
-                    objectFit: 'contain',
-                  }} 
-                />
-              </button>
-              <button
-                onClick={() => setSelectedChain('bnb')}
-                className="transition-all duration-200"
-                style={{
-                  filter: selectedChain === 'bnb' ? 'none' : 'grayscale(100%)',
-                  opacity: selectedChain === 'bnb' ? 1 : 0.5,
-                }}
-              >
-                <img 
-                  src="/bnb-chain-binance-smart-chain-logo.svg" 
-                  alt="BNB Chain" 
-                  style={{ 
-                    width: `${scale * 1.5}rem`, 
-                    height: `${scale * 1.5}rem`,
-                    objectFit: 'contain',
-                  }} 
-                />
-              </button>
+          {isHovering && (
+            <div 
+              className="absolute top-0 left-0 flex items-center gap-1 px-3 z-20 pointer-events-auto transition-opacity duration-200"
+              style={{ 
+                height: `${scale * 2.5}rem`,
+                paddingTop: `${scale * 0.5}rem`
+              }}
+            >
+              <div className="flex items-center gap-1 bg-black/40 rounded-lg p-1">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setSelectedChain('sol')
+                  }}
+                  className="transition-all duration-200 pointer-events-auto"
+                  style={{
+                    filter: selectedChain === 'sol' ? 'none' : 'grayscale(100%)',
+                    opacity: selectedChain === 'sol' ? 1 : 0.5,
+                  }}
+                >
+                  <img 
+                    src="/sol-logo.png" 
+                    alt="Solana" 
+                    style={{ 
+                      width: `${scale * 1.5}rem`, 
+                      height: `${scale * 1.5}rem`,
+                      objectFit: 'contain',
+                    }} 
+                  />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setSelectedChain('bnb')
+                  }}
+                  className="transition-all duration-200 pointer-events-auto"
+                  style={{
+                    filter: selectedChain === 'bnb' ? 'none' : 'grayscale(100%)',
+                    opacity: selectedChain === 'bnb' ? 1 : 0.5,
+                  }}
+                >
+                  <img 
+                    src="/bnb-chain-binance-smart-chain-logo.svg" 
+                    alt="BNB Chain" 
+                    style={{ 
+                      width: `${scale * 1.5}rem`, 
+                      height: `${scale * 1.5}rem`,
+                      objectFit: 'contain',
+                    }} 
+                  />
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Drag Handle & Controls */}
           <div 
             className="drag-handle absolute top-0 left-0 right-0 cursor-move flex items-center justify-end px-3"
-            style={{ height: `${scale * 2.5}rem` }}
+            style={{ 
+              height: `${scale * 2.5}rem`,
+              pointerEvents: 'auto'
+            }}
           >
             {isHovering && (
-              <div className="flex items-center gap-2 z-10 transition-opacity duration-200">
+              <div className="flex items-center gap-2 z-10 transition-opacity duration-200 pointer-events-auto">
                 <button 
-                  onClick={() => setShowSettings(!showSettings)}
-                  className="text-gray-400 hover:text-white transition-colors p-1 rounded-lg bg-black/40 hover:bg-black/60"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowSettings(!showSettings)
+                  }}
+                  className="text-gray-400 hover:text-white transition-colors p-1 rounded-lg bg-black/40 hover:bg-black/60 pointer-events-auto"
                 >
                   <Settings style={{ width: `${scale * 1}rem`, height: `${scale * 1}rem` }} />
                 </button>
                 <button 
-                  onClick={onClose}
-                  className="text-gray-400 hover:text-white transition-colors p-1 rounded-lg bg-black/40 hover:bg-black/60"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onClose()
+                  }}
+                  className="text-gray-400 hover:text-white transition-colors p-1 rounded-lg bg-black/40 hover:bg-black/60 pointer-events-auto"
                 >
                   <X style={{ width: `${scale * 1}rem`, height: `${scale * 1}rem` }} />
                 </button>
