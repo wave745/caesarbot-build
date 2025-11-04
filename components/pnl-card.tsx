@@ -28,6 +28,7 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
   const [showUSD, setShowUSD] = useState(true)
   const [selectedChain, setSelectedChain] = useState<'sol' | 'bnb'>('sol')
   const [customBackgroundImage, setCustomBackgroundImage] = useState<string | null>(null)
+  const [selectedPreset, setSelectedPreset] = useState<'default' | 'gif1' | 'gif2' | 'custom'>('default')
   const [opacity, setOpacity] = useState(23)
   const [blur, setBlur] = useState(5)
   const [cardSize, setCardSize] = useState({ width: 380, height: 200 })
@@ -42,7 +43,18 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
   
   // Default background that's always present
   const defaultBackground = '/caesarx-main-pnlcard-BG.jpg'
-  const backgroundImage = customBackgroundImage || defaultBackground
+  const presetGif1 = '/custom-gif1.gif'
+  const presetGif2 = '/custom-gif2.gif'
+  
+  // Determine background image based on preset or custom
+  const getBackgroundImage = () => {
+    if (customBackgroundImage) return customBackgroundImage
+    if (selectedPreset === 'gif1') return presetGif1
+    if (selectedPreset === 'gif2') return presetGif2
+    return defaultBackground
+  }
+  
+  const backgroundImage = getBackgroundImage()
   const isCustomBackground = customBackgroundImage !== null
   
   // Detect mobile device
@@ -64,6 +76,7 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
       const reader = new FileReader()
       reader.onload = (ev) => {
         setCustomBackgroundImage(ev.target?.result as string)
+        setSelectedPreset('custom')
       }
       reader.readAsDataURL(file)
     }
@@ -76,8 +89,17 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
       const reader = new FileReader()
       reader.onload = (ev) => {
         setCustomBackgroundImage(ev.target?.result as string)
+        setSelectedPreset('custom')
       }
       reader.readAsDataURL(file)
+    }
+  }
+
+  const handlePresetSelect = (preset: 'default' | 'gif1' | 'gif2') => {
+    setSelectedPreset(preset)
+    setCustomBackgroundImage(null)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
     }
   }
 
@@ -607,6 +629,7 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
                   <button
                     onClick={() => {
                       setCustomBackgroundImage(null)
+                      setSelectedPreset('default')
                       if (fileInputRef.current) {
                         fileInputRef.current.value = ''
                       }
@@ -616,6 +639,70 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
                     Delete
                   </button>
                 )}
+              </div>
+              
+              {/* Preset Background Cards */}
+              <div className="mb-3 flex gap-2">
+                {/* Default Preset */}
+                <button
+                  onClick={() => handlePresetSelect('default')}
+                  className={`relative flex-1 h-20 rounded-lg overflow-hidden border-2 transition-all ${
+                    selectedPreset === 'default' && !isCustomBackground
+                      ? 'border-yellow-500 ring-2 ring-yellow-500/50'
+                      : 'border-[#1a1a1a] hover:border-gray-600'
+                  }`}
+                >
+                  <div
+                    className="absolute inset-0 bg-cover bg-center"
+                    style={{
+                      backgroundImage: `url(${defaultBackground})`,
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-black/40" />
+                  <div className="absolute bottom-0 left-0 right-0 p-1 bg-black/60 text-xs text-white text-center">
+                    Default
+                  </div>
+                </button>
+
+                {/* GIF 1 Preset */}
+                <button
+                  onClick={() => handlePresetSelect('gif1')}
+                  className={`relative flex-1 h-20 rounded-lg overflow-hidden border-2 transition-all ${
+                    selectedPreset === 'gif1' && !isCustomBackground
+                      ? 'border-yellow-500 ring-2 ring-yellow-500/50'
+                      : 'border-[#1a1a1a] hover:border-gray-600'
+                  }`}
+                >
+                  <img
+                    src={presetGif1}
+                    alt="Preset GIF 1"
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/40" />
+                  <div className="absolute bottom-0 left-0 right-0 p-1 bg-black/60 text-xs text-white text-center">
+                    GIF 1
+                  </div>
+                </button>
+
+                {/* GIF 2 Preset */}
+                <button
+                  onClick={() => handlePresetSelect('gif2')}
+                  className={`relative flex-1 h-20 rounded-lg overflow-hidden border-2 transition-all ${
+                    selectedPreset === 'gif2' && !isCustomBackground
+                      ? 'border-yellow-500 ring-2 ring-yellow-500/50'
+                      : 'border-[#1a1a1a] hover:border-gray-600'
+                  }`}
+                >
+                  <img
+                    src={presetGif2}
+                    alt="Preset GIF 2"
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/40" />
+                  <div className="absolute bottom-0 left-0 right-0 p-1 bg-black/60 text-xs text-white text-center">
+                    GIF 2
+                  </div>
+                </button>
               </div>
               
               {/* Upload/Preview Area */}
@@ -653,13 +740,13 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
                       onChange={handleImageUpload}
                       className="hidden"
                     />
-                    <span className="text-gray-400 text-sm">Select or drag and drop an image here</span>
+                    <span className="text-gray-400 text-sm">Select or drag and drop an image or GIF here</span>
                   </label>
                 )}
               </div>
             </div>
 
-            {/* Opacity Slider - Only for custom backgrounds */}
+            {/* Opacity Slider - For custom backgrounds only (not presets) */}
             {isCustomBackground && (
               <div>
                 <label className="flex items-center justify-between text-white mb-2">
@@ -677,7 +764,7 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
               </div>
             )}
 
-            {/* Blur Slider - Only for custom backgrounds */}
+            {/* Blur Slider - For custom backgrounds only (not presets) */}
             {isCustomBackground && (
               <div>
                 <label className="flex items-center justify-between text-white mb-2">
