@@ -1,63 +1,97 @@
 "use client"
 
 import { useState } from "react"
-import { Plus, SlidersHorizontal } from "lucide-react"
+import Image from "next/image"
+import { Plus, SlidersHorizontal, ChevronDown, Grid3x3, RefreshCw, Calendar } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { PNLChartInteractive } from "@/components/pnl-chart-interactive"
+import { PNLCalendarModal } from "@/components/pnl-calendar-modal"
+import { PNLCardsModal } from "@/components/pnl-cards-modal"
 
 export function PortfolioContent() {
   const [activeTab, setActiveTab] = useState<"portfolio" | "wallets">("portfolio")
   const [activePortfolioTab, setActivePortfolioTab] = useState("overview")
+  const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false)
+  const [isCardsModalOpen, setIsCardsModalOpen] = useState(false)
+  const [isMonthlyCard, setIsMonthlyCard] = useState(false)
+  const [selectedCurrency, setSelectedCurrency] = useState<"SOL" | "USD">("SOL")
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date())
+  const [selectedMonth, setSelectedMonth] = useState<Date>(new Date())
 
   return (
     <div className="max-w-7xl mx-auto">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-4">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-          {/* Portfolio/Wallets Toggle */}
-          <div className="flex bg-[#111111] rounded-lg p-1 w-fit">
-            <button
-              onClick={() => setActiveTab("portfolio")}
-              className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                activeTab === "portfolio" ? "bg-gradient-to-r from-yellow-500 to-orange-500 text-black" : "text-gray-400 hover:text-white"
-              }`}
-            >
-              <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full border border-current" />
-              <span className="hidden sm:inline">Wallet Operations</span>
-              <span className="sm:hidden">Wallet</span>
-            </button>
-            <button
-              onClick={() => setActiveTab("wallets")}
-              className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                activeTab === "wallets" ? "bg-gradient-to-r from-yellow-500 to-orange-500 text-black" : "text-gray-400 hover:text-white"
-              }`}
-            >
-              <div className="w-3 h-3 sm:w-4 sm:h-4 bg-gradient-to-r from-yellow-500 to-orange-500 rounded" />
-              <span className="hidden sm:inline">Wallets</span>
-              <span className="sm:hidden">Wallets</span>
-            </button>
-          </div>
+      <div className="mb-6">
+        {/* Portfolio/Wallets Tabs */}
+        <div className="flex items-center gap-6 mb-4">
+          <button
+            onClick={() => setActiveTab("portfolio")}
+            className={`text-base font-medium transition-colors ${
+              activeTab === "portfolio" ? "text-white" : "text-gray-400 hover:text-white"
+            }`}
+          >
+            Portfolio
+          </button>
+          <button
+            onClick={() => setActiveTab("wallets")}
+            className={`text-base font-medium transition-colors ${
+              activeTab === "wallets" ? "text-white" : "text-gray-400 hover:text-white"
+            }`}
+          >
+            Wallets
+          </button>
+        </div>
 
-          {/* Balance and PNL (Portfolio tab only) */}
+        {/* Balance, PNL, and Wallet Selector Row */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          {/* Left: Balance and PNL */}
           {activeTab === "portfolio" && (
-            <div className="flex items-center gap-4 sm:gap-8">
+            <div className="flex items-center gap-8">
               <div>
-                <div className="text-xs sm:text-sm text-gray-400">Balance 📅</div>
-                <div className="text-base sm:text-lg font-medium text-white">$0.00</div>
+                <div className="flex items-center gap-1.5 text-sm text-gray-400">
+                  <span>Balance</span>
+                  <Calendar className="w-3.5 h-3.5" />
+                </div>
+                <div className="text-lg font-medium text-white">$0.00</div>
               </div>
               <div>
-                <div className="text-xs sm:text-sm text-gray-400">Unrealized PNL</div>
-                <div className="text-base sm:text-lg font-medium text-white">$0.00</div>
+                <div className="text-sm text-gray-400">Unrealized PNL</div>
+                <div className="text-lg font-medium text-white">$0.00</div>
               </div>
             </div>
           )}
-        </div>
 
-        <div className="flex items-center gap-4">
-          {activeTab === "portfolio" ? (
-            <div className="text-gray-400 text-xs sm:text-sm">No wallet connected</div>
-          ) : (
-            <div className="text-gray-400 text-xs sm:text-sm">No wallets available</div>
+          {/* Right: Wallet Selector and Icons */}
+          {activeTab === "portfolio" && (
+            <div className="flex items-center gap-3">
+              {/* Wallet Selector */}
+              <button className="flex items-center gap-2 px-4 py-2 bg-[#111111] border border-[#282828] rounded-lg hover:bg-[#1a1a1a] transition-colors">
+                <Image 
+                  src="/sol-logo.png" 
+                  alt="Solana" 
+                  width={16} 
+                  height={16} 
+                  className="rounded"
+                />
+                <span className="text-sm text-white font-medium">Starting Solana Wallet</span>
+                <span className="text-xs text-gray-400">$0.00</span>
+                <ChevronDown className="w-4 h-4 text-gray-400" />
+              </button>
+
+              {/* Icon Buttons */}
+              <Button variant="outline" size="sm" className="bg-[#111111] border-[#282828] text-white hover:bg-[#1a1a1a] p-2 h-9 w-9">
+                <Grid3x3 className="w-4 h-4" />
+              </Button>
+              <Button variant="outline" size="sm" className="bg-[#111111] border-[#282828] text-white hover:bg-[#1a1a1a] p-2 h-9 w-9">
+                <RefreshCw className="w-4 h-4" />
+              </Button>
+              <Button variant="outline" size="sm" className="bg-[#111111] border-[#282828] text-white hover:bg-[#1a1a1a] px-3 h-9 relative">
+                <SlidersHorizontal className="w-4 h-4 mr-2" />
+                <span className="text-sm">Filters</span>
+                <span className="absolute -top-1 -right-1 bg-yellow-500 text-black text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">1</span>
+              </Button>
+            </div>
           )}
         </div>
       </div>
@@ -66,16 +100,16 @@ export function PortfolioContent() {
       {activeTab === "portfolio" && (
         <>
           {/* Portfolio Sub-tabs */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-4">
-            <div className="flex gap-2 sm:gap-6 overflow-x-auto pb-2 sm:pb-0 scrollbar-hide">
+          <div className="flex items-center justify-between mb-6 border-b border-[#282828]">
+            <div className="flex gap-6 overflow-x-auto pb-2 scrollbar-hide">
               {["Overview", "Open positions (0)", "Closed positions", "Trades", "Open orders (0)"].map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActivePortfolioTab(tab.toLowerCase().replace(/\s+/g, "-"))}
-                  className={`text-xs sm:text-sm font-medium pb-2 border-b-2 transition-colors whitespace-nowrap ${
+                  className={`text-sm font-medium pb-2 border-b-2 transition-colors whitespace-nowrap ${
                     (tab === "Overview" && activePortfolioTab === "overview") ||
                     activePortfolioTab === tab.toLowerCase().replace(/\s+/g, "-")
-                      ? "text-yellow-500 border-yellow-500"
+                      ? "text-blue-500 border-blue-500"
                       : "text-gray-400 border-transparent hover:text-white"
                   }`}
                 >
@@ -83,34 +117,48 @@ export function PortfolioContent() {
                 </button>
               ))}
             </div>
+          </div>
 
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" className="bg-[#111111] border-[#282828] text-white hover:bg-[#111111] p-2 sm:px-3">
-                <div className="w-3 h-3 sm:w-4 sm:h-4 bg-gradient-to-r from-yellow-500 to-orange-500 rounded mr-1 sm:mr-2" />
-              </Button>
-              <Button variant="outline" size="sm" className="bg-[#111111] border-[#282828] text-white hover:bg-[#111111] p-2 sm:px-3">
-                <div className="w-3 h-3 sm:w-4 sm:h-4 bg-[#111111] rounded-full mr-1 sm:mr-2" />
-              </Button>
-              <Button variant="outline" size="sm" className="bg-[#111111] border-[#282828] text-white hover:bg-[#111111] p-2 sm:px-3">
-                <SlidersHorizontal className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                <span className="hidden sm:inline">Filter</span>
-              </Button>
+          {/* Portfolio Content - Two Column Layout */}
+          {activePortfolioTab === "overview" && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Left Column - Empty State */}
+              <div className="lg:col-span-1">
+                <Card className="bg-[#111111] border-[#282828] p-6 h-full">
+                  <div className="text-gray-400 text-sm text-center">
+                    You don&apos;t have assets in any of the selected wallets
+                  </div>
+                </Card>
+              </div>
+
+              {/* Right Column - PNL Chart */}
+              <div className="lg:col-span-2">
+                <Card className="bg-[#111111] border-[#282828] p-6 h-full">
+                  <div className="h-full flex flex-col">
+                    <PNLChartInteractive 
+                      onCalendarClick={() => setIsCalendarModalOpen(true)}
+                    />
+                  </div>
+                </Card>
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Portfolio Content */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-            <Card className="bg-[#111111] border-[#282828] p-4 sm:p-8">
-              <div className="text-center">
-                <div className="text-gray-400 mb-2 text-sm sm:text-base">You don&apos;t have assets in any of the selected wallets</div>
-              </div>
-            </Card>
-            <Card className="bg-[#111111] border-[#282828] p-4 sm:p-8">
-              <div className="text-center">
-                <div className="text-gray-400 mb-2 text-sm sm:text-base">You don&apos;t have assets in any of the selected wallets</div>
-              </div>
-            </Card>
-          </div>
+          {/* Other Tabs Content */}
+          {activePortfolioTab !== "overview" && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+              <Card className="bg-[#111111] border-[#282828] p-4 sm:p-8">
+                <div className="text-center">
+                  <div className="text-gray-400 mb-2 text-sm sm:text-base">You don&apos;t have assets in any of the selected wallets</div>
+                </div>
+              </Card>
+              <Card className="bg-[#111111] border-[#282828] p-4 sm:p-8">
+                <div className="text-center">
+                  <div className="text-gray-400 mb-2 text-sm sm:text-base">You don&apos;t have assets in any of the selected wallets</div>
+                </div>
+              </Card>
+            </div>
+          )}
         </>
       )}
 
@@ -162,6 +210,40 @@ export function PortfolioContent() {
           </div>
         </div>
       )}
+
+      {/* PNL Calendar Modal */}
+      <PNLCalendarModal
+        isOpen={isCalendarModalOpen}
+        onClose={() => setIsCalendarModalOpen(false)}
+        currency={selectedCurrency}
+        onCurrencyChange={setSelectedCurrency}
+        onDayClick={(date) => {
+          setSelectedDate(date)
+          setIsMonthlyCard(false)
+          setIsCardsModalOpen(true)
+        }}
+        onMonthlyPNLClick={(month) => {
+          setSelectedMonth(month)
+          setIsMonthlyCard(true)
+          setIsCardsModalOpen(true)
+        }}
+      />
+
+      {/* PNL Cards Modal */}
+      <PNLCardsModal
+        isOpen={isCardsModalOpen}
+        onClose={() => setIsCardsModalOpen(false)}
+        selectedDate={selectedDate}
+        currency={selectedCurrency}
+        isMonthly={isMonthlyCard}
+        monthData={isMonthlyCard ? {
+          month: selectedMonth,
+          totalPNL: 0.00, // Replace with actual monthly PNL data
+          totalBought: 0.00, // Replace with actual monthly data
+          totalSold: 0.00, // Replace with actual monthly data
+          pnlPercentage: 0.00 // Replace with actual monthly data
+        } : undefined}
+      />
     </div>
   )
 }
