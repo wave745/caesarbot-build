@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef, memo } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { 
   Copy,
@@ -381,9 +381,28 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
             <span className="ml-2 text-zinc-400">Loading tokens...</span>
           </div>
         ) : (
-          tokens.map((token, idx) => (
-            <TrenchesTokenCard key={`${token.platform}-${token.id}-${idx}`} token={token} solAmount={solAmount} echoSettings={echoSettings} />
-          ))
+          (() => {
+            // Deduplicate tokens by mint/contractAddress to prevent duplicate keys
+            const seen = new Set<string>()
+            const uniqueTokens = tokens.filter(token => {
+              const identifier = token.coinMint || token.contractAddress || token.id
+              if (!identifier) return true // Keep tokens without identifier
+              if (seen.has(identifier)) return false
+              seen.add(identifier)
+              return true
+            })
+            
+            return uniqueTokens.map((token, index) => {
+              // Use stable identifier: platform + coinMint/contractAddress
+              // Use coinMint first, then contractAddress, then id as fallback
+              const tokenId = token.coinMint || token.contractAddress || token.id || `unknown-${index}`
+              // Create unique key: platform + tokenId (no index needed after deduplication)
+              const stableKey = `${token.platform}-${tokenId}`
+              return (
+                <TrenchesTokenCard key={stableKey} token={token} solAmount={solAmount} echoSettings={echoSettings} />
+              )
+            })
+          })()
         )}
       </div>
 
@@ -399,7 +418,8 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
   )
 }
 
-const TrenchesTokenCard = memo(function TrenchesTokenCard({ token, solAmount, echoSettings }: { token: TrenchesToken; solAmount: string; echoSettings?: any }) {
+// REMOVED memo() wrapper - trading platform needs continuous live updates, no memoization blocking
+function TrenchesTokenCard({ token, solAmount, echoSettings }: { token: TrenchesToken; solAmount: string; echoSettings?: any }) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'migrated': return 'border-red-500/60'
@@ -424,13 +444,148 @@ const TrenchesTokenCard = memo(function TrenchesTokenCard({ token, solAmount, ec
     return 'hover:bg-zinc-900/40'
   }
 
+  // Helper functions for settings
+  const formatNumber = (num: number, digits: "Short" | "Rounded" = "Rounded") => {
+    if (digits === "Short") {
+      if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M'
+      if (num >= 1000) return (num / 1000).toFixed(1) + 'K'
+      return num.toFixed(0)
+    } else {
+      if (num >= 1000000) return (num / 1000000).toFixed(2) + 'M'
+      if (num >= 1000) return (num / 1000).toFixed(2) + 'K'
+      return num.toFixed(2)
+    }
+  }
+
+  const parseMarketCap = (mcStr: string): number => {
+    if (!mcStr) return 0
+    const cleanStr = mcStr.replace('$', '').replace(',', '')
+    if (cleanStr.includes('M')) {
+      return parseFloat(cleanStr.replace('M', '')) * 1000000
+    } else if (cleanStr.includes('K')) {
+      return parseFloat(cleanStr.replace('K', '')) * 1000
+    } else {
+      return parseFloat(cleanStr) || 0
+    }
+  }
+
+  const parseTimeToMinutes = (timeStr: string): number => {
+    if (!timeStr) return 0
+    if (timeStr.includes('s')) return 0
+    if (timeStr.includes('m')) return parseInt(timeStr) || 0
+    if (timeStr.includes('h')) return (parseInt(timeStr) || 0) * 60
+    if (timeStr.includes('d')) return (parseInt(timeStr) || 0) * 60 * 24
+    return 0
+  }
+
+  // Get threshold color for market cap
+  const getMarketCapColor = () => {
+    if (!echoSettings?.thresholds || !echoSettings?.thresholdColors) return 'text-cyan-400'
+    const mc = parseMarketCap(token.mc)
+    const mc1 = parseFloat(echoSettings.thresholds.mc1 || '0')
+    const mc2 = parseFloat(echoSettings.thresholds.mc2 || '0')
+    const mc3 = parseFloat(echoSettings.thresholds.mc3 || '0')
+    
+    if (mc >= mc1) return echoSettings.thresholdColors.mc1 || 'text-green-400'
+    if (mc >= mc2) return echoSettings.thresholdColors.mc2 || 'text-amber-400'
+    if (mc >= mc3) return echoSettings.thresholdColors.mc3 || 'text-cyan-400'
+    return 'text-cyan-400'
+  }
+
+  // Get threshold color for tweet age
+  const getTweetAgeColor = () => {
+    if (!echoSettings?.thresholds || !echoSettings?.thresholdColors) return getAgeColor(token.age)
+    const ageMinutes = parseTimeToMinutes(token.age)
+    const age1 = parseFloat(echoSettings.thresholds.tweetAge1 || '0')
+    const age2 = parseFloat(echoSettings.thresholds.tweetAge2 || '0')
+    const age3 = parseFloat(echoSettings.thresholds.tweetAge3 || '0')
+    
+    if (ageMinutes >= age1) return echoSettings.thresholdColors.tweet1 || 'text-red-400'
+    if (ageMinutes >= age2) return echoSettings.thresholdColors.tweet2 || 'text-amber-400'
+    if (ageMinutes >= age3) return echoSettings.thresholdColors.tweet3 || 'text-cyan-400'
+    return getAgeColor(token.age)
+  }
+
+  // Get avatar shape class
+  const getAvatarShape = () => {
+    const shape = echoSettings?.layout?.avatarShape || 'Circle'
+    return shape === 'Square' ? 'rounded-lg' : 'rounded-full'
+  }
+
+  // Get metrics size class
+  const getMetricsSize = () => {
+    const size = echoSettings?.layout?.metricsSize || 'Small'
+    return size === 'Large' ? 'text-sm' : 'text-xs'
+  }
+
+  // Get button styles from quickBuy settings
+  const getButtonStyles = () => {
+    const quickBuy = echoSettings?.quickBuy
+    if (!quickBuy) return {}
+    
+    const sizeMap = {
+      'Small': 'px-3 py-1 text-xs',
+      'Large': 'px-5 py-2 text-sm',
+      'Mega': 'px-6 py-3 text-base',
+      'Ultra': 'px-8 py-4 text-lg'
+    }
+    
+    const shapeMap = {
+      'Round': 'rounded-full',
+      'Square': 'rounded-lg'
+    }
+    
+    // Use fixed pixel width instead of percentage to prevent resizing with columns
+    const width = quickBuy.width || 60
+    const transparency = quickBuy.transparency || 0
+    const opacity = 1 - (transparency / 100)
+    
+    // Use width value directly as pixels (not percentage) to keep button size consistent
+    // regardless of column layout changes
+    const fixedWidth = width > 0 ? `${width}px` : 'auto'
+    
+    // Only set colors if they're provided (not empty strings)
+    const style: any = {
+      width: fixedWidth,
+      minWidth: fixedWidth,
+      maxWidth: fixedWidth,
+      flexShrink: 0, // Prevent button from shrinking
+      opacity: opacity
+    }
+    
+    if (quickBuy.buttonColor && quickBuy.buttonColor.trim() !== '') {
+      style.backgroundColor = quickBuy.buttonColor
+    }
+    
+    if (quickBuy.buttonTextColor && quickBuy.buttonTextColor.trim() !== '') {
+      style.color = quickBuy.buttonTextColor
+    }
+    
+    return {
+      className: `${sizeMap[quickBuy.size as keyof typeof sizeMap] || sizeMap.Small} ${shapeMap[quickBuy.shape as keyof typeof shapeMap] || shapeMap.Round}`,
+      style
+    }
+  }
+
+  // Handle copy name on click
+  const handleNameClick = () => {
+    if (echoSettings?.toggles?.copyNameOnClick && token.name) {
+      navigator.clipboard.writeText(token.name)
+    }
+  }
+
+  // Check if data field should be displayed
+  const shouldShow = (key: string) => {
+    return echoSettings?.dataDisplay?.[key as keyof typeof echoSettings.dataDisplay] !== false
+  }
+
   return (
     <div className={`p-2 transition-all cursor-pointer min-h-[140px] w-full ${getBackgroundColor()}`}>
       <div className="flex items-start gap-3 h-full">
         {/* Left: Large Token Icon and Contract Address */}
         <div className="flex flex-col items-start">
           <div className="relative">
-            <div className={`w-16 h-16 rounded-lg overflow-hidden border ${getStatusColor(token.status)}`}>
+            <div className={`w-16 h-16 ${getAvatarShape()} overflow-hidden border ${getStatusColor(token.status)}`}>
               <img
                 src={token.image || `https://ui-avatars.com/api/?name=${token.symbol}&background=6366f1&color=fff&size=64`}
                 alt={token.name}
@@ -509,6 +664,7 @@ const TrenchesTokenCard = memo(function TrenchesTokenCard({ token, solAmount, ec
           </div>
           
           {/* Contract Address under the icon */}
+          {shouldShow('contractAddress') && (
           <div className="flex items-center gap-1 text-zinc-500 text-xs mt-1 w-16">
             <span 
               className="cursor-pointer hover:text-white transition-colors font-mono text-center flex-1"
@@ -535,25 +691,34 @@ const TrenchesTokenCard = memo(function TrenchesTokenCard({ token, solAmount, ec
               })()}
             </span>
           </div>
+          )}
         </div>
 
         {/* Center: Token Info and Metrics */}
         <div className="flex flex-col flex-1">
           {/* Top Row: Token Name */}
           <div className="flex items-center gap-2 mb-1">
-            <h3 className="font-semibold text-white text-sm">
+            <h3 
+              className={`font-semibold text-white ${getMetricsSize()} ${echoSettings?.toggles?.copyNameOnClick ? 'cursor-pointer hover:text-blue-400' : ''}`}
+              onClick={handleNameClick}
+            >
               {token.name}
             </h3>
-            <span className="text-zinc-500 text-xs">
-              {token.tag}
-            </span>
+            {shouldShow('keywordsSearch') && (
+              <span className="text-zinc-500 text-xs">
+                {token.tag}
+              </span>
+            )}
           </div>
 
           {/* Middle Row: Time and Social Icons */}
           <div className="flex items-center gap-2 mb-1">
-            <span className={`text-xs ${getAgeColor(token.age)}`}>{token.age}</span>
+            <div className="flex items-center gap-1.5">
+              <span className={`${getMetricsSize()} font-medium ${getTweetAgeColor()}`}>{token.age}</span>
+            </div>
+            {shouldShow('socials') && (
             <div className="flex items-center gap-1">
-              {token.hasTwitter && (
+              {token.hasTwitter && shouldShow('linkedXUser') && (
                 <Image 
                   src="/icons/social/x-logo.svg" 
                   alt="Twitter" 
@@ -583,18 +748,22 @@ const TrenchesTokenCard = memo(function TrenchesTokenCard({ token, solAmount, ec
                   onClick={() => window.open(token.telegram || '#', '_blank')}
                 />
               )}
-              <Image 
-                src="/icons/ui/search-icon.svg" 
-                alt="Search" 
-                width={12} 
-                height={12} 
-                className="opacity-80 brightness-0 invert cursor-pointer hover:opacity-100"
-              />
+              {shouldShow('xTokenSearch') && (
+                <Image 
+                  src="/icons/ui/search-icon.svg" 
+                  alt="Search" 
+                  width={12} 
+                  height={12} 
+                  className="opacity-80 brightness-0 invert cursor-pointer hover:opacity-100"
+                />
+              )}
             </div>
+            )}
           </div>
 
-          {/* Counts Row */}
-          <div className="flex items-center gap-3 text-xs text-zinc-400 mb-2">
+          {/* Counts Row: Holders */}
+          {shouldShow('totalHolders') && (
+          <div className={`flex items-center gap-3 ${getMetricsSize()} text-zinc-400 mb-2`}>
             <div className="flex items-center gap-1">
               <Image 
                 src="/icons/ui/totalholders-icon.svg" 
@@ -605,6 +774,7 @@ const TrenchesTokenCard = memo(function TrenchesTokenCard({ token, solAmount, ec
               />
               <span>{token.holders}</span>
             </div>
+            {token.migratedTokens > 0 && shouldShow('devBonded') && (
             <div className="flex items-center gap-1">
               <Image 
                 src="/icons/ui/dev-migrated-icon.svg" 
@@ -615,23 +785,30 @@ const TrenchesTokenCard = memo(function TrenchesTokenCard({ token, solAmount, ec
               />
               <span>{token.migratedTokens}</span>
             </div>
+            )}
           </div>
+          )}
 
         </div>
 
         {/* Right: Key Metrics */}
-        <div className="flex flex-col items-end text-right text-xs flex-shrink-0">
+        <div className={`flex flex-col items-end text-right ${getMetricsSize()} flex-shrink-0`}>
           {/* Key Metrics */}
           <div className="mb-2">
+            {shouldShow('marketCap') && (
             <div className="flex items-center gap-1 mb-1">
               <span className="text-zinc-400">MC</span>
-              <span className="text-cyan-400 font-medium">{token.mc}</span>
+              <span className={`font-medium ${getMarketCapColor()}`}>{token.mc}</span>
             </div>
+            )}
+            {shouldShow('volume') && (
             <div className="flex items-center gap-1 mb-1">
               <span className="text-zinc-400">V</span>
               <span className="text-white">{token.volume}</span>
             </div>
-            <div className="flex items-center gap-1">
+            )}
+            {shouldShow('totalFees') && (
+            <div className="flex items-center gap-1 mb-1">
               <div className="flex items-center gap-1">
                 <span className="text-zinc-400">F</span>
                 <img 
@@ -642,6 +819,21 @@ const TrenchesTokenCard = memo(function TrenchesTokenCard({ token, solAmount, ec
               </div>
               <span className="text-white">{token.fee}</span>
             </div>
+            )}
+            {/* Price Change 24h if available */}
+            {(token as any).priceChange24h !== undefined && (token as any).priceChange24h !== 0 && (
+              <div className="flex items-center gap-1">
+                <span className="text-zinc-400">24h</span>
+                <span className={`font-medium ${
+                  (token as any).priceChange24h > 0 ? 'text-green-400' : 
+                  (token as any).priceChange24h < 0 ? 'text-red-400' : 
+                  'text-zinc-400'
+                }`}>
+                  {(token as any).priceChange24h > 0 ? '+' : ''}
+                  {((token as any).priceChange24h || 0).toFixed(2)}%
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -649,7 +841,8 @@ const TrenchesTokenCard = memo(function TrenchesTokenCard({ token, solAmount, ec
       {/* Bottom Row: Engagement Metrics and Buy Button */}
       <div className="flex items-center justify-between mt-3">
         {/* Engagement Metrics */}
-        <div className="flex items-center gap-1 text-xs">
+        <div className={`flex items-center gap-1 ${getMetricsSize()}`}>
+          {shouldShow('top10Holders') && (
           <div className="flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full border border-gray-400/30 min-w-fit">
             <Image 
               src="/icons/ui/top10H-icon.svg" 
@@ -660,6 +853,8 @@ const TrenchesTokenCard = memo(function TrenchesTokenCard({ token, solAmount, ec
             />
             <span className="text-green-400 text-xs">+{(token.top10HoldersPercentage ?? token.top10Holders ?? 0).toFixed(1)}%</span>
           </div>
+          )}
+          {shouldShow('devHolding') && (
           <div className="flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full border border-gray-400/30 min-w-fit">
             <Image 
               src="/icons/ui/dev-holding-icon.svg" 
@@ -672,6 +867,8 @@ const TrenchesTokenCard = memo(function TrenchesTokenCard({ token, solAmount, ec
               {token.devSold ? 'DS' : `${(token.devPercentage ?? token.devHoldingsPercentage ?? 0).toFixed(1)}%`}
             </span>
           </div>
+          )}
+          {shouldShow('snipersHoldings') && (
           <div className="flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full border border-gray-400/30 min-w-fit">
             <Image 
               src="/icons/ui/snipers-icon.svg" 
@@ -682,6 +879,8 @@ const TrenchesTokenCard = memo(function TrenchesTokenCard({ token, solAmount, ec
             />
             <span className="text-white text-xs">{(token.snipersTotalPercentage ?? token.snipers ?? 0).toFixed(1)}%</span>
           </div>
+          )}
+          {shouldShow('insidersHolding') && (
           <div className="flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full border border-gray-400/30 min-w-fit">
             <Image 
               src="/icons/ui/insiders-icon.svg" 
@@ -692,20 +891,45 @@ const TrenchesTokenCard = memo(function TrenchesTokenCard({ token, solAmount, ec
             />
             <span className="text-white text-xs">{(token.insidersTotalPercentage ?? token.insiders ?? 0).toFixed(1)}%</span>
           </div>
+          )}
         </div>
 
         {/* Buy Button */}
-        <button 
-          className="flex items-center gap-1 px-4 py-1.5 bg-zinc-800 hover:bg-zinc-700 rounded-full text-xs transition-colors"
-          onClick={() => {
-            // TODO: Implement buy functionality
-            console.log(`Buying ${solAmount} SOL worth of ${token.symbol}`)
-          }}
-        >
-          <Zap className="w-3 h-3 text-zinc-400" />
-          <span className="text-white text-xs">{solAmount}</span>
-        </button>
+        {(() => {
+          const buttonStyles = getButtonStyles()
+          const quickBuy = echoSettings?.quickBuy
+          const amount = solAmount
+          
+          // Default button classes (gray background) - only apply if no custom color is set
+          const hasCustomColor = quickBuy?.buttonColor && quickBuy.buttonColor.trim() !== ''
+          const defaultButtonClass = hasCustomColor 
+            ? '' 
+            : 'bg-zinc-800 hover:bg-zinc-700 text-white'
+          
+          return (
+            <button 
+              className={`flex items-center gap-1 transition-colors ${defaultButtonClass} ${buttonStyles.className || 'px-4 py-1.5 rounded-full text-xs'}`}
+              style={buttonStyles.style || {}}
+              onClick={() => {
+                console.log(`Buying ${amount} SOL worth of ${token.symbol}`)
+              }}
+              onMouseEnter={(e) => {
+                if (echoSettings?.toggles?.pauseOnHover) {
+                  e.currentTarget.style.opacity = '0.7'
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (echoSettings?.toggles?.pauseOnHover) {
+                  e.currentTarget.style.opacity = buttonStyles.style?.opacity?.toString() || '1'
+                }
+              }}
+            >
+              <Zap className="w-3 h-3" />
+              <span>{amount}</span>
+            </button>
+          )
+        })()}
       </div>
     </div>
   )
-})
+}

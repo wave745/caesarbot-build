@@ -41,6 +41,7 @@ import {
   type BonkFunToken,
   type MoonItToken
 } from "@/lib/pump-api"
+import { useSolanaTrackerGraduatingWebSocket, type SolanaTrackerGraduatingWebSocketToken } from "@/lib/hooks/use-solanatracker-graduating-websocket"
 
 interface TrenchesToken {
   id: string
@@ -228,7 +229,87 @@ const convertMoonItToToken = (token: MoonItToken, index: number): TrenchesToken 
   }
 }
 
-// Function to convert Solana Tracker data to our token format
+// Function to convert Solana Tracker WebSocket token to our token format
+const convertSolanaTrackerWebSocketToToken = (wsToken: SolanaTrackerGraduatingWebSocketToken, index: number): TrenchesToken => {
+  const token = wsToken.token
+  const pool = wsToken.pools?.[0]
+  const risk = wsToken.risk
+  const creation = wsToken.creation
+  
+  // Extract platform from createdOn
+  let platform = 'unknown'
+  let platformLogo: string | undefined
+  if (token.createdOn) {
+    const createdOn = token.createdOn.toLowerCase()
+    if (createdOn.includes('pump.fun') || createdOn.includes('pump')) platform = 'pump.fun'
+    else if (createdOn.includes('bonk.fun') || createdOn.includes('bonk') || createdOn.includes('letsbonk')) platform = 'bonk.fun'
+    else if (createdOn.includes('moon.it') || createdOn.includes('moon')) platform = 'moon.it'
+    else if (createdOn.includes('meteora')) platform = 'meteora'
+    else if (createdOn.includes('pumpswap')) platform = 'pumpswap'
+    else if (createdOn.includes('moonshot')) platform = 'moonshot'
+    else if (createdOn.includes('boop')) platform = 'boop.fun'
+    else if (createdOn.includes('orca')) platform = 'orca'
+    else if (createdOn.includes('raydium')) platform = 'raydium'
+    else if (createdOn.includes('jupiter')) platform = 'jupiter'
+    else if (createdOn.includes('birdeye')) platform = 'birdeye'
+    else if (createdOn.includes('dexscreener')) platform = 'dexscreener'
+    else if (createdOn.includes('solscan')) platform = 'solscan'
+    else if (createdOn.includes('solana')) platform = 'solana'
+    else if (createdOn.includes('trends')) platform = 'trends.fun'
+    else if (createdOn.includes('rupert')) platform = 'rupert'
+    else if (createdOn.includes('bags.fm') || createdOn.includes('bags')) platform = 'bags.fm'
+    else if (createdOn.includes('believe.app') || createdOn.includes('believe')) platform = 'believe.app'
+  }
+
+  const marketCap = pool?.marketCap?.usd || 0
+  const volume = typeof pool?.volume === 'number' ? pool.volume : pool?.volume?.h24 || 0
+  const createdAt = creation?.created_time || Date.now()
+  const volumeInUsd = formatVolume(volume)
+  
+  return {
+    id: token.mint || (index + 1).toString(),
+    name: token.name,
+    symbol: token.symbol,
+    image: token.image || `https://ui-avatars.com/api/?name=${token.symbol}&background=6366f1&color=fff&size=48`,
+    mc: formatMarketCap(marketCap),
+    volume: volumeInUsd,
+    fee: typeof risk?.fees?.total === 'number' ? risk.fees.total.toFixed(3) : '0.000',
+    age: formatTimeAgo(createdAt),
+    holders: 0, // Not provided in WebSocket data
+    buys: risk?.buys || pool?.txns?.buys || 0,
+    sells: risk?.sells || pool?.txns?.sells || 0,
+    status: 'about-to-graduate',
+    tag: token.name,
+    contractAddress: getContractAddress(token.mint),
+    migratedTokens: 0,
+    devSold: (risk?.dev?.percentage || 0) === 0,
+    top10Holders: Math.round(risk?.top10 || 0),
+    snipers: Math.round((risk?.snipers?.totalPercentage || 0) * 100) / 100,
+    insiders: 0,
+    platform: platform as any,
+    platformLogo: platformLogo,
+    buyAmount: "5.00",
+    totalFees: risk?.fees?.total || 0,
+    tradingFees: risk?.fees?.totalTrading || 0,
+    tipsFees: risk?.fees?.totalTips || 0,
+    coinMint: token.mint,
+    dev: creation?.creator || '',
+    bondingCurveProgress: pool?.bondingCurveProgress || 0,
+    sniperCount: risk?.snipers?.count || 0,
+    graduationDate: null, // WebSocket doesn't provide this
+    devHoldingsPercentage: risk?.dev?.percentage || 0,
+    sniperOwnedPercentage: risk?.snipers?.totalPercentage || 0,
+    topHoldersPercentage: risk?.top10 || 0,
+    hasTwitter: !!(token.twitter || token.strictSocials?.twitter),
+    hasTelegram: !!(token.telegram || token.strictSocials?.telegram),
+    hasWebsite: !!(token.website || token.strictSocials?.website),
+    twitter: token.twitter || token.strictSocials?.twitter || null,
+    telegram: token.telegram || token.strictSocials?.telegram || null,
+    website: token.website || token.strictSocials?.website || null
+  }
+}
+
+// Function to convert Solana Tracker REST API data to our token format
 const convertSolanaTrackerToToken = (token: any, index: number, status: 'new' | 'about-to-graduate' | 'migrated' = 'new'): TrenchesToken => {
   const volumeInUsd = formatVolume(token.volume || 0)
   const marketCap = token.marketCap || 0
@@ -357,6 +438,53 @@ export function TrenchesPage() {
   const [error, setError] = useState<string | null>(null)
   const [currentTime, setCurrentTime] = useState<number>(Date.now())
   const [lastUpdateTime, setLastUpdateTime] = useState<number>(Date.now())
+  
+  // Helper function for parsing time - defined early for use in WebSocket callback
+  const parseTimeToMinutes = useCallback((timeStr: string): number => {
+    if (!timeStr) return 0
+    if (timeStr.includes('s')) return 0
+    if (timeStr.includes('m')) return parseInt(timeStr) || 0
+    if (timeStr.includes('h')) return (parseInt(timeStr) || 0) * 60
+    if (timeStr.includes('d')) return (parseInt(timeStr) || 0) * 60 * 24
+    return 0
+  }, [])
+  
+  // Use WebSocket for SolanaTracker GRADUATING tokens (middle column) - real-time updates
+  const { isConnected: isGraduatingWebSocketConnected } = useSolanaTrackerGraduatingWebSocket({
+    onMessage: (wsTokens: SolanaTrackerGraduatingWebSocketToken[]) => {
+      // Convert WebSocket tokens to TrenchesToken format and update state
+      console.log('📨 WebSocket: Received graduating tokens:', wsTokens.length)
+      
+      const convertedTokens: TrenchesToken[] = []
+      for (let i = 0; i < wsTokens.length; i++) {
+        try {
+          const token = convertSolanaTrackerWebSocketToToken(wsTokens[i], i)
+          convertedTokens.push(token)
+        } catch (err) {
+          console.warn('Error converting WebSocket graduating token:', err)
+        }
+      }
+      
+      // Filter out tokens older than 3 days
+      const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000)
+      const filteredTokens = convertedTokens.filter((token: any) => {
+        const tokenAge = parseTimeToMinutes(token.age)
+        const tokenAgeInMs = tokenAge * 60 * 1000
+        const tokenCreatedAt = Date.now() - tokenAgeInMs
+        return tokenCreatedAt > threeDaysAgo
+      })
+      
+      // Update state with converted tokens
+      setSolanaTrackerGraduatingTokens(filteredTokens)
+      setLastUpdateTime(Date.now())
+      console.log('✅ WebSocket: Updated graduating tokens:', filteredTokens.length, '(filtered from', convertedTokens.length, ')')
+    },
+    onError: (err: Error) => {
+      console.warn('⚠️ WebSocket error for graduating tokens:', err.message)
+    },
+    maxTokens: 30
+  })
+  
   const [filters, setFilters] = useState<FilterState>({
     launchpads: {
       pumpfun: true,
@@ -545,26 +673,8 @@ export function TrenchesPage() {
         }
       }
 
-      // Fetch Solana Tracker graduating tokens for MC column
-      const fetchSolanaTrackerGraduatingTokens = async () => {
-        try {
-          const response = await fetch('/api/solanatracker/tokens?type=graduating&limit=30', {
-            method: 'GET',
-            headers: {
-              'Accept': 'application/json',
-              'Content-Type': 'application/json'
-            },
-            signal: AbortSignal.timeout(5000)
-          })
-          
-          if (!response.ok) return []
-          const data = await response.json()
-          return data.success && Array.isArray(data.data) ? data.data : []
-        } catch (error) {
-          console.warn('Error fetching Solana Tracker graduating tokens:', error)
-          return []
-        }
-      }
+      // REMOVED: Solana Tracker graduating tokens now fetched via WebSocket (real-time)
+      // WebSocket provides faster, real-time updates for trading application
 
       // Fetch Solana Tracker graduated tokens for 3rd column
       const fetchSolanaTrackerGraduatedTokens = async () => {
@@ -588,9 +698,9 @@ export function TrenchesPage() {
       }
       
       // Execute all API calls in parallel for maximum speed
+      // NOTE: Graduating tokens are now fetched via WebSocket (real-time), not REST API
       const [
         solanaTrackerNewResult,
-        solanaTrackerGraduatingResult,
         solanaTrackerGraduatedResult,
         pumpFunResult,
         pumpFunMCResult,
@@ -604,7 +714,6 @@ export function TrenchesPage() {
         moonItGraduatedResult
       ] = await Promise.allSettled([
         fetchSolanaTrackerNewTokens(),
-        fetchSolanaTrackerGraduatingTokens(),
         fetchSolanaTrackerGraduatedTokens(),
         fetchPumpFunTokens(),
         fetchPumpFunMCTokens(),
@@ -632,22 +741,12 @@ export function TrenchesPage() {
         console.log('⚠️ Solana Tracker NEW tokens not available, will use fallback')
       }
 
-      if (solanaTrackerGraduatingResult.status === 'fulfilled' && solanaTrackerGraduatingResult.value.length > 0) {
-        const convertedTokens = solanaTrackerGraduatingResult.value.slice(0, 30).map((token: any, index: number) => 
-          convertSolanaTrackerToToken(token, index, 'about-to-graduate')
-        )
-        // Filter out Solana Tracker graduating tokens older than 3 days
-        const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000)
-        const filteredSolanaTrackerGraduatingTokens = convertedTokens.filter((token: any) => {
-          const tokenAge = parseTimeToMinutes(token.age)
-          const tokenAgeInMs = tokenAge * 60 * 1000
-          const tokenCreatedAt = Date.now() - tokenAgeInMs
-          return tokenCreatedAt > threeDaysAgo
-        })
-        setSolanaTrackerGraduatingTokens(filteredSolanaTrackerGraduatingTokens)
-        console.log('✅ Solana Tracker GRADUATING tokens loaded:', filteredSolanaTrackerGraduatingTokens.length, '(filtered from', convertedTokens.length, 'to exclude tokens >3 days old)')
+      // REMOVED: Graduating tokens are now handled via WebSocket (real-time updates)
+      // WebSocket provides instant updates as tokens become available, no REST API needed
+      if (isGraduatingWebSocketConnected) {
+        console.log('✅ Solana Tracker GRADUATING tokens via WebSocket (real-time):', solanaTrackerGraduatingTokens.length)
       } else {
-        console.log('⚠️ Solana Tracker GRADUATING tokens not available')
+        console.log('⏳ Waiting for WebSocket connection for graduating tokens...')
       }
 
       if (solanaTrackerGraduatedResult.status === 'fulfilled' && solanaTrackerGraduatedResult.value.length > 0) {
@@ -1116,14 +1215,7 @@ export function TrenchesPage() {
 
 
 
-  // Helper functions - memoized for performance
-  const parseTimeToMinutes = useCallback((timeStr: string): number => {
-    if (timeStr.includes('s')) return 0
-    if (timeStr.includes('m')) return parseInt(timeStr) || 0
-    if (timeStr.includes('h')) return (parseInt(timeStr) || 0) * 60
-    if (timeStr.includes('d')) return (parseInt(timeStr) || 0) * 60 * 24
-    return 0
-  }, [])
+  // Helper functions - memoized for performance (parseTimeToMinutes moved above for WebSocket hook)
 
   const parseMarketCap = useCallback((mcStr: string): number => {
     if (!mcStr) return 0
@@ -1401,75 +1493,116 @@ export function TrenchesPage() {
 
 
       {/* Three Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 items-start w-full">
-        {selectedChain === 'solana' ? (
-          <>
-            <div className="px-1">
-              <TrenchesColumn 
-                title="New" 
-                tokens={newTokens} 
-                onFiltersChange={handleFiltersChange}
-                initialFilters={filters}
-                selectedChain={selectedChain}
-                echoSettings={echoSettings}
-              />
-            </div>
-            <div>
-              <TrenchesColumn 
-                title="% MC" 
-                tokens={mcCategoryTokens} 
-                onFiltersChange={handleFiltersChange}
-                initialFilters={filters}
-                selectedChain={selectedChain}
-                echoSettings={echoSettings}
-              />
-            </div>
-            <div className="px-1">
-              <TrenchesColumn 
-                title="Migrated" 
-                tokens={graduatedCategoryTokens} 
-                onFiltersChange={handleFiltersChange}
-                initialFilters={filters}
-                selectedChain={selectedChain}
-                echoSettings={echoSettings}
-              />
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="px-1">
-              <TrenchesColumn 
-                title="New" 
-                tokens={bscRealTokens} 
-                onFiltersChange={handleFiltersChange}
-                initialFilters={filters}
-                selectedChain={selectedChain}
-                echoSettings={echoSettings}
-              />
-            </div>
-            <div>
-              <TrenchesColumn 
-                title="% MC" 
-                tokens={bscMcTokens} 
-                onFiltersChange={handleFiltersChange}
-                initialFilters={filters}
-                selectedChain={selectedChain}
-                echoSettings={echoSettings}
-              />
-            </div>
-            <div className="px-1">
-              <TrenchesColumn 
-                title="Migrated" 
-                tokens={bscGraduatedTokens} 
-                onFiltersChange={handleFiltersChange}
-                initialFilters={filters}
-                selectedChain={selectedChain}
-                echoSettings={echoSettings}
-              />
-            </div>
-          </>
-        )}
-      </div>
+      {(() => {
+        const columns = echoSettings?.layout?.columns || 'Compact'
+        const columnSpacing = columns === 'Spaced' ? 'px-4' : 'px-1'
+        const showNew = echoSettings?.layout?.showNew !== false
+        const showAlmostBonded = echoSettings?.layout?.showAlmostBonded !== false
+        const showMigrated = echoSettings?.layout?.showMigrated !== false
+        
+        // Calculate visible columns
+        const visibleColumns = [showNew, showAlmostBonded, showMigrated].filter(Boolean).length
+        
+        // Responsive grid classes based on visible columns
+        let gridCols = 'grid-cols-1' // Mobile always single column
+        let containerClass = 'w-full'
+        
+        if (visibleColumns === 3) {
+          gridCols = 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+          containerClass = 'w-full'
+        } else if (visibleColumns === 2) {
+          gridCols = 'grid-cols-1 sm:grid-cols-2'
+          containerClass = 'w-full'
+        } else if (visibleColumns === 1) {
+          gridCols = 'grid-cols-1'
+          // Single column: center it with max-width for better appearance
+          containerClass = 'w-full max-w-2xl mx-auto'
+        }
+        
+        return (
+          <div className={`grid ${gridCols} gap-2 items-start ${containerClass}`}>
+            {selectedChain === 'solana' ? (
+              <>
+                {showNew && (
+                  <div className={columnSpacing}>
+                    <TrenchesColumn 
+                      title="New" 
+                      tokens={newTokens} 
+                      onFiltersChange={handleFiltersChange}
+                      initialFilters={filters}
+                      selectedChain={selectedChain}
+                      echoSettings={echoSettings}
+                    />
+                  </div>
+                )}
+                {showAlmostBonded && (
+                  <div className={columnSpacing}>
+                    <TrenchesColumn 
+                      title="% MC" 
+                      tokens={mcCategoryTokens} 
+                      onFiltersChange={handleFiltersChange}
+                      initialFilters={filters}
+                      selectedChain={selectedChain}
+                      echoSettings={echoSettings}
+                    />
+                  </div>
+                )}
+                {showMigrated && (
+                  <div className={columnSpacing}>
+                    <TrenchesColumn 
+                      title="Migrated" 
+                      tokens={graduatedCategoryTokens} 
+                      onFiltersChange={handleFiltersChange}
+                      initialFilters={filters}
+                      selectedChain={selectedChain}
+                      echoSettings={echoSettings}
+                    />
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                {showNew && (
+                  <div className={columnSpacing}>
+                    <TrenchesColumn 
+                      title="New" 
+                      tokens={bscRealTokens} 
+                      onFiltersChange={handleFiltersChange}
+                      initialFilters={filters}
+                      selectedChain={selectedChain}
+                      echoSettings={echoSettings}
+                    />
+                  </div>
+                )}
+                {showAlmostBonded && (
+                  <div className={columnSpacing}>
+                    <TrenchesColumn 
+                      title="% MC" 
+                      tokens={bscMcTokens} 
+                      onFiltersChange={handleFiltersChange}
+                      initialFilters={filters}
+                      selectedChain={selectedChain}
+                      echoSettings={echoSettings}
+                    />
+                  </div>
+                )}
+                {showMigrated && (
+                  <div className={columnSpacing}>
+                    <TrenchesColumn 
+                      title="Migrated" 
+                      tokens={bscGraduatedTokens} 
+                      onFiltersChange={handleFiltersChange}
+                      initialFilters={filters}
+                      selectedChain={selectedChain}
+                      echoSettings={echoSettings}
+                    />
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )
+      })()}
 
       {/* Customize Modal */}
       <EchoCustomizeModal 

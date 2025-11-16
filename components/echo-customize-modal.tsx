@@ -5,29 +5,22 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
-import { X, RotateCcw, Settings, Zap } from "lucide-react"
-import { PresetsModal } from "./presets-modal"
+import { X, RotateCcw, Settings } from "lucide-react"
 
 export type EchoSettings = {
   layout: {
-    display: "Moxia" | "Legacy"
     metricsSize: "Small" | "Large"
     avatarShape: "Circle" | "Square"
-    progressStyle: "Bar" | "Ring"
     columns: "Compact" | "Spaced"
     showNew: boolean
     showAlmostBonded: boolean
-    almostBondedBy: "Curve" | "M Cap"
     showMigrated: boolean
-    statsDigits: "Short" | "Rounded"
   }
   toggles: {
     copyNameOnClick: boolean
       pauseOnHover: boolean
       backgroundColor: boolean
       launchpadColorMatching: boolean
-      searchKeywords: boolean
-      showAvatarReused: boolean
   }
   thresholds: {
     mc1: string
@@ -48,45 +41,27 @@ export type EchoSettings = {
   quickBuy: {
     buttonColor: string
     buttonTextColor: string
-    extraBehavior: "None" | "Open Market" | "Open New Tab"
     size: "Small" | "Large" | "Mega" | "Ultra"
     shape: "Round" | "Square"
     width: number
     transparency: number
-    showSecondButton: boolean
-    extraButtonColor: string
-    extraButtonTextColor: string
-    extraPreset: string
-    amount: string
-    presets: {
-      P1: { prio: string; tip: string; slippage: string; mev: boolean }
-      P2: { prio: string; tip: string; slippage: string; mev: boolean }
-      P3: { prio: string; tip: string; slippage: string; mev: boolean }
-    }
   }
   dataDisplay: {
     top10Holders: boolean
     devHolding: boolean
-    devFunded: boolean
     snipersHoldings: boolean
-    snipersCount: boolean
     insidersHolding: boolean
     bundles: boolean
     dexBoosted: boolean
     dexPaid: boolean
     xTokenSearch: boolean
-    progressLine: boolean
-    totalTxns: boolean
     devBonded: boolean
     socials: boolean
-    proHolders: boolean
-    freshWalletBuys: boolean
     totalHolders: boolean
     volume: boolean
     marketCap: boolean
     marketCapInStats: boolean
     totalFees: boolean
-    vibing: boolean
     contractAddress: boolean
     linkedXUser: boolean
     keywordsSearch: boolean
@@ -95,24 +70,18 @@ export type EchoSettings = {
 
 const defaultSettings: EchoSettings = {
   layout: {
-    display: "Moxia",
     metricsSize: "Small",
     avatarShape: "Circle",
-    progressStyle: "Bar",
     columns: "Compact",
     showNew: true,
     showAlmostBonded: true,
-    almostBondedBy: "Curve",
-    showMigrated: true,
-    statsDigits: "Rounded"
+    showMigrated: true
   },
   toggles: {
     copyNameOnClick: true,
       pauseOnHover: true,
       backgroundColor: false,
-      launchpadColorMatching: false,
-      searchKeywords: true,
-      showAvatarReused: true
+      launchpadColorMatching: false
   },
   thresholds: {
     mc1: "100000",
@@ -131,47 +100,29 @@ const defaultSettings: EchoSettings = {
     tweet3: "#06b6d4"  // cyan
   },
   quickBuy: {
-    buttonColor: "#22c55e",
-    buttonTextColor: "#0b0b0b",
-    extraBehavior: "None",
+    buttonColor: "",
+    buttonTextColor: "",
     size: "Small",
     shape: "Round",
     width: 60,
-    transparency: 0,
-    showSecondButton: false,
-    extraButtonColor: "#22c55e",
-    extraButtonTextColor: "#0b0b0b",
-    extraPreset: "P1",
-    amount: "0"
-    ,presets: {
-      P1: { prio: "0.003", tip: "0.004", slippage: "20", mev: true },
-      P2: { prio: "0.008", tip: "0.012", slippage: "10", mev: false },
-      P3: { prio: "0.012", tip: "0.03", slippage: "10", mev: false }
-    }
+    transparency: 0
   },
   dataDisplay: {
     top10Holders: true,
     devHolding: true,
-    devFunded: false,
     snipersHoldings: true,
-    snipersCount: true,
     insidersHolding: true,
     bundles: true,
     dexBoosted: true,
     dexPaid: true,
     xTokenSearch: true,
-    progressLine: false,
-    totalTxns: true,
     devBonded: true,
     socials: true,
-    proHolders: true,
-    freshWalletBuys: false,
     totalHolders: true,
     volume: true,
     marketCap: true,
     marketCapInStats: false,
     totalFees: true,
-    vibing: false,
     contractAddress: true,
     linkedXUser: true,
     keywordsSearch: true
@@ -187,7 +138,6 @@ interface EchoCustomizeModalProps {
 
 export function EchoCustomizeModal({ isOpen, onClose, settings, onApply }: EchoCustomizeModalProps) {
   const [activeTab, setActiveTab] = useState<"layout" | "data" | "quick">("layout")
-  const [showPresetsModal, setShowPresetsModal] = useState(false)
   const [local, setLocal] = useState<EchoSettings>(settings || defaultSettings)
 
   useEffect(() => {
@@ -238,30 +188,18 @@ export function EchoCustomizeModal({ isOpen, onClose, settings, onApply }: EchoC
             {/* Layout Tab */}
             <TabsContent value="layout" className="pt-3 pb-2">
               <div className="space-y-3">
-                <Row label="Display" right={
-                  <Chooser current={local.layout.display} options={["Moxia","Legacy"]} onChange={(v)=>write(p=>({...p,layout:{...p.layout,display:v as any}}))} />
-                } />
                 <Row label="Metrics" right={
                   <Chooser current={local.layout.metricsSize} options={["Small","Large"]} onChange={(v)=>write(p=>({...p,layout:{...p.layout,metricsSize:v as any}}))} />
                 } />
                 <Row label="Avatar" right={
                   <Chooser current={local.layout.avatarShape} options={["Circle","Square"]} onChange={(v)=>write(p=>({...p,layout:{...p.layout,avatarShape:v as any}}))} />
                 } />
-                <Row label="Progress" right={
-                  <Chooser current={local.layout.progressStyle} options={["Bar","Ring"]} onChange={(v)=>write(p=>({...p,layout:{...p.layout,progressStyle:v as any}}))} />
-                } />
                 <Row label="Columns" right={
                   <Chooser current={local.layout.columns} options={["Compact","Spaced"]} onChange={(v)=>write(p=>({...p,layout:{...p.layout,columns:v as any}}))} />
                 } />
                 <Row label="New" right={<Toggle checked={local.layout.showNew} onChange={(v)=>write(p=>({...p,layout:{...p.layout,showNew:v}}))} />} />
-                <Row label="Almost bonded" right={<Toggle checked={local.layout.showAlmostBonded} onChange={(v)=>write(p=>({...p,layout:{...p.layout,showAlmostBonded:v}}))} />} />
-                <Row label="Almost bonded by" right={
-                  <Chooser current={local.layout.almostBondedBy} options={["Curve","M Cap"]} onChange={(v)=>write(p=>({...p,layout:{...p.layout,almostBondedBy:v as any}}))} />
-                } />
+                <Row label="Nearly there" right={<Toggle checked={local.layout.showAlmostBonded} onChange={(v)=>write(p=>({...p,layout:{...p.layout,showAlmostBonded:v}}))} />} />
                 <Row label="Migrated" right={<Toggle checked={local.layout.showMigrated} onChange={(v)=>write(p=>({...p,layout:{...p.layout,showMigrated:v}}))} />} />
-                <Row label="Stats digits" right={
-                  <Chooser current={local.layout.statsDigits} options={["Short","Rounded"]} onChange={(v)=>write(p=>({...p,layout:{...p.layout,statsDigits:v as any}}))} />
-                } />
 
                 {/* Extra toggles from screenshot (kept under Layout for v1) */}
                 <Divider title="" />
@@ -269,8 +207,6 @@ export function EchoCustomizeModal({ isOpen, onClose, settings, onApply }: EchoC
                 <Row label="Pause on hover" right={<Toggle checked={local.toggles.pauseOnHover} onChange={(v)=>write(p=>({...p,toggles:{...p.toggles,pauseOnHover:v}}))} />} />
                  <Row label="Background color" right={<Toggle checked={local.toggles.backgroundColor} onChange={(v)=>write(p=>({...p,toggles:{...p.toggles,backgroundColor:v}}))} />} />
                  <Row label="Launchpad color matching" right={<Toggle checked={local.toggles.launchpadColorMatching} onChange={(v)=>write(p=>({...p,toggles:{...p.toggles,launchpadColorMatching:v}}))} disabled={!local.toggles.backgroundColor} />} />
-                 <Row label="Search keywords" right={<Toggle checked={local.toggles.searchKeywords} onChange={(v)=>write(p=>({...p,toggles:{...p.toggles,searchKeywords:v}}))} />} />
-                <Row label="Show avatar reused" right={<Toggle checked={local.toggles.showAvatarReused} onChange={(v)=>write(p=>({...p,toggles:{...p.toggles,showAvatarReused:v}}))} />} />
 
                 {/* Threshold sections */}
                 <Divider title="Market Cap Threshold" />
@@ -291,28 +227,20 @@ export function EchoCustomizeModal({ isOpen, onClose, settings, onApply }: EchoC
                 {[
                   { key: 'top10Holders', label: 'Top 10 holders' },
                   { key: 'devHolding', label: 'Dev holding' },
-                  { key: 'devFunded', label: 'Dev funded', disabled: true },
                   { key: 'snipersHoldings', label: 'Snipers holdings' },
-                  { key: 'snipersCount', label: 'Snipers count' },
                   { key: 'insidersHolding', label: 'Insiders holding' },
                   { key: 'bundles', label: 'Bundles' },
                   { key: 'dexBoosted', label: 'Dex boosted' },
                   { key: 'dexPaid', label: 'Dex paid' },
                   { key: 'xTokenSearch', label: 'X token search' },
-                  { key: 'progressLine', label: 'Progress line', disabled: true },
-                  { key: 'totalTxns', label: 'Total txns' },
                   { key: 'devBonded', label: 'Dev bonded' },
                   { key: 'socials', label: 'Socials' },
-                  { key: 'proHolders', label: 'Pro holders' },
-                  { key: 'freshWalletBuys', label: 'Fresh wallet buys', disabled: true },
                   { key: 'totalHolders', label: 'Total holders' },
                   { key: 'volume', label: 'Volume' },
                   { key: 'marketCap', label: 'Market cap' },
                   { key: 'marketCapInStats', label: 'Market cap in stats' },
                   { key: 'totalFees', label: 'Total fees' },
-                  { key: 'vibing', label: 'Vibing', disabled: true },
                   { key: 'contractAddress', label: 'Contract address' },
-                  { key: 'linkedXUser', label: 'Linked X user' },
                   { key: 'keywordsSearch', label: 'Keywords search' }
                 ].map((item) => (
                   <div
@@ -346,11 +274,6 @@ export function EchoCustomizeModal({ isOpen, onClose, settings, onApply }: EchoC
                   <ColorPicker value={local.quickBuy.buttonTextColor} onChange={(v)=>write(p=>({...p,quickBuy:{...p.quickBuy,buttonTextColor:v}}))} />
                 } />
 
-                <div className="px-2">
-                  <div className="text-sm text-zinc-300 mb-1">Quick buy extra behavior</div>
-                  <Chooser current={local.quickBuy.extraBehavior} options={["None","Open Market","Open New Tab"]} onChange={(v)=>write(p=>({...p,quickBuy:{...p.quickBuy,extraBehavior:v as any}}))} />
-                </div>
-
                 <Row label="Size" right={
                   <Chooser current={local.quickBuy.size} options={["Small","Large","Mega","Ultra"]} onChange={(v)=>write(p=>({...p,quickBuy:{...p.quickBuy,size:v as any}}))} />
                 } />
@@ -371,38 +294,6 @@ export function EchoCustomizeModal({ isOpen, onClose, settings, onApply }: EchoC
                     <input type="range" min={0} max={100} value={local.quickBuy.transparency} onChange={(e)=>write(p=>({...p,quickBuy:{...p.quickBuy,transparency: parseInt(e.target.value) || 0}}))} className="w-40" />
                   </div>
                 </div>
-
-                <Row label="Show second button" right={
-                  <Checkbox checked={local.quickBuy.showSecondButton} onCheckedChange={(v)=>write(p=>({...p,quickBuy:{...p.quickBuy,showSecondButton:Boolean(v)}}))} />
-                } />
-
-                {local.quickBuy.showSecondButton && (
-                  <div className="space-y-3 border-t border-[#1f1f1f] pt-3">
-                    <div className="px-2">
-                      <div className="text-sm text-zinc-300 mb-2">Config</div>
-                      <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-2 px-2 py-1 rounded-md border border-[#2a2a2a] bg-[#111111]">
-                          <Zap className="w-3 h-3" />
-                          <input
-                            type="number"
-                            value={local.quickBuy.amount}
-                            onChange={(e)=>write(p=>({...p,quickBuy:{...p.quickBuy,amount:e.target.value}}))}
-                            className="w-10 bg-transparent border-0 outline-none text-sm text-white"
-                          />
-                          <img src="/sol-logo.png" alt="SOL" className="w-3 h-3" />
-                        </div>
-                        <PresetDropdown current={local.quickBuy.extraPreset as 'P1'|'P2'|'P3'} onChange={(v)=>write(p=>({...p,quickBuy:{...p.quickBuy,extraPreset:v}}))} presets={local.quickBuy.presets} onEditPresets={()=>setShowPresetsModal(true)} />
-                      </div>
-                    </div>
-
-                    <Row label="Extra button color" right={
-                      <ColorPicker value={local.quickBuy.extraButtonColor} onChange={(v)=>write(p=>({...p,quickBuy:{...p.quickBuy,extraButtonColor:v}}))} />
-                    } />
-                    <Row label="Extra button text color" right={
-                      <ColorPicker value={local.quickBuy.extraButtonTextColor} onChange={(v)=>write(p=>({...p,quickBuy:{...p.quickBuy,extraButtonTextColor:v}}))} />
-                    } />
-                  </div>
-                )}
               </div>
             </TabsContent>
 
@@ -416,21 +307,6 @@ export function EchoCustomizeModal({ isOpen, onClose, settings, onApply }: EchoC
         </div>
       </div>
 
-      {/* Presets Modal */}
-      <PresetsModal
-        isOpen={showPresetsModal}
-        onClose={() => setShowPresetsModal(false)}
-        presets={local.quickBuy.presets}
-        onSave={(newPresets) => {
-          setLocal(prev => ({
-            ...prev,
-            quickBuy: {
-              ...prev.quickBuy,
-              presets: newPresets
-            }
-          }))
-        }}
-      />
     </div>
   )
 }
@@ -521,42 +397,4 @@ function ColorPicker({ value, onChange }: { value: string; onChange: (v: string)
     </div>
   )
 }
-
-function PresetDropdown({ current, presets, onChange, onEditPresets }: { current: 'P1'|'P2'|'P3'; presets: any; onChange: (v: 'P1'|'P2'|'P3')=>void; onEditPresets: ()=>void }) {
-  return (
-    <div className="relative">
-      <details className="group">
-        <summary className="list-none cursor-pointer select-none px-2 py-1 rounded-md border border-[#2a2a2a] bg-[#111111] text-xs text-zinc-300 flex items-center gap-2">
-          {current}
-        </summary>
-        <div className="absolute left-0 mt-1 min-w-[220px] bg-[#0e0e0e] border border-[#2a2a2a] rounded-lg shadow-xl z-50">
-          {(['P1','P2','P3'] as const).map((id)=> (
-            <button
-              key={id}
-              onClick={(e)=>{ e.preventDefault(); onChange(id); }}
-              className={`w-full text-left px-3 py-2 text-sm hover:bg-[#151515] ${current===id ? 'bg-[#151515]' : ''}`}
-            >
-              <div className="flex items-center justify-between">
-                <span className="font-medium text-white">{id}</span>
-                <span className="text-xs text-zinc-400">{presets[id].slippage}%</span>
-              </div>
-              <div className="mt-1 flex items-center gap-3 text-xs text-zinc-300">
-                <span>⛽ {presets[id].prio}</span>
-                <span>👤 {presets[id].tip}</span>
-                <span>{presets[id].mev ? '🟢 On' : '🔴 Off'}</span>
-              </div>
-            </button>
-          ))}
-          <div className="border-t border-[#222]"></div>
-          <button
-            onClick={(e)=>{ e.preventDefault(); onEditPresets(); }}
-            className="w-full text-left px-3 py-2 text-sm text-zinc-300 hover:bg-[#151515]"
-          >
-          </button>
-        </div>
-      </details>
-    </div>
-  )
-}
-
 
