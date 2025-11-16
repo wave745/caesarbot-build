@@ -1538,7 +1538,7 @@ export function TrenchesPage() {
                 {showAlmostBonded && (
                   <div className={columnSpacing}>
                     <TrenchesColumn 
-                      title="% MC" 
+                      title="Nearly There" 
                       tokens={mcCategoryTokens} 
                       onFiltersChange={handleFiltersChange}
                       initialFilters={filters}
@@ -1577,7 +1577,7 @@ export function TrenchesPage() {
                 {showAlmostBonded && (
                   <div className={columnSpacing}>
                     <TrenchesColumn 
-                      title="% MC" 
+                      title="Nearly There" 
                       tokens={bscMcTokens} 
                       onFiltersChange={handleFiltersChange}
                       initialFilters={filters}
