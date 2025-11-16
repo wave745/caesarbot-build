@@ -115,7 +115,7 @@ interface TrenchesColumnProps {
   echoSettings?: any
 }
 
-export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange, initialFilters, selectedChain = 'solana', echoSettings }: TrenchesColumnProps) {
+export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange, initialFilters, selectedChain = 'solana', echoSettings, currentTime }: TrenchesColumnProps & { currentTime?: number }) {
   const [solAmount, setSolAmount] = useState("5")
   const [isEditing, setIsEditing] = useState(false)
   const [showPresets, setShowPresets] = useState(false)
@@ -399,7 +399,7 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
               // Create unique key: platform + tokenId (no index needed after deduplication)
               const stableKey = `${token.platform}-${tokenId}`
               return (
-                <TrenchesTokenCard key={stableKey} token={token} solAmount={solAmount} echoSettings={echoSettings} />
+                <TrenchesTokenCard key={stableKey} token={token} solAmount={solAmount} echoSettings={echoSettings} currentTime={currentTime} />
               )
             })
           })()
@@ -419,7 +419,42 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
 }
 
 // REMOVED memo() wrapper - trading platform needs continuous live updates, no memoization blocking
-function TrenchesTokenCard({ token, solAmount, echoSettings }: { token: TrenchesToken; solAmount: string; echoSettings?: any }) {
+function TrenchesTokenCard({ token, solAmount, echoSettings, currentTime }: { token: TrenchesToken; solAmount: string; echoSettings?: any; currentTime?: number }) {
+  // Calculate live age from creationTime for THIS specific token
+  // Each token calculates its own age independently based on its individual creationTime
+  // IMPORTANT: Each token has its own unique creationTime, so each will show different age
+  const getLiveAge = (): string => {
+    // Get THIS token's individual creationTime (each token has its own)
+    const tokenCreationTime = token.creationTime
+    
+    // Only calculate if we have both creationTime and currentTime
+    if (tokenCreationTime && currentTime && typeof tokenCreationTime === 'number') {
+      // Calculate age for THIS specific token using its own creationTime
+      // This ensures each token shows its own unique age
+      const diff = Math.max(0, currentTime - tokenCreationTime) // Ensure non-negative
+      const seconds = Math.floor(diff / 1000)
+      const minutes = Math.floor(seconds / 60)
+      const hours = Math.floor(minutes / 60)
+      const days = Math.floor(hours / 24)
+      
+      if (days > 0) return `${days}d`
+      if (hours > 0) return `${hours}h`
+      if (minutes > 0) return `${minutes}m`
+      return `${seconds}s`
+    }
+    
+    // Fallback: use stored age string if creationTime not available
+    // This ensures tokens without creationTime still show correct age
+    if (token.age) {
+      return token.age
+    }
+    
+    return '0s'
+  }
+  
+  // Calculate live age for THIS specific token - each token calculates independently
+  // Each token uses its own creationTime, so each will display different age
+  const liveAge = getLiveAge()
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'migrated': return 'border-red-500/60'
@@ -494,8 +529,8 @@ function TrenchesTokenCard({ token, solAmount, echoSettings }: { token: Trenches
 
   // Get threshold color for tweet age
   const getTweetAgeColor = () => {
-    if (!echoSettings?.thresholds || !echoSettings?.thresholdColors) return getAgeColor(token.age)
-    const ageMinutes = parseTimeToMinutes(token.age)
+    if (!echoSettings?.thresholds || !echoSettings?.thresholdColors) return getAgeColor(liveAge)
+    const ageMinutes = parseTimeToMinutes(liveAge)
     const age1 = parseFloat(echoSettings.thresholds.tweetAge1 || '0')
     const age2 = parseFloat(echoSettings.thresholds.tweetAge2 || '0')
     const age3 = parseFloat(echoSettings.thresholds.tweetAge3 || '0')
@@ -503,7 +538,7 @@ function TrenchesTokenCard({ token, solAmount, echoSettings }: { token: Trenches
     if (ageMinutes >= age1) return echoSettings.thresholdColors.tweet1 || 'text-red-400'
     if (ageMinutes >= age2) return echoSettings.thresholdColors.tweet2 || 'text-amber-400'
     if (ageMinutes >= age3) return echoSettings.thresholdColors.tweet3 || 'text-cyan-400'
-    return getAgeColor(token.age)
+    return getAgeColor(liveAge)
   }
 
   // Get avatar shape class
@@ -714,7 +749,7 @@ function TrenchesTokenCard({ token, solAmount, echoSettings }: { token: Trenches
           {/* Middle Row: Time and Social Icons */}
           <div className="flex items-center gap-2 mb-1">
             <div className="flex items-center gap-1.5">
-              <span className={`${getMetricsSize()} font-medium ${getTweetAgeColor()}`}>{token.age}</span>
+              <span className={`${getMetricsSize()} font-medium ${getTweetAgeColor()}`}>{liveAge}</span>
             </div>
             {shouldShow('socials') && (
             <div className="flex items-center gap-1">

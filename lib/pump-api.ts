@@ -303,55 +303,112 @@ function convertSolanaTrackerToPumpFunCoins(data: any[]): PumpFunCoin[] {
 
 export async function fetchPumpFunTokens(): Promise<PumpFunCoin[]> {
   try {
-    console.log('Starting direct API call to SolanaTracker for multi-platform tokens...')
+    console.log('🚀 Fetching pump.fun tokens from pump.fun API (via proxy)...')
     
-    // Check cache first
-    const cacheKey = 'tokens-latest'
-    const cached = solanaTrackerCache.get(cacheKey)
-    if (cached && Date.now() - cached.timestamp < CACHE_DURATION_MAIN) {
-      console.log('Using cached SolanaTracker data for immediate display')
-      return convertSolanaTrackerToPumpFunCoins(cached.data)
-    }
-    
-    // Call through our backend API route which has the API key
-    const response = await fetch('/api/solanatracker/tokens?type=new&limit=30', {
+    // Call through our API route to avoid CORS issues - fast and accurate
+    const response = await fetch('/api/pump-fun/coins?sortBy=creationTime&limit=30', {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json'
       },
-      signal: AbortSignal.timeout(8000) // 8 second timeout for better reliability
+      signal: AbortSignal.timeout(2000), // 2 second timeout - pump.fun API is fast and stable
+      cache: 'no-store', // Always fetch fresh data
+      next: { revalidate: 0 } // No caching
     })
     
-    console.log('SolanaTracker proxy response status:', response.status)
+    console.log('Pump.fun API response status:', response.status)
     
     if (!response.ok) {
-      console.warn('SolanaTracker proxy returned error:', response.status)
-      // Fallback to original pump.fun API
-      return await fetchPumpFunTokensFallback()
+      console.warn('Pump.fun API returned error:', response.status, response.statusText)
+      try {
+        const errorText = await response.text()
+        console.warn('Error response body:', errorText)
+      } catch (e) {
+        // Ignore error reading response body
+      }
+      return []
     }
     
     const responseData = await response.json()
-    const data = responseData.data || []
-    
-    // Store in cache for immediate future requests
-    solanaTrackerCache.set(cacheKey, { data, timestamp: Date.now() })
+    console.log('Pump.fun API response data:', {
+      success: responseData.success,
+      hasCoins: !!responseData.coins,
+      coinsLength: responseData.coins?.length || 0,
+      firstCoin: responseData.coins?.[0] ? {
+        coinMint: responseData.coins[0].coinMint,
+        name: responseData.coins[0].name,
+        ticker: responseData.coins[0].ticker
+      } : null
+    })
     
     // Check if the response has the expected structure
-    if (!Array.isArray(data)) {
-      console.warn('Invalid SolanaTracker response structure:', data)
-      return await fetchPumpFunTokensFallback()
+    if (!responseData.coins || !Array.isArray(responseData.coins)) {
+      console.warn('Invalid pump.fun API response structure:', {
+        hasCoins: !!responseData.coins,
+        isArray: Array.isArray(responseData.coins),
+        responseData: responseData
+      })
+      return []
     }
     
-    // Convert SolanaTracker tokens to PumpFunCoin format using helper function
-    const convertedTokens = convertSolanaTrackerToPumpFunCoins(data)
+    if (responseData.coins.length === 0) {
+      console.warn('⚠️ Pump.fun API returned empty coins array')
+      return []
+    }
     
-    console.log('Successfully converted SolanaTracker data:', convertedTokens.length, 'tokens')
-    return convertedTokens
+    // Map pump.fun API response to PumpFunCoin format
+    const coins: PumpFunCoin[] = responseData.coins.map((coin: any) => ({
+      coinMint: coin.coinMint,
+      dev: coin.dev,
+      name: coin.name,
+      ticker: coin.ticker,
+      imageUrl: coin.imageUrl,
+      creationTime: coin.creationTime,
+      numHolders: coin.numHolders,
+      marketCap: coin.marketCap,
+      volume: coin.volume,
+      currentMarketPrice: coin.currentMarketPrice,
+      bondingCurveProgress: coin.bondingCurveProgress,
+      sniperCount: coin.sniperCount,
+      graduationDate: coin.graduationDate,
+      holders: coin.holders || [],
+      allTimeHighMarketCap: coin.allTimeHighMarketCap,
+      poolAddress: coin.poolAddress,
+      twitter: coin.twitter,
+      telegram: coin.telegram,
+      website: coin.website,
+      hasTwitter: coin.hasTwitter || false,
+      hasTelegram: coin.hasTelegram || false,
+      hasWebsite: coin.hasWebsite || false,
+      hasSocial: coin.hasSocial || false,
+      twitterReuseCount: coin.twitterReuseCount || 0,
+      devHoldingsPercentage: coin.devHoldingsPercentage || 0,
+      buyTransactions: coin.buyTransactions || 0,
+      sellTransactions: coin.sellTransactions || 0,
+      transactions: coin.transactions || 0,
+      sniperOwnedPercentage: coin.sniperOwnedPercentage || 0,
+      topHoldersPercentage: coin.topHoldersPercentage || 0,
+      tokenProgram: coin.tokenProgram,
+      isMayhemMode: coin.isMayhemMode || false,
+      platform: 'pump.fun' as const,
+      platformLogo: undefined
+    }))
+    
+    console.log('✅ Successfully fetched and mapped pump.fun tokens:', coins.length, 'tokens')
+    return coins
   } catch (error) {
-    console.warn('Error fetching tokens from SolanaTracker:', error)
-    console.warn('Falling back to original pump.fun API')
-    return await fetchPumpFunTokensFallback()
+    // Handle timeout errors gracefully - don't log as errors, just warnings
+    if (error instanceof Error) {
+      if (error.name === 'TimeoutError' || error.message.includes('timeout') || error.message.includes('timed out')) {
+        console.warn('⏱️ Pump.fun API timeout (this is normal for slow connections)')
+      } else {
+        console.warn('⚠️ Error fetching tokens from pump.fun API:', error.message)
+      }
+    } else {
+      console.warn('⚠️ Error fetching tokens from pump.fun API:', error)
+    }
+    return []
   }
 }
 

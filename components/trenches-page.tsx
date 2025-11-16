@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo, useCallback } from "react"
+import { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -84,12 +84,17 @@ interface TrenchesToken {
   twitter?: string | null
   telegram?: string | null
   website?: string | null
+  creationTime?: number // Store creation timestamp for live age calculation
 }
 
 
 // Function to convert Pump.fun data to our token format - moved inside component
-const convertPumpFunToToken = (coin: PumpFunCoin, index: number, status: 'new' | 'about-to-graduate' | 'migrated' = 'new'): TrenchesToken => {
-  const volumeInUsd = formatVolume(coin.volume)
+// Note: coin.volume from pump.fun API is in SOL, needs conversion to USD
+const convertPumpFunToToken = (coin: PumpFunCoin, index: number, status: 'new' | 'about-to-graduate' | 'migrated' = 'new', solPrice: number = 100): TrenchesToken => {
+  // Convert volume from SOL to USD: volume (SOL) * solPrice (USD/SOL) = volume (USD)
+  const volumeInSol = typeof coin.volume === 'number' ? coin.volume : parseFloat(coin.volume.toString()) || 0
+  const volumeInUsd = volumeInSol * solPrice
+  const volumeFormatted = formatVolume(volumeInUsd)
   
   // Determine platform based on coin data
   const platform = coin.platform || 'unknown'
@@ -101,9 +106,10 @@ const convertPumpFunToToken = (coin: PumpFunCoin, index: number, status: 'new' |
     symbol: coin.ticker,
     image: coin.imageUrl || `https://ui-avatars.com/api/?name=${coin.ticker}&background=6366f1&color=fff&size=48`,
     mc: formatMarketCap(coin.marketCap),
-    volume: volumeInUsd,
+    volume: volumeFormatted,
     fee: typeof coin.totalFees === 'string' ? coin.totalFees : (coin.totalFees || 0).toFixed(3), // Use total fees from SolanaTracker (already formatted) - CACHE BUSTER
     age: formatTimeAgo(coin.creationTime),
+    creationTime: coin.creationTime, // Store for live age updates
     holders: coin.numHolders,
     buys: coin.buyTransactions,
     sells: coin.sellTransactions,
@@ -152,6 +158,7 @@ const convertBonkFunToToken = (token: BonkFunToken, index: number): TrenchesToke
     volume: volumeInUsd,
     fee: "0", // Bonk.fun doesn't provide fee data in this endpoint
     age: formatTimeAgo(new Date(token.createAt).getTime()),
+    creationTime: new Date(token.createAt).getTime(), // Store for live age updates
     holders: 0, // Not provided in bonk.fun API
     buys: 0, // Not provided in bonk.fun API
     sells: 0, // Not provided in bonk.fun API
@@ -198,6 +205,7 @@ const convertMoonItToToken = (token: MoonItToken, index: number): TrenchesToken 
     volume: volumeInUsd,
     fee: "0", // Moon.it doesn't provide fee data in this endpoint
     age: formatTimeAgo(createdAt),
+    creationTime: createdAt, // Store for live age updates
     holders: parseInt(token.totalHolders) || 0,
     buys: 0, // Not provided in moon.it API
     sells: 0, // Not provided in moon.it API
@@ -275,6 +283,7 @@ const convertSolanaTrackerWebSocketToToken = (wsToken: SolanaTrackerGraduatingWe
     volume: volumeInUsd,
     fee: typeof risk?.fees?.total === 'number' ? risk.fees.total.toFixed(3) : '0.000',
     age: formatTimeAgo(createdAt),
+    creationTime: createdAt, // Store for live age updates
     holders: 0, // Not provided in WebSocket data
     buys: risk?.buys || pool?.txns?.buys || 0,
     sells: risk?.sells || pool?.txns?.sells || 0,
@@ -324,6 +333,7 @@ const convertSolanaTrackerToToken = (token: any, index: number, status: 'new' | 
     volume: volumeInUsd,
     fee: typeof token.totalFees === 'string' ? token.totalFees : (token.totalFees || 0).toFixed(3),
     age: token.age || formatTimeAgo(createdAt),
+    creationTime: createdAt, // Store for live age updates - each token has its own creationTime
     holders: token.holders || 0,
     buys: token.buyTransactions || 0,
     sells: token.sellTransactions || 0,
@@ -438,6 +448,12 @@ export function TrenchesPage() {
   const [error, setError] = useState<string | null>(null)
   const [currentTime, setCurrentTime] = useState<number>(Date.now())
   const [lastUpdateTime, setLastUpdateTime] = useState<number>(Date.now())
+  
+  // Ref to track if pump.fun tokens have been successfully loaded (prevents overwrites)
+  const pumpFunTokensLoadedRef = useRef(false)
+  
+  // SOL price cache for volume conversion (pump.fun volume is in SOL, needs conversion to USD)
+  const [solPrice, setSolPrice] = useState<number>(100) // Default fallback price
   
   // Helper function for parsing time - defined early for use in WebSocket callback
   const parseTimeToMinutes = useCallback((timeStr: string): number => {
@@ -561,25 +577,19 @@ export function TrenchesPage() {
   }
 
   // Live time updater for token age display - optimized for performance
+  // Update every second instead of every frame to reduce re-renders
   useEffect(() => {
-    let animationFrameId: number
-    
-    const updateTime = () => {
+    const interval = setInterval(() => {
       setCurrentTime(Date.now())
-      animationFrameId = requestAnimationFrame(updateTime)
-    }
-    
-    // Start the animation loop
-    animationFrameId = requestAnimationFrame(updateTime)
+    }, 1000) // Update every second for live time display
     
     return () => {
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId)
-      }
+      clearInterval(interval)
     }
   }, [])
 
-  // Background SOL price fetcher to keep cache updated - optimized
+  // SOL price fetcher from pump.fun API for volume conversion
+  // Pump.fun volume is in SOL, needs to be converted to USD
   useEffect(() => {
     let isUpdating = false
     
@@ -588,29 +598,39 @@ export function TrenchesPage() {
       isUpdating = true
       
       try {
-        const response = await fetch('/api/moralis/token-prices?tokenAddresses=So11111111111111111111111111111111111111112&chain=solana', {
-          signal: AbortSignal.timeout(5000) // 5 second timeout
+        // Fetch SOL price from pump.fun API (same source as volume data)
+        const response = await fetch('/api/pump-fun/sol-price', {
+          signal: AbortSignal.timeout(2000) // 2 second timeout
         })
         if (response.ok) {
           const data = await response.json()
-          if (data.success && data.data && data.data.length > 0) {
-            // Update the global cache
-            if (typeof window !== 'undefined') {
-              (window as any).solPriceCache = { 
-                price: data.data[0].usdPrice, 
-                timestamp: Date.now() 
-              }
-            }
+          if (data.success && data.solPrice) {
+            setSolPrice(data.solPrice)
+            console.log('✅ SOL price updated from pump.fun:', data.solPrice)
           }
         }
       } catch (error) {
-        console.warn('Background SOL price update failed:', error)
+        console.warn('⚠️ Failed to fetch SOL price from pump.fun:', error)
+        // Try fallback to Moralis
+        try {
+          const fallbackResponse = await fetch('/api/moralis/token-prices?tokenAddresses=So11111111111111111111111111111111111111112&chain=solana', {
+            signal: AbortSignal.timeout(2000)
+          })
+          if (fallbackResponse.ok) {
+            const fallbackData = await fallbackResponse.json()
+            if (fallbackData.success && fallbackData.data && fallbackData.data.length > 0) {
+              setSolPrice(fallbackData.data[0].usdPrice)
+            }
+          }
+        } catch (fallbackError) {
+          console.warn('⚠️ Fallback SOL price fetch also failed:', fallbackError)
+        }
       } finally {
         isUpdating = false
       }
     }
 
-    // Update SOL price every 30 seconds in background
+    // Update SOL price every 30 seconds
     const solPriceInterval = setInterval(updateSolPrice, 30000)
     updateSolPrice() // Initial fetch
 
@@ -624,11 +644,14 @@ export function TrenchesPage() {
     let fetchTimeout: NodeJS.Timeout | null = null
     
     const fetchAllDataInParallel = async () => {
-      if (isFetching) return // Skip if already fetching
+      if (isFetching) {
+        console.log('⏸️ Fetch already in progress, skipping...')
+        return // Skip if already fetching
+      }
       isFetching = true
       
       try {
-        console.log('🚀 Fetching all trading data in parallel for immediate loading...')
+        console.log('🚀 Fetching all trading data in parallel...')
         setLastUpdateTime(Date.now())
       
       // Fetch migrated tokens through API route to avoid exposing API keys
@@ -728,17 +751,14 @@ export function TrenchesPage() {
       ])
 
       // Process results immediately as they come in
-      let hasSolanaTrackerTokens = false
+      // IMPORTANT: Process pump.fun tokens LAST to ensure they don't get overwritten
+      // Pump.fun tokens are the primary source for NEW column
       
+      // Skip SolanaTracker for NEW column - we use pump.fun API directly
       if (solanaTrackerNewResult.status === 'fulfilled' && solanaTrackerNewResult.value.length > 0) {
-        const convertedTokens = solanaTrackerNewResult.value.slice(0, 30).map((token: any, index: number) => 
-          convertSolanaTrackerToToken(token, index, 'new')
-        )
-        setRealTokens(convertedTokens)
-        hasSolanaTrackerTokens = true
-        console.log('✅ Solana Tracker NEW tokens loaded:', convertedTokens.length)
+        console.log('ℹ️ Solana Tracker NEW tokens available (skipped - using pump.fun API directly):', solanaTrackerNewResult.value.length)
       } else {
-        console.log('⚠️ Solana Tracker NEW tokens not available, will use fallback')
+        console.log('ℹ️ Solana Tracker NEW tokens not available (using pump.fun API directly)')
       }
 
       // REMOVED: Graduating tokens are now handled via WebSocket (real-time updates)
@@ -767,20 +787,74 @@ export function TrenchesPage() {
         console.log('⚠️ Solana Tracker GRADUATED tokens not available')
       }
 
+      // Process pump.fun tokens LAST to ensure they are the primary source and don't get overwritten
       if (pumpFunResult.status === 'fulfilled') {
-        const convertedTokens = pumpFunResult.value.slice(0, 30).map((coin: any, index: number) => 
-          convertPumpFunToToken(coin, index, 'new')
-        )
-        // Only use Pump.fun tokens if Solana Tracker failed or returned no data
-        if (!hasSolanaTrackerTokens) {
-        setRealTokens(convertedTokens)
-          console.log('✅ Pump.fun tokens loaded (fallback):', convertedTokens.length)
+        const pumpFunCoins = pumpFunResult.value
+        console.log('📦 Pump.fun result received:', {
+          coinsLength: pumpFunCoins?.length || 0,
+          firstCoin: pumpFunCoins?.[0] ? {
+            coinMint: pumpFunCoins[0].coinMint,
+            name: pumpFunCoins[0].name,
+            ticker: pumpFunCoins[0].ticker
+          } : null
+        })
+        
+        if (pumpFunCoins && pumpFunCoins.length > 0) {
+          const convertedTokens = pumpFunCoins.slice(0, 30).map((coin: any, index: number) => {
+            try {
+              return convertPumpFunToToken(coin, index, 'new', solPrice)
+            } catch (err) {
+              console.error('Error converting pump.fun token:', err, coin)
+              return null
+            }
+          }).filter((token: any) => token !== null)
+          
+          // Use functional update to ensure pump.fun tokens are always set (prevents race conditions)
+          // This ensures pump.fun tokens are the primary source and won't be overwritten
+          // Note: Streaming will take over after initial load, so only set if streaming hasn't started
+          if (convertedTokens.length > 0) {
+            pumpFunTokensLoadedRef.current = true
+            // Only set if streaming hasn't populated tokens yet (initial load)
+            setRealTokens(prev => {
+              if (prev.length === 0) {
+                // Initial load - set tokens
+                console.log('✅ Initial pump.fun tokens loaded:', convertedTokens.length, 'tokens')
+                return convertedTokens
+              }
+              // Streaming is active - don't overwrite, just return existing
+              return prev
+            })
+          } else {
+            // If no tokens returned, keep previous tokens to prevent disappearing
+            setRealTokens(prev => {
+              if (prev.length > 0) {
+                console.log('⚠️ Pump.fun API returned empty, keeping previous tokens:', prev.length)
+                return prev
+              }
+              return []
+            })
+          }
+        } else {
+          console.warn('⚠️ Pump.fun API returned empty array')
         }
+      } else if (pumpFunResult.status === 'rejected') {
+        console.error('❌ Pump.fun API call failed:', pumpFunResult.reason)
+        // Don't clear existing tokens on API failure - keep previous tokens to prevent disappearing
+        setRealTokens(prev => {
+          if (prev.length > 0) {
+            console.log('⚠️ Pump.fun API failed, keeping previous tokens:', prev.length)
+            return prev
+          }
+          return []
+        })
+      } else {
+        // Promise still pending - don't update state yet
+        console.log('⏳ Pump.fun API call still pending...')
       }
 
       if (pumpFunMCResult.status === 'fulfilled') {
         const convertedMCTokens = pumpFunMCResult.value.slice(0, 30).map((coin: any, index: number) => 
-          convertPumpFunToToken(coin, index, 'about-to-graduate')
+          convertPumpFunToToken(coin, index, 'about-to-graduate', solPrice)
         )
         setMcTokens(convertedMCTokens)
         console.log('✅ Pump.fun MC tokens loaded:', convertedMCTokens.length)
@@ -788,7 +862,7 @@ export function TrenchesPage() {
 
       if (pumpFunGraduatedResult.status === 'fulfilled') {
         const convertedGraduatedTokens = pumpFunGraduatedResult.value.slice(0, 30).map((coin: any, index: number) => 
-          convertPumpFunToToken(coin, index, 'migrated')
+          convertPumpFunToToken(coin, index, 'migrated', solPrice)
         )
         setGraduatedTokens(convertedGraduatedTokens)
         console.log('✅ Pump.fun graduated tokens loaded:', convertedGraduatedTokens.length)
@@ -796,7 +870,7 @@ export function TrenchesPage() {
 
       if (pumpFunMigratedResult.status === 'fulfilled') {
         const convertedMigratedTokens = pumpFunMigratedResult.value.slice(0, 30).map((coin: any, index: number) => 
-          convertPumpFunToToken(coin, index, 'migrated')
+          convertPumpFunToToken(coin, index, 'migrated', solPrice)
         )
         setMigratedTokens(convertedMigratedTokens)
         console.log('✅ Pump.fun migrated tokens loaded:', convertedMigratedTokens.length)
@@ -904,6 +978,7 @@ export function TrenchesPage() {
         console.error('Error in fetchAllDataInParallel:', error)
       } finally {
         isFetching = false // Always reset fetching flag
+        console.log('✅ Fetch completed')
       }
     }
 
@@ -951,7 +1026,7 @@ export function TrenchesPage() {
         const pumpFunGraduatedCoins = await fetchPumpFunGraduatedTokens()
         console.log('Received graduated coins:', pumpFunGraduatedCoins.length)
         const convertedGraduatedTokens = pumpFunGraduatedCoins.slice(0, 30).map((coin: any, index: number) => 
-          convertPumpFunToToken(coin, index, 'migrated')
+          convertPumpFunToToken(coin, index, 'migrated', solPrice)
         )
         console.log('Converted graduated tokens:', convertedGraduatedTokens.length)
         setGraduatedTokens(convertedGraduatedTokens)
@@ -991,7 +1066,7 @@ export function TrenchesPage() {
         
         console.log('Received migrated coins:', data.coins.length)
         const convertedMigratedTokens = data.coins.slice(0, 30).map((coin: any, index: number) => 
-          convertPumpFunToToken(coin, index, 'migrated')
+          convertPumpFunToToken(coin, index, 'migrated', solPrice)
         )
         console.log('Converted migrated tokens:', convertedMigratedTokens.length)
         setMigratedTokens(convertedMigratedTokens)
@@ -1170,21 +1245,17 @@ export function TrenchesPage() {
     // Initial parallel fetch for immediate trading data
     fetchAllDataInParallel()
 
-    // Set up optimized auto-refresh with staggered updates to prevent API overload
+    // Set up optimized auto-refresh - refresh every 5 seconds to balance speed and performance
     const interval = setInterval(() => {
-      // Clear any pending timeout
-      if (fetchTimeout) {
-        clearTimeout(fetchTimeout)
-      }
-      
-      // Use timeout to prevent overlapping requests
-      fetchTimeout = setTimeout(() => {
+      // Only refresh if not already fetching
+      if (!isFetching) {
         console.log('Auto-refreshing token data in parallel...')
         fetchAllDataInParallel()
-      }, 100) // Small delay to prevent overlapping
-    }, 1000) // 1 second for real-time trading
-
-    // Cleanup interval and timeout on component unmount
+      } else {
+        console.log('⏸️ Skipping refresh - previous fetch still in progress')
+      }
+    }, 5000) // 5 seconds for other tokens
+    
     return () => {
       clearInterval(interval)
       if (fetchTimeout) {
@@ -1192,6 +1263,109 @@ export function TrenchesPage() {
       }
     }
   }, [])
+  
+  // Dedicated ultra-fast streaming for pump.fun tokens - updates every 25ms (40x per second)
+  // Pump.fun API is stable with no rate limits, so we can stream at maximum speed
+  // All metrics (volume, market cap, holders, buys, sells, etc.) update in real-time
+  useEffect(() => {
+    let streamInterval: NodeJS.Timeout | null = null
+    let lastFetchTime = 0
+    const MIN_FETCH_INTERVAL = 0 // No minimum interval - stream as fast as possible
+    
+    const streamPumpFunTokens = async () => {
+      const now = Date.now()
+      // No minimum interval - stream as fast as API allows
+      if (MIN_FETCH_INTERVAL > 0 && now - lastFetchTime < MIN_FETCH_INTERVAL) {
+        return
+      }
+      lastFetchTime = now
+      
+      try {
+        // Fetch pump.fun tokens directly for fast streaming
+        const response = await fetch('/api/pump-fun/coins?sortBy=creationTime&limit=30', {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+          signal: AbortSignal.timeout(2000), // 2 second timeout - pump.fun API is fast and stable
+          cache: 'no-store',
+          next: { revalidate: 0 }
+        })
+        
+        if (!response.ok) {
+          console.warn('⚠️ Pump.fun stream: API error', response.status)
+          return
+        }
+        
+        const responseData = await response.json()
+        
+        if (responseData.coins && Array.isArray(responseData.coins) && responseData.coins.length > 0) {
+          // Fast conversion - optimized loop for maximum speed
+          const newTokens: TrenchesToken[] = []
+          for (let i = 0; i < responseData.coins.length && i < 30; i++) {
+            try {
+              const token = convertPumpFunToToken(responseData.coins[i], i, 'new', solPrice)
+              if (token) newTokens.push(token)
+            } catch (err) {
+              // Skip errors silently for speed - don't log in hot path
+            }
+          }
+          
+          // Fast merge: update existing tokens with new metrics, add new ones
+          // This updates ALL metrics in real-time: volume, market cap, holders, buys, sells, etc.
+          setRealTokens(prev => {
+            // Use Map for O(1) lookups - maximum performance
+            const tokenMap = new Map<string, TrenchesToken>()
+            
+            // Keep existing tokens (preserve state)
+            prev.forEach(token => {
+              const key = token.coinMint || token.contractAddress || token.id
+              if (key) tokenMap.set(key, token)
+            })
+            
+            // Update with fresh data - this updates ALL metrics in real-time
+            newTokens.forEach((newToken: TrenchesToken) => {
+              const key = newToken.coinMint || newToken.contractAddress || newToken.id
+              if (key) {
+                // Direct update - replaces old token with fresh metrics
+                tokenMap.set(key, newToken)
+              }
+            })
+            
+            // Fast sort and limit - newest first, top 30
+            return Array.from(tokenMap.values())
+              .sort((a, b) => (b.creationTime || 0) - (a.creationTime || 0))
+              .slice(0, 30)
+          })
+          
+          pumpFunTokensLoadedRef.current = true
+          // Removed console.log for maximum speed - metrics update silently
+        }
+      } catch (error) {
+        // Handle timeout errors gracefully - don't spam console
+        if (error instanceof Error) {
+          if (error.name === 'TimeoutError' || error.message.includes('timeout') || error.message.includes('timed out')) {
+            // Timeout is normal for streaming - just skip this update
+            return
+          }
+        }
+        console.warn('⚠️ Pump.fun stream error:', error)
+      }
+    }
+    
+    // Start streaming immediately
+    streamPumpFunTokens()
+    
+    // Stream every 25ms for maximum speed (pump.fun API is stable with no limits)
+    streamInterval = setInterval(streamPumpFunTokens, 25)
+    
+    return () => {
+      if (streamInterval) {
+        clearInterval(streamInterval)
+      }
+    }
+  }, [solPrice]) // Re-run if SOL price changes
 
   // Removed all mock data - only showing real data from API
 
@@ -1298,9 +1472,11 @@ export function TrenchesPage() {
 
   // Memoized token processing for each category
   const newTokens = useMemo(() => {
-    // Combine all tokens and sort by time (newest first)
+    // Combine all tokens: pump.fun (from realTokens), bonk.fun, and moon.it
+    // Note: realTokens now contains pump.fun tokens (fetched directly from pump.fun API)
+    // SolanaTracker tokens are separate and only used if available
     const combinedTokens = [...realTokens, ...bonkFunTokens, ...moonItTokens]
-    console.log('🔍 NEW tokens - combined:', combinedTokens.length, 'realTokens (SolanaTracker):', realTokens.length, 'bonkFun:', bonkFunTokens.length, 'moonIt:', moonItTokens.length)
+    console.log('🔍 NEW tokens - combined:', combinedTokens.length, 'pump.fun (realTokens):', realTokens.length, 'bonkFun:', bonkFunTokens.length, 'moonIt:', moonItTokens.length)
     
     const filteredTokens = applyFilters(combinedTokens)
     console.log('🔍 NEW tokens - after filtering:', filteredTokens.length)
@@ -1532,6 +1708,7 @@ export function TrenchesPage() {
                       initialFilters={filters}
                       selectedChain={selectedChain}
                       echoSettings={echoSettings}
+                      currentTime={currentTime}
                     />
                   </div>
                 )}
@@ -1544,6 +1721,7 @@ export function TrenchesPage() {
                       initialFilters={filters}
                       selectedChain={selectedChain}
                       echoSettings={echoSettings}
+                      currentTime={currentTime}
                     />
                   </div>
                 )}
@@ -1556,6 +1734,7 @@ export function TrenchesPage() {
                       initialFilters={filters}
                       selectedChain={selectedChain}
                       echoSettings={echoSettings}
+                      currentTime={currentTime}
                     />
                   </div>
                 )}
@@ -1571,6 +1750,7 @@ export function TrenchesPage() {
                       initialFilters={filters}
                       selectedChain={selectedChain}
                       echoSettings={echoSettings}
+                      currentTime={currentTime}
                     />
                   </div>
                 )}
@@ -1583,6 +1763,7 @@ export function TrenchesPage() {
                       initialFilters={filters}
                       selectedChain={selectedChain}
                       echoSettings={echoSettings}
+                      currentTime={currentTime}
                     />
                   </div>
                 )}
@@ -1595,6 +1776,7 @@ export function TrenchesPage() {
                       initialFilters={filters}
                       selectedChain={selectedChain}
                       echoSettings={echoSettings}
+                      currentTime={currentTime}
                     />
                   </div>
                 )}
