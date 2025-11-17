@@ -71,7 +71,7 @@ export type EchoSettings = {
 const defaultSettings: EchoSettings = {
   layout: {
     metricsSize: "Small",
-    avatarShape: "Circle",
+    avatarShape: "Square",
     columns: "Compact",
     showNew: true,
     showAlmostBonded: true,

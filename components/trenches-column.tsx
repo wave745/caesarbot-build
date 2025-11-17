@@ -265,9 +265,9 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
             {title}
           </h2>
         </div>
-        <div className="flex items-center gap-1">
-          <div className="flex items-center gap-1 px-2 py-1 bg-zinc-800 rounded text-xs hover:bg-zinc-700 transition-colors">
-            <Zap className="w-3 h-3 text-gray-400" />
+        <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-zinc-800/60 rounded-md text-xs hover:bg-zinc-700/60 transition-colors border border-zinc-700/50">
+            <Zap className="w-3.5 h-3.5 text-zinc-300" />
             {isEditing ? (
               <input
                 type="number"
@@ -293,16 +293,16 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
             <img 
               src={selectedChain === 'solana' ? "/sol-logo.png" : "/bnb-chain-binance-smart-chain-logo.svg"} 
               alt={selectedChain === 'solana' ? "SOL" : "BNB"} 
-              className="w-3 h-3" 
+              className="w-3.5 h-3.5" 
             />
           </div>
           
           <div className="relative" ref={presetRef}>
             <button 
-              className="px-2 py-1 bg-zinc-800 rounded text-xs hover:bg-zinc-700 transition-colors"
+              className="px-2.5 py-1.5 bg-zinc-800/60 rounded-md text-xs hover:bg-zinc-700/60 transition-colors border border-zinc-700/50 h-[28px] flex items-center justify-center"
               onClick={() => setShowPresets(!showPresets)}
             >
-              <span className="text-white font-medium">{selectedPreset}</span>
+              <span className="text-white font-medium text-xs">{selectedPreset}</span>
             </button>
             
             {showPresets && (
@@ -352,15 +352,15 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
           />
           
           <button 
-            className="p-1 bg-zinc-800 rounded hover:bg-zinc-700 transition-colors"
+            className="p-1.5 bg-zinc-800/60 rounded-md hover:bg-zinc-700/60 transition-colors border border-zinc-700/50 h-[28px] w-[28px] flex items-center justify-center"
             onClick={() => setIsFilterModalOpen(true)}
           >
             <Image 
               src="/icons/ui/filter-icon.svg" 
               alt="Filter" 
-              width={12} 
-              height={12} 
-              className="opacity-60"
+              width={14} 
+              height={14} 
+              className="opacity-70 brightness-0 invert"
             />
           </button>
         </div>
@@ -543,7 +543,7 @@ function TrenchesTokenCard({ token, solAmount, echoSettings, currentTime }: { to
 
   // Get avatar shape class
   const getAvatarShape = () => {
-    const shape = echoSettings?.layout?.avatarShape || 'Circle'
+    const shape = echoSettings?.layout?.avatarShape || 'Square'
     return shape === 'Square' ? 'rounded-lg' : 'rounded-full'
   }
 
@@ -716,12 +716,8 @@ function TrenchesTokenCard({ token, solAmount, echoSettings, currentTime }: { to
                 
                 // Clean the contract address to remove any extra spaces or characters
                 const cleanAddress = token.contractAddress.trim().replace(/\s+/g, '');
-                console.log('Contract Address Debug:', {
-                  original: token.contractAddress,
-                  clean: cleanAddress,
-                  length: cleanAddress.length
-                });
                 
+                // Display shortened form, but full address is stored in token.contractAddress
                 return `${cleanAddress.substring(0, 3)}...${cleanAddress.substring(cleanAddress.length - 4)}`;
               })()}
             </span>

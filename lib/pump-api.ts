@@ -1062,7 +1062,8 @@ export function formatTimeAgo(creationTime: number): string {
 }
 
 export function getContractAddress(coinMint: string): string {
-  return `${coinMint.slice(0, 3)}...${coinMint.slice(-4)}`
+  // Return the full address, not shortened - the display component will handle shortening
+  return coinMint
 }
 
 // MetaData interface for meta-analysis components

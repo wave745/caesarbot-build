@@ -365,17 +365,7 @@ const convertSolanaTrackerToToken = (token: any, index: number, status: 'new' | 
     hasWebsite: token.hasWebsite || false,
     twitter: token.twitter || null,
     telegram: token.telegram || null,
-    website: token.website || null,
-    // Risk data fields
-    top10HoldersPercentage: token.top10HoldersPercentage || 0,
-    devPercentage: token.devPercentage || 0,
-    devAmount: token.devAmount || 0,
-    insidersCount: token.insidersCount || 0,
-    insidersTotalBalance: token.insidersTotalBalance || 0,
-    insidersTotalPercentage: token.insidersTotalPercentage || 0,
-    snipersCount: token.snipersCount || 0,
-    snipersTotalBalance: token.snipersTotalBalance || 0,
-    snipersTotalPercentage: token.snipersTotalPercentage || 0
+    website: token.website || null
   }
 }
 
@@ -800,14 +790,14 @@ export function TrenchesPage() {
         })
         
         if (pumpFunCoins && pumpFunCoins.length > 0) {
-          const convertedTokens = pumpFunCoins.slice(0, 30).map((coin: any, index: number) => {
+          const convertedTokens: TrenchesToken[] = pumpFunCoins.slice(0, 30).map((coin: any, index: number) => {
             try {
               return convertPumpFunToToken(coin, index, 'new', solPrice)
             } catch (err) {
               console.error('Error converting pump.fun token:', err, coin)
               return null
             }
-          }).filter((token: any) => token !== null)
+          }).filter((token): token is TrenchesToken => token !== null)
           
           // Use functional update to ensure pump.fun tokens are always set (prevents race conditions)
           // This ensures pump.fun tokens are the primary source and won't be overwritten
@@ -1264,106 +1254,55 @@ export function TrenchesPage() {
     }
   }, [])
   
-  // Dedicated ultra-fast streaming for pump.fun tokens - updates every 25ms (40x per second)
-  // Pump.fun API is stable with no rate limits, so we can stream at maximum speed
+  // Dedicated ultra-fast streaming for pump.fun tokens - NONSTOP continuous updates
+  // Pump.fun API is stable with no rate limits - streams continuously without delay
   // All metrics (volume, market cap, holders, buys, sells, etc.) update in real-time
   useEffect(() => {
-    let streamInterval: NodeJS.Timeout | null = null
-    let lastFetchTime = 0
-    const MIN_FETCH_INTERVAL = 0 // No minimum interval - stream as fast as possible
+    let isActive = true
     
-    const streamPumpFunTokens = async () => {
-      const now = Date.now()
-      // No minimum interval - stream as fast as API allows
-      if (MIN_FETCH_INTERVAL > 0 && now - lastFetchTime < MIN_FETCH_INTERVAL) {
-        return
-      }
-      lastFetchTime = now
-      
-      try {
-        // Fetch pump.fun tokens directly for fast streaming
-        const response = await fetch('/api/pump-fun/coins?sortBy=creationTime&limit=30', {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-          },
-          signal: AbortSignal.timeout(2000), // 2 second timeout - pump.fun API is fast and stable
-          cache: 'no-store',
-          next: { revalidate: 0 }
-        })
-        
-        if (!response.ok) {
-          console.warn('⚠️ Pump.fun stream: API error', response.status)
-          return
-        }
-        
-        const responseData = await response.json()
-        
-        if (responseData.coins && Array.isArray(responseData.coins) && responseData.coins.length > 0) {
-          // Fast conversion - optimized loop for maximum speed
-          const newTokens: TrenchesToken[] = []
-          for (let i = 0; i < responseData.coins.length && i < 30; i++) {
-            try {
-              const token = convertPumpFunToToken(responseData.coins[i], i, 'new', solPrice)
-              if (token) newTokens.push(token)
-            } catch (err) {
-              // Skip errors silently for speed - don't log in hot path
-            }
-          }
-          
-          // Fast merge: update existing tokens with new metrics, add new ones
-          // This updates ALL metrics in real-time: volume, market cap, holders, buys, sells, etc.
-          setRealTokens(prev => {
-            // Use Map for O(1) lookups - maximum performance
-            const tokenMap = new Map<string, TrenchesToken>()
-            
-            // Keep existing tokens (preserve state)
-            prev.forEach(token => {
-              const key = token.coinMint || token.contractAddress || token.id
-              if (key) tokenMap.set(key, token)
-            })
-            
-            // Update with fresh data - this updates ALL metrics in real-time
-            newTokens.forEach((newToken: TrenchesToken) => {
-              const key = newToken.coinMint || newToken.contractAddress || newToken.id
-              if (key) {
-                // Direct update - replaces old token with fresh metrics
-                tokenMap.set(key, newToken)
-              }
-            })
-            
-            // Fast sort and limit - newest first, top 30
-            return Array.from(tokenMap.values())
-              .sort((a, b) => (b.creationTime || 0) - (a.creationTime || 0))
-              .slice(0, 30)
+    const streamPumpFunTokens = async (): Promise<void> => {
+      while (isActive) {
+        try {
+          // Fetch pump.fun tokens - NONSTOP, no delays, no timeout
+          const response = await fetch('/api/pump-fun/coins?sortBy=creationTime&limit=30', {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'
+            },
+            cache: 'no-store',
+            next: { revalidate: 0 }
           })
           
-          pumpFunTokensLoadedRef.current = true
-          // Removed console.log for maximum speed - metrics update silently
-        }
-      } catch (error) {
-        // Handle timeout errors gracefully - don't spam console
-        if (error instanceof Error) {
-          if (error.name === 'TimeoutError' || error.message.includes('timeout') || error.message.includes('timed out')) {
-            // Timeout is normal for streaming - just skip this update
-            return
+          if (!response.ok || !isActive) continue
+          
+          const responseData = await response.json()
+          
+          if (responseData.coins && Array.isArray(responseData.coins) && responseData.coins.length > 0 && isActive) {
+            // Ultra-fast conversion - pre-allocated array, no sorting
+            const coins = responseData.coins.slice(0, 30)
+            const newTokens: TrenchesToken[] = new Array(coins.length)
+            for (let i = 0; i < coins.length; i++) {
+              newTokens[i] = convertPumpFunToToken(coins[i], i, 'new', solPrice)
+            }
+            
+            // Update state immediately - no batching delay
+            setRealTokens(newTokens)
+            pumpFunTokensLoadedRef.current = true
           }
+        } catch (error) {
+          // Silent - continue immediately
+          if (!isActive) break
         }
-        console.warn('⚠️ Pump.fun stream error:', error)
+        // No delay - continue immediately
       }
     }
     
-    // Start streaming immediately
+    // Start streaming immediately - nonstop infinite loop
     streamPumpFunTokens()
     
-    // Stream every 25ms for maximum speed (pump.fun API is stable with no limits)
-    streamInterval = setInterval(streamPumpFunTokens, 25)
-    
     return () => {
-      if (streamInterval) {
-        clearInterval(streamInterval)
-      }
+      isActive = false
     }
   }, [solPrice]) // Re-run if SOL price changes
 

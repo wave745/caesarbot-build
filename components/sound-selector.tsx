@@ -59,7 +59,7 @@ export function SoundSelector({ selectedSound, volume, onSoundChange, onVolumeCh
       <div className="relative" ref={dropdownRef}>
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="p-1 bg-zinc-800 rounded hover:bg-zinc-700 transition-colors"
+          className="p-1.5 bg-zinc-800/60 rounded-md hover:bg-zinc-700/60 transition-colors border border-zinc-700/50 h-[28px] w-[28px] flex items-center justify-center"
           title="Sound settings"
         >
           {selectedSound === 'none' ? (
