@@ -397,11 +397,11 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
               // Use coinMint first, then contractAddress, then id as fallback
               const tokenId = token.coinMint || token.contractAddress || token.id || `unknown-${index}`
               // Create unique key: platform + tokenId (no index needed after deduplication)
-              const stableKey = `${token.platform}-${tokenId}`
-              return (
+            const stableKey = `${token.platform}-${tokenId}`
+            return (
                 <TrenchesTokenCard key={stableKey} token={token} solAmount={solAmount} echoSettings={echoSettings} currentTime={currentTime} />
-              )
-            })
+            )
+          })
           })()
         )}
       </div>
@@ -727,15 +727,31 @@ function TrenchesTokenCard({ token, solAmount, echoSettings, currentTime }: { to
 
         {/* Center: Token Info and Metrics */}
         <div className="flex flex-col flex-1">
-          {/* Top Row: Token Name */}
+          {/* Top Row: Token Ticker and Name */}
           <div className="flex items-center gap-2 mb-1">
-            <h3 
-              className={`font-semibold text-white ${getMetricsSize()} ${echoSettings?.toggles?.copyNameOnClick ? 'cursor-pointer hover:text-blue-400' : ''}`}
-              onClick={handleNameClick}
-            >
-              {token.name}
-            </h3>
-            {shouldShow('keywordsSearch') && (
+            <div className="group flex items-center gap-1">
+              <h3 
+                className={`font-semibold text-white ${getMetricsSize()} ${echoSettings?.toggles?.copyNameOnClick ? 'cursor-pointer' : ''}`}
+                onClick={handleNameClick}
+              >
+                <span>{token.symbol}</span>
+                {token.name && (
+                  <span className="text-zinc-400 font-normal ml-1.5">{token.name}</span>
+                )}
+              </h3>
+              {token.contractAddress && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigator.clipboard.writeText(token.contractAddress);
+                  }}
+                  className="p-0.5 cursor-pointer text-zinc-500 hover:text-zinc-300"
+                >
+                  <Copy className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+            {shouldShow('keywordsSearch') && token.tag && token.tag.toLowerCase() !== token.name.toLowerCase() && token.tag.toLowerCase() !== token.symbol.toLowerCase() && (
               <span className="text-zinc-500 text-xs">
                 {token.tag}
               </span>

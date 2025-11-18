@@ -610,8 +610,8 @@ export function TrenchesPage() {
             const fallbackData = await fallbackResponse.json()
             if (fallbackData.success && fallbackData.data && fallbackData.data.length > 0) {
               setSolPrice(fallbackData.data[0].usdPrice)
-            }
           }
+        }
         } catch (fallbackError) {
           console.warn('⚠️ Fallback SOL price fetch also failed:', fallbackError)
         }
@@ -755,7 +755,7 @@ export function TrenchesPage() {
       // WebSocket provides instant updates as tokens become available, no REST API needed
       if (isGraduatingWebSocketConnected) {
         console.log('✅ Solana Tracker GRADUATING tokens via WebSocket (real-time):', solanaTrackerGraduatingTokens.length)
-      } else {
+        } else {
         console.log('⏳ Waiting for WebSocket connection for graduating tokens...')
       }
 
@@ -1636,92 +1636,92 @@ export function TrenchesPage() {
         
         return (
           <div className={`grid ${gridCols} gap-2 items-start ${containerClass}`}>
-            {selectedChain === 'solana' ? (
-              <>
+        {selectedChain === 'solana' ? (
+          <>
                 {showNew && (
                   <div className={columnSpacing}>
-                    <TrenchesColumn 
-                      title="New" 
-                      tokens={newTokens} 
-                      onFiltersChange={handleFiltersChange}
-                      initialFilters={filters}
-                      selectedChain={selectedChain}
-                      echoSettings={echoSettings}
+              <TrenchesColumn 
+                title="New" 
+                tokens={newTokens} 
+                onFiltersChange={handleFiltersChange}
+                initialFilters={filters}
+                selectedChain={selectedChain}
+                echoSettings={echoSettings}
                       currentTime={currentTime}
-                    />
-                  </div>
+              />
+            </div>
                 )}
                 {showAlmostBonded && (
                   <div className={columnSpacing}>
-                    <TrenchesColumn 
+              <TrenchesColumn 
                       title="Nearly There" 
-                      tokens={mcCategoryTokens} 
-                      onFiltersChange={handleFiltersChange}
-                      initialFilters={filters}
-                      selectedChain={selectedChain}
-                      echoSettings={echoSettings}
+                tokens={mcCategoryTokens} 
+                onFiltersChange={handleFiltersChange}
+                initialFilters={filters}
+                selectedChain={selectedChain}
+                echoSettings={echoSettings}
                       currentTime={currentTime}
-                    />
-                  </div>
+              />
+            </div>
                 )}
                 {showMigrated && (
                   <div className={columnSpacing}>
-                    <TrenchesColumn 
-                      title="Migrated" 
-                      tokens={graduatedCategoryTokens} 
-                      onFiltersChange={handleFiltersChange}
-                      initialFilters={filters}
-                      selectedChain={selectedChain}
-                      echoSettings={echoSettings}
+              <TrenchesColumn 
+                title="Migrated" 
+                tokens={graduatedCategoryTokens} 
+                onFiltersChange={handleFiltersChange}
+                initialFilters={filters}
+                selectedChain={selectedChain}
+                echoSettings={echoSettings}
                       currentTime={currentTime}
-                    />
-                  </div>
+              />
+            </div>
                 )}
-              </>
-            ) : (
-              <>
+          </>
+        ) : (
+          <>
                 {showNew && (
                   <div className={columnSpacing}>
-                    <TrenchesColumn 
-                      title="New" 
-                      tokens={bscRealTokens} 
-                      onFiltersChange={handleFiltersChange}
-                      initialFilters={filters}
-                      selectedChain={selectedChain}
-                      echoSettings={echoSettings}
+              <TrenchesColumn 
+                title="New" 
+                tokens={bscRealTokens} 
+                onFiltersChange={handleFiltersChange}
+                initialFilters={filters}
+                selectedChain={selectedChain}
+                echoSettings={echoSettings}
                       currentTime={currentTime}
-                    />
-                  </div>
+              />
+            </div>
                 )}
                 {showAlmostBonded && (
                   <div className={columnSpacing}>
-                    <TrenchesColumn 
+              <TrenchesColumn 
                       title="Nearly There" 
-                      tokens={bscMcTokens} 
-                      onFiltersChange={handleFiltersChange}
-                      initialFilters={filters}
-                      selectedChain={selectedChain}
-                      echoSettings={echoSettings}
+                tokens={bscMcTokens} 
+                onFiltersChange={handleFiltersChange}
+                initialFilters={filters}
+                selectedChain={selectedChain}
+                echoSettings={echoSettings}
                       currentTime={currentTime}
-                    />
-                  </div>
+              />
+            </div>
                 )}
                 {showMigrated && (
                   <div className={columnSpacing}>
-                    <TrenchesColumn 
-                      title="Migrated" 
-                      tokens={bscGraduatedTokens} 
-                      onFiltersChange={handleFiltersChange}
-                      initialFilters={filters}
-                      selectedChain={selectedChain}
-                      echoSettings={echoSettings}
+              <TrenchesColumn 
+                title="Migrated" 
+                tokens={bscGraduatedTokens} 
+                onFiltersChange={handleFiltersChange}
+                initialFilters={filters}
+                selectedChain={selectedChain}
+                echoSettings={echoSettings}
                       currentTime={currentTime}
-                    />
-                  </div>
+              />
+            </div>
                 )}
-              </>
-            )}
-          </div>
+          </>
+        )}
+      </div>
         )
       })()}
 
