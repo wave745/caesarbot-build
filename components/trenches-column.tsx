@@ -115,7 +115,7 @@ interface TrenchesColumnProps {
   echoSettings?: any
 }
 
-export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange, initialFilters, selectedChain = 'solana', echoSettings, currentTime }: TrenchesColumnProps & { currentTime?: number }) {
+export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange, initialFilters, selectedChain = 'solana', echoSettings }: TrenchesColumnProps) {
   const [solAmount, setSolAmount] = useState("5")
   const [isEditing, setIsEditing] = useState(false)
   const [showPresets, setShowPresets] = useState(false)
@@ -265,9 +265,9 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
             {title}
           </h2>
         </div>
-        <div className="flex items-center gap-1.5">
-          <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-zinc-800/60 rounded-md text-xs hover:bg-zinc-700/60 transition-colors border border-zinc-700/50">
-            <Zap className="w-3.5 h-3.5 text-zinc-300" />
+        <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 px-2 py-1 bg-zinc-800 rounded text-xs hover:bg-zinc-700 transition-colors">
+            <Zap className="w-3 h-3 text-gray-400" />
             {isEditing ? (
               <input
                 type="number"
@@ -293,16 +293,16 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
             <img 
               src={selectedChain === 'solana' ? "/sol-logo.png" : "/bnb-chain-binance-smart-chain-logo.svg"} 
               alt={selectedChain === 'solana' ? "SOL" : "BNB"} 
-              className="w-3.5 h-3.5" 
+              className="w-3 h-3" 
             />
           </div>
           
           <div className="relative" ref={presetRef}>
             <button 
-              className="px-2.5 py-1.5 bg-zinc-800/60 rounded-md text-xs hover:bg-zinc-700/60 transition-colors border border-zinc-700/50 h-[28px] flex items-center justify-center"
+              className="px-2 py-1 bg-zinc-800 rounded text-xs hover:bg-zinc-700 transition-colors"
               onClick={() => setShowPresets(!showPresets)}
             >
-              <span className="text-white font-medium text-xs">{selectedPreset}</span>
+              <span className="text-white font-medium">{selectedPreset}</span>
             </button>
             
             {showPresets && (
@@ -352,15 +352,15 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
           />
           
           <button 
-            className="p-1.5 bg-zinc-800/60 rounded-md hover:bg-zinc-700/60 transition-colors border border-zinc-700/50 h-[28px] w-[28px] flex items-center justify-center"
+            className="p-1 bg-zinc-800 rounded hover:bg-zinc-700 transition-colors"
             onClick={() => setIsFilterModalOpen(true)}
           >
             <Image 
               src="/icons/ui/filter-icon.svg" 
               alt="Filter" 
-              width={14} 
-              height={14} 
-              className="opacity-70 brightness-0 invert"
+              width={12} 
+              height={12} 
+              className="opacity-60"
             />
           </button>
         </div>
@@ -381,28 +381,15 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
             <span className="ml-2 text-zinc-400">Loading tokens...</span>
           </div>
         ) : (
-          (() => {
-            // Deduplicate tokens by mint/contractAddress to prevent duplicate keys
-            const seen = new Set<string>()
-            const uniqueTokens = tokens.filter(token => {
-              const identifier = token.coinMint || token.contractAddress || token.id
-              if (!identifier) return true // Keep tokens without identifier
-              if (seen.has(identifier)) return false
-              seen.add(identifier)
-              return true
-            })
-            
-            return uniqueTokens.map((token, index) => {
-              // Use stable identifier: platform + coinMint/contractAddress
-              // Use coinMint first, then contractAddress, then id as fallback
-              const tokenId = token.coinMint || token.contractAddress || token.id || `unknown-${index}`
-              // Create unique key: platform + tokenId (no index needed after deduplication)
+          tokens.map((token, index) => {
+            // Use stable identifier: platform + coinMint (or id/contractAddress as fallback)
+            // Add index as fallback to ensure uniqueness even if deduplication fails
+            const tokenId = token.coinMint || token.id || token.contractAddress || `unknown-${index}`
             const stableKey = `${token.platform}-${tokenId}`
             return (
-                <TrenchesTokenCard key={stableKey} token={token} solAmount={solAmount} echoSettings={echoSettings} currentTime={currentTime} />
+              <TrenchesTokenCard key={stableKey} token={token} solAmount={solAmount} echoSettings={echoSettings} />
             )
           })
-          })()
         )}
       </div>
 
@@ -419,42 +406,7 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
 }
 
 // REMOVED memo() wrapper - trading platform needs continuous live updates, no memoization blocking
-function TrenchesTokenCard({ token, solAmount, echoSettings, currentTime }: { token: TrenchesToken; solAmount: string; echoSettings?: any; currentTime?: number }) {
-  // Calculate live age from creationTime for THIS specific token
-  // Each token calculates its own age independently based on its individual creationTime
-  // IMPORTANT: Each token has its own unique creationTime, so each will show different age
-  const getLiveAge = (): string => {
-    // Get THIS token's individual creationTime (each token has its own)
-    const tokenCreationTime = token.creationTime
-    
-    // Only calculate if we have both creationTime and currentTime
-    if (tokenCreationTime && currentTime && typeof tokenCreationTime === 'number') {
-      // Calculate age for THIS specific token using its own creationTime
-      // This ensures each token shows its own unique age
-      const diff = Math.max(0, currentTime - tokenCreationTime) // Ensure non-negative
-      const seconds = Math.floor(diff / 1000)
-      const minutes = Math.floor(seconds / 60)
-      const hours = Math.floor(minutes / 60)
-      const days = Math.floor(hours / 24)
-      
-      if (days > 0) return `${days}d`
-      if (hours > 0) return `${hours}h`
-      if (minutes > 0) return `${minutes}m`
-      return `${seconds}s`
-    }
-    
-    // Fallback: use stored age string if creationTime not available
-    // This ensures tokens without creationTime still show correct age
-    if (token.age) {
-      return token.age
-    }
-    
-    return '0s'
-  }
-  
-  // Calculate live age for THIS specific token - each token calculates independently
-  // Each token uses its own creationTime, so each will display different age
-  const liveAge = getLiveAge()
+function TrenchesTokenCard({ token, solAmount, echoSettings }: { token: TrenchesToken; solAmount: string; echoSettings?: any }) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'migrated': return 'border-red-500/60'
@@ -479,148 +431,13 @@ function TrenchesTokenCard({ token, solAmount, echoSettings, currentTime }: { to
     return 'hover:bg-zinc-900/40'
   }
 
-  // Helper functions for settings
-  const formatNumber = (num: number, digits: "Short" | "Rounded" = "Rounded") => {
-    if (digits === "Short") {
-      if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M'
-      if (num >= 1000) return (num / 1000).toFixed(1) + 'K'
-      return num.toFixed(0)
-    } else {
-      if (num >= 1000000) return (num / 1000000).toFixed(2) + 'M'
-      if (num >= 1000) return (num / 1000).toFixed(2) + 'K'
-      return num.toFixed(2)
-    }
-  }
-
-  const parseMarketCap = (mcStr: string): number => {
-    if (!mcStr) return 0
-    const cleanStr = mcStr.replace('$', '').replace(',', '')
-    if (cleanStr.includes('M')) {
-      return parseFloat(cleanStr.replace('M', '')) * 1000000
-    } else if (cleanStr.includes('K')) {
-      return parseFloat(cleanStr.replace('K', '')) * 1000
-    } else {
-      return parseFloat(cleanStr) || 0
-    }
-  }
-
-  const parseTimeToMinutes = (timeStr: string): number => {
-    if (!timeStr) return 0
-    if (timeStr.includes('s')) return 0
-    if (timeStr.includes('m')) return parseInt(timeStr) || 0
-    if (timeStr.includes('h')) return (parseInt(timeStr) || 0) * 60
-    if (timeStr.includes('d')) return (parseInt(timeStr) || 0) * 60 * 24
-    return 0
-  }
-
-  // Get threshold color for market cap
-  const getMarketCapColor = () => {
-    if (!echoSettings?.thresholds || !echoSettings?.thresholdColors) return 'text-cyan-400'
-    const mc = parseMarketCap(token.mc)
-    const mc1 = parseFloat(echoSettings.thresholds.mc1 || '0')
-    const mc2 = parseFloat(echoSettings.thresholds.mc2 || '0')
-    const mc3 = parseFloat(echoSettings.thresholds.mc3 || '0')
-    
-    if (mc >= mc1) return echoSettings.thresholdColors.mc1 || 'text-green-400'
-    if (mc >= mc2) return echoSettings.thresholdColors.mc2 || 'text-amber-400'
-    if (mc >= mc3) return echoSettings.thresholdColors.mc3 || 'text-cyan-400'
-    return 'text-cyan-400'
-  }
-
-  // Get threshold color for tweet age
-  const getTweetAgeColor = () => {
-    if (!echoSettings?.thresholds || !echoSettings?.thresholdColors) return getAgeColor(liveAge)
-    const ageMinutes = parseTimeToMinutes(liveAge)
-    const age1 = parseFloat(echoSettings.thresholds.tweetAge1 || '0')
-    const age2 = parseFloat(echoSettings.thresholds.tweetAge2 || '0')
-    const age3 = parseFloat(echoSettings.thresholds.tweetAge3 || '0')
-    
-    if (ageMinutes >= age1) return echoSettings.thresholdColors.tweet1 || 'text-red-400'
-    if (ageMinutes >= age2) return echoSettings.thresholdColors.tweet2 || 'text-amber-400'
-    if (ageMinutes >= age3) return echoSettings.thresholdColors.tweet3 || 'text-cyan-400'
-    return getAgeColor(liveAge)
-  }
-
-  // Get avatar shape class
-  const getAvatarShape = () => {
-    const shape = echoSettings?.layout?.avatarShape || 'Square'
-    return shape === 'Square' ? 'rounded-lg' : 'rounded-full'
-  }
-
-  // Get metrics size class
-  const getMetricsSize = () => {
-    const size = echoSettings?.layout?.metricsSize || 'Small'
-    return size === 'Large' ? 'text-sm' : 'text-xs'
-  }
-
-  // Get button styles from quickBuy settings
-  const getButtonStyles = () => {
-    const quickBuy = echoSettings?.quickBuy
-    if (!quickBuy) return {}
-    
-    const sizeMap = {
-      'Small': 'px-3 py-1 text-xs',
-      'Large': 'px-5 py-2 text-sm',
-      'Mega': 'px-6 py-3 text-base',
-      'Ultra': 'px-8 py-4 text-lg'
-    }
-    
-    const shapeMap = {
-      'Round': 'rounded-full',
-      'Square': 'rounded-lg'
-    }
-    
-    // Use fixed pixel width instead of percentage to prevent resizing with columns
-    const width = quickBuy.width || 60
-    const transparency = quickBuy.transparency || 0
-    const opacity = 1 - (transparency / 100)
-    
-    // Use width value directly as pixels (not percentage) to keep button size consistent
-    // regardless of column layout changes
-    const fixedWidth = width > 0 ? `${width}px` : 'auto'
-    
-    // Only set colors if they're provided (not empty strings)
-    const style: any = {
-      width: fixedWidth,
-      minWidth: fixedWidth,
-      maxWidth: fixedWidth,
-      flexShrink: 0, // Prevent button from shrinking
-      opacity: opacity
-    }
-    
-    if (quickBuy.buttonColor && quickBuy.buttonColor.trim() !== '') {
-      style.backgroundColor = quickBuy.buttonColor
-    }
-    
-    if (quickBuy.buttonTextColor && quickBuy.buttonTextColor.trim() !== '') {
-      style.color = quickBuy.buttonTextColor
-    }
-    
-    return {
-      className: `${sizeMap[quickBuy.size as keyof typeof sizeMap] || sizeMap.Small} ${shapeMap[quickBuy.shape as keyof typeof shapeMap] || shapeMap.Round}`,
-      style
-    }
-  }
-
-  // Handle copy name on click
-  const handleNameClick = () => {
-    if (echoSettings?.toggles?.copyNameOnClick && token.name) {
-      navigator.clipboard.writeText(token.name)
-    }
-  }
-
-  // Check if data field should be displayed
-  const shouldShow = (key: string) => {
-    return echoSettings?.dataDisplay?.[key as keyof typeof echoSettings.dataDisplay] !== false
-  }
-
   return (
     <div className={`p-2 transition-all cursor-pointer min-h-[140px] w-full ${getBackgroundColor()}`}>
       <div className="flex items-start gap-3 h-full">
         {/* Left: Large Token Icon and Contract Address */}
         <div className="flex flex-col items-start">
           <div className="relative">
-            <div className={`w-16 h-16 ${getAvatarShape()} overflow-hidden border ${getStatusColor(token.status)}`}>
+            <div className={`w-16 h-16 rounded-lg overflow-hidden border ${getStatusColor(token.status)}`}>
               <img
                 src={token.image || `https://ui-avatars.com/api/?name=${token.symbol}&background=6366f1&color=fff&size=64`}
                 alt={token.name}
@@ -699,7 +516,6 @@ function TrenchesTokenCard({ token, solAmount, echoSettings, currentTime }: { to
           </div>
           
           {/* Contract Address under the icon */}
-          {shouldShow('contractAddress') && (
           <div className="flex items-center gap-1 text-zinc-500 text-xs mt-1 w-16">
             <span 
               className="cursor-pointer hover:text-white transition-colors font-mono text-center flex-1"
@@ -716,56 +532,37 @@ function TrenchesTokenCard({ token, solAmount, echoSettings, currentTime }: { to
                 
                 // Clean the contract address to remove any extra spaces or characters
                 const cleanAddress = token.contractAddress.trim().replace(/\s+/g, '');
+                console.log('Contract Address Debug:', {
+                  original: token.contractAddress,
+                  clean: cleanAddress,
+                  length: cleanAddress.length
+                });
                 
-                // Display shortened form, but full address is stored in token.contractAddress
                 return `${cleanAddress.substring(0, 3)}...${cleanAddress.substring(cleanAddress.length - 4)}`;
               })()}
             </span>
           </div>
-          )}
         </div>
 
         {/* Center: Token Info and Metrics */}
         <div className="flex flex-col flex-1">
-          {/* Top Row: Token Ticker and Name */}
-          <div className="flex items-center gap-2 mb-1">
-            <div className="group flex items-center gap-1">
-              <h3 
-                className={`font-semibold text-white ${getMetricsSize()} ${echoSettings?.toggles?.copyNameOnClick ? 'cursor-pointer' : ''}`}
-                onClick={handleNameClick}
-              >
-                <span>{token.symbol}</span>
-                {token.name && (
-                  <span className="text-zinc-400 font-normal ml-1.5">{token.name}</span>
-                )}
-              </h3>
-              {token.contractAddress && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigator.clipboard.writeText(token.contractAddress);
-                  }}
-                  className="p-0.5 cursor-pointer text-zinc-500 hover:text-zinc-300"
-                >
-                  <Copy className="w-3 h-3" />
-                </button>
-              )}
-            </div>
-            {shouldShow('keywordsSearch') && token.tag && token.tag.toLowerCase() !== token.name.toLowerCase() && token.tag.toLowerCase() !== token.symbol.toLowerCase() && (
-              <span className="text-zinc-500 text-xs">
-                {token.tag}
-              </span>
-            )}
+          {/* Top Row: Ticker (bold) then Name */}
+          <div className="flex items-baseline gap-2 mb-1">
+            <h3 className="font-bold text-white text-sm leading-tight">
+              {token.symbol}
+            </h3>
+            <span className="text-zinc-500 text-xs leading-tight">
+              {token.name}
+            </span>
           </div>
 
           {/* Middle Row: Time and Social Icons */}
           <div className="flex items-center gap-2 mb-1">
             <div className="flex items-center gap-1.5">
-              <span className={`${getMetricsSize()} font-medium ${getTweetAgeColor()}`}>{liveAge}</span>
+              <span className={`text-xs font-medium ${getAgeColor(token.age)}`}>{token.age}</span>
             </div>
-            {shouldShow('socials') && (
             <div className="flex items-center gap-1">
-              {token.hasTwitter && shouldShow('linkedXUser') && (
+              {token.hasTwitter && (
                 <Image 
                   src="/icons/social/x-logo.svg" 
                   alt="Twitter" 
@@ -795,22 +592,18 @@ function TrenchesTokenCard({ token, solAmount, echoSettings, currentTime }: { to
                   onClick={() => window.open(token.telegram || '#', '_blank')}
                 />
               )}
-              {shouldShow('xTokenSearch') && (
-                <Image 
-                  src="/icons/ui/search-icon.svg" 
-                  alt="Search" 
-                  width={12} 
-                  height={12} 
-                  className="opacity-80 brightness-0 invert cursor-pointer hover:opacity-100"
-                />
-              )}
+              <Image 
+                src="/icons/ui/search-icon.svg" 
+                alt="Search" 
+                width={12} 
+                height={12} 
+                className="opacity-80 brightness-0 invert cursor-pointer hover:opacity-100"
+              />
             </div>
-            )}
           </div>
 
           {/* Counts Row: Holders */}
-          {shouldShow('totalHolders') && (
-          <div className={`flex items-center gap-3 ${getMetricsSize()} text-zinc-400 mb-2`}>
+          <div className="flex items-center gap-3 text-xs text-zinc-400 mb-2">
             <div className="flex items-center gap-1">
               <Image 
                 src="/icons/ui/totalholders-icon.svg" 
@@ -821,7 +614,7 @@ function TrenchesTokenCard({ token, solAmount, echoSettings, currentTime }: { to
               />
               <span>{token.holders}</span>
             </div>
-            {token.migratedTokens > 0 && shouldShow('devBonded') && (
+            {token.migratedTokens > 0 && (
             <div className="flex items-center gap-1">
               <Image 
                 src="/icons/ui/dev-migrated-icon.svg" 
@@ -834,27 +627,21 @@ function TrenchesTokenCard({ token, solAmount, echoSettings, currentTime }: { to
             </div>
             )}
           </div>
-          )}
 
         </div>
 
         {/* Right: Key Metrics */}
-        <div className={`flex flex-col items-end text-right ${getMetricsSize()} flex-shrink-0`}>
+        <div className="flex flex-col items-end text-right text-xs flex-shrink-0">
           {/* Key Metrics */}
           <div className="mb-2">
-            {shouldShow('marketCap') && (
             <div className="flex items-center gap-1 mb-1">
               <span className="text-zinc-400">MC</span>
-              <span className={`font-medium ${getMarketCapColor()}`}>{token.mc}</span>
+              <span className="text-cyan-400 font-medium">{token.mc}</span>
             </div>
-            )}
-            {shouldShow('volume') && (
             <div className="flex items-center gap-1 mb-1">
               <span className="text-zinc-400">V</span>
               <span className="text-white">{token.volume}</span>
             </div>
-            )}
-            {shouldShow('totalFees') && (
             <div className="flex items-center gap-1 mb-1">
               <div className="flex items-center gap-1">
                 <span className="text-zinc-400">F</span>
@@ -866,7 +653,6 @@ function TrenchesTokenCard({ token, solAmount, echoSettings, currentTime }: { to
               </div>
               <span className="text-white">{token.fee}</span>
             </div>
-            )}
             {/* Price Change 24h if available */}
             {(token as any).priceChange24h !== undefined && (token as any).priceChange24h !== 0 && (
               <div className="flex items-center gap-1">
@@ -888,8 +674,7 @@ function TrenchesTokenCard({ token, solAmount, echoSettings, currentTime }: { to
       {/* Bottom Row: Engagement Metrics and Buy Button */}
       <div className="flex items-center justify-between mt-3">
         {/* Engagement Metrics */}
-        <div className={`flex items-center gap-1 ${getMetricsSize()}`}>
-          {shouldShow('top10Holders') && (
+        <div className="flex items-center gap-1 text-xs">
           <div className="flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full border border-gray-400/30 min-w-fit">
             <Image 
               src="/icons/ui/top10H-icon.svg" 
@@ -900,8 +685,6 @@ function TrenchesTokenCard({ token, solAmount, echoSettings, currentTime }: { to
             />
             <span className="text-green-400 text-xs">+{(token.top10HoldersPercentage ?? token.top10Holders ?? 0).toFixed(1)}%</span>
           </div>
-          )}
-          {shouldShow('devHolding') && (
           <div className="flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full border border-gray-400/30 min-w-fit">
             <Image 
               src="/icons/ui/dev-holding-icon.svg" 
@@ -914,8 +697,6 @@ function TrenchesTokenCard({ token, solAmount, echoSettings, currentTime }: { to
               {token.devSold ? 'DS' : `${(token.devPercentage ?? token.devHoldingsPercentage ?? 0).toFixed(1)}%`}
             </span>
           </div>
-          )}
-          {shouldShow('snipersHoldings') && (
           <div className="flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full border border-gray-400/30 min-w-fit">
             <Image 
               src="/icons/ui/snipers-icon.svg" 
@@ -926,8 +707,6 @@ function TrenchesTokenCard({ token, solAmount, echoSettings, currentTime }: { to
             />
             <span className="text-white text-xs">{(token.snipersTotalPercentage ?? token.snipers ?? 0).toFixed(1)}%</span>
           </div>
-          )}
-          {shouldShow('insidersHolding') && (
           <div className="flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full border border-gray-400/30 min-w-fit">
             <Image 
               src="/icons/ui/insiders-icon.svg" 
@@ -938,44 +717,19 @@ function TrenchesTokenCard({ token, solAmount, echoSettings, currentTime }: { to
             />
             <span className="text-white text-xs">{(token.insidersTotalPercentage ?? token.insiders ?? 0).toFixed(1)}%</span>
           </div>
-          )}
         </div>
 
         {/* Buy Button */}
-        {(() => {
-          const buttonStyles = getButtonStyles()
-          const quickBuy = echoSettings?.quickBuy
-          const amount = solAmount
-          
-          // Default button classes (gray background) - only apply if no custom color is set
-          const hasCustomColor = quickBuy?.buttonColor && quickBuy.buttonColor.trim() !== ''
-          const defaultButtonClass = hasCustomColor 
-            ? '' 
-            : 'bg-zinc-800 hover:bg-zinc-700 text-white'
-          
-          return (
-            <button 
-              className={`flex items-center gap-1 transition-colors ${defaultButtonClass} ${buttonStyles.className || 'px-4 py-1.5 rounded-full text-xs'}`}
-              style={buttonStyles.style || {}}
-              onClick={() => {
-                console.log(`Buying ${amount} SOL worth of ${token.symbol}`)
-              }}
-              onMouseEnter={(e) => {
-                if (echoSettings?.toggles?.pauseOnHover) {
-                  e.currentTarget.style.opacity = '0.7'
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (echoSettings?.toggles?.pauseOnHover) {
-                  e.currentTarget.style.opacity = buttonStyles.style?.opacity?.toString() || '1'
-                }
-              }}
-            >
-              <Zap className="w-3 h-3" />
-              <span>{amount}</span>
-            </button>
-          )
-        })()}
+        <button 
+          className="flex items-center gap-1 px-4 py-1.5 bg-zinc-800 hover:bg-zinc-700 rounded-full text-xs transition-colors"
+          onClick={() => {
+            // TODO: Implement buy functionality
+            console.log(`Buying ${solAmount} SOL worth of ${token.symbol}`)
+          }}
+        >
+          <Zap className="w-3 h-3 text-zinc-400" />
+          <span className="text-white text-xs">{solAmount}</span>
+        </button>
       </div>
     </div>
   )

@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { TrenchesColumn } from "@/components/trenches-column"
 import { TrendingFilterModal } from "@/components/trending-filter-modal"
 import { EchoCustomizeModal, type EchoSettings } from "@/components/echo-customize-modal"
+import { useSolanaTrackerWebSocket } from "@/lib/hooks/use-solanatracker-websocket"
 import { 
   Search,
   Zap,
@@ -41,7 +42,6 @@ import {
   type BonkFunToken,
   type MoonItToken
 } from "@/lib/pump-api"
-import { useSolanaTrackerGraduatingWebSocket, type SolanaTrackerGraduatingWebSocketToken } from "@/lib/hooks/use-solanatracker-graduating-websocket"
 
 interface TrenchesToken {
   id: string
@@ -84,17 +84,14 @@ interface TrenchesToken {
   twitter?: string | null
   telegram?: string | null
   website?: string | null
-  creationTime?: number // Store creation timestamp for live age calculation
+  // Live age update
+  creationTime?: number // Timestamp in milliseconds for live age calculation
 }
 
 
 // Function to convert Pump.fun data to our token format - moved inside component
-// Note: coin.volume from pump.fun API is in SOL, needs conversion to USD
-const convertPumpFunToToken = (coin: PumpFunCoin, index: number, status: 'new' | 'about-to-graduate' | 'migrated' = 'new', solPrice: number = 100): TrenchesToken => {
-  // Convert volume from SOL to USD: volume (SOL) * solPrice (USD/SOL) = volume (USD)
-  const volumeInSol = typeof coin.volume === 'number' ? coin.volume : parseFloat(coin.volume.toString()) || 0
-  const volumeInUsd = volumeInSol * solPrice
-  const volumeFormatted = formatVolume(volumeInUsd)
+const convertPumpFunToToken = (coin: PumpFunCoin, index: number, status: 'new' | 'about-to-graduate' | 'migrated' = 'new'): TrenchesToken => {
+  const volumeInUsd = formatVolume(coin.volume)
   
   // Determine platform based on coin data
   const platform = coin.platform || 'unknown'
@@ -106,10 +103,9 @@ const convertPumpFunToToken = (coin: PumpFunCoin, index: number, status: 'new' |
     symbol: coin.ticker,
     image: coin.imageUrl || `https://ui-avatars.com/api/?name=${coin.ticker}&background=6366f1&color=fff&size=48`,
     mc: formatMarketCap(coin.marketCap),
-    volume: volumeFormatted,
+    volume: volumeInUsd,
     fee: typeof coin.totalFees === 'string' ? coin.totalFees : (coin.totalFees || 0).toFixed(3), // Use total fees from SolanaTracker (already formatted) - CACHE BUSTER
     age: formatTimeAgo(coin.creationTime),
-    creationTime: coin.creationTime, // Store for live age updates
     holders: coin.numHolders,
     buys: coin.buyTransactions,
     sells: coin.sellTransactions,
@@ -141,7 +137,9 @@ const convertPumpFunToToken = (coin: PumpFunCoin, index: number, status: 'new' |
     hasWebsite: coin.hasWebsite,
     twitter: coin.twitter,
     telegram: coin.telegram,
-    website: coin.website
+    website: coin.website,
+    // Store creation time for live age updates
+    creationTime: coin.creationTime
   }
 }
 
@@ -158,7 +156,6 @@ const convertBonkFunToToken = (token: BonkFunToken, index: number): TrenchesToke
     volume: volumeInUsd,
     fee: "0", // Bonk.fun doesn't provide fee data in this endpoint
     age: formatTimeAgo(new Date(token.createAt).getTime()),
-    creationTime: new Date(token.createAt).getTime(), // Store for live age updates
     holders: 0, // Not provided in bonk.fun API
     buys: 0, // Not provided in bonk.fun API
     sells: 0, // Not provided in bonk.fun API
@@ -172,6 +169,8 @@ const convertBonkFunToToken = (token: BonkFunToken, index: number): TrenchesToke
     insiders: 0, // Not provided in bonk.fun API
     platform: 'bonk.fun' as const,
     buyAmount: "5.00",
+    // Store creation time for live age updates
+    creationTime: new Date(token.createAt).getTime(),
     bondingCurveProgress: token.finishingRate * 100, // Convert to percentage
     // Bonk.fun specific fields
     coinMint: token.mint,
@@ -205,7 +204,6 @@ const convertMoonItToToken = (token: MoonItToken, index: number): TrenchesToken 
     volume: volumeInUsd,
     fee: "0", // Moon.it doesn't provide fee data in this endpoint
     age: formatTimeAgo(createdAt),
-    creationTime: createdAt, // Store for live age updates
     holders: parseInt(token.totalHolders) || 0,
     buys: 0, // Not provided in moon.it API
     sells: 0, // Not provided in moon.it API
@@ -233,92 +231,13 @@ const convertMoonItToToken = (token: MoonItToken, index: number): TrenchesToken 
     hasWebsite: !!token.website,
     twitter: token.x,
     telegram: token.telegram,
-    website: token.website
+    website: token.website,
+    // Store creation time for live age updates
+    creationTime: createdAt
   }
 }
 
-// Function to convert Solana Tracker WebSocket token to our token format
-const convertSolanaTrackerWebSocketToToken = (wsToken: SolanaTrackerGraduatingWebSocketToken, index: number): TrenchesToken => {
-  const token = wsToken.token
-  const pool = wsToken.pools?.[0]
-  const risk = wsToken.risk
-  const creation = wsToken.creation
-  
-  // Extract platform from createdOn
-  let platform = 'unknown'
-  let platformLogo: string | undefined
-  if (token.createdOn) {
-    const createdOn = token.createdOn.toLowerCase()
-    if (createdOn.includes('pump.fun') || createdOn.includes('pump')) platform = 'pump.fun'
-    else if (createdOn.includes('bonk.fun') || createdOn.includes('bonk') || createdOn.includes('letsbonk')) platform = 'bonk.fun'
-    else if (createdOn.includes('moon.it') || createdOn.includes('moon')) platform = 'moon.it'
-    else if (createdOn.includes('meteora')) platform = 'meteora'
-    else if (createdOn.includes('pumpswap')) platform = 'pumpswap'
-    else if (createdOn.includes('moonshot')) platform = 'moonshot'
-    else if (createdOn.includes('boop')) platform = 'boop.fun'
-    else if (createdOn.includes('orca')) platform = 'orca'
-    else if (createdOn.includes('raydium')) platform = 'raydium'
-    else if (createdOn.includes('jupiter')) platform = 'jupiter'
-    else if (createdOn.includes('birdeye')) platform = 'birdeye'
-    else if (createdOn.includes('dexscreener')) platform = 'dexscreener'
-    else if (createdOn.includes('solscan')) platform = 'solscan'
-    else if (createdOn.includes('solana')) platform = 'solana'
-    else if (createdOn.includes('trends')) platform = 'trends.fun'
-    else if (createdOn.includes('rupert')) platform = 'rupert'
-    else if (createdOn.includes('bags.fm') || createdOn.includes('bags')) platform = 'bags.fm'
-    else if (createdOn.includes('believe.app') || createdOn.includes('believe')) platform = 'believe.app'
-  }
-
-  const marketCap = pool?.marketCap?.usd || 0
-  const volume = typeof pool?.volume === 'number' ? pool.volume : pool?.volume?.h24 || 0
-  const createdAt = creation?.created_time || Date.now()
-  const volumeInUsd = formatVolume(volume)
-  
-  return {
-    id: token.mint || (index + 1).toString(),
-    name: token.name,
-    symbol: token.symbol,
-    image: token.image || `https://ui-avatars.com/api/?name=${token.symbol}&background=6366f1&color=fff&size=48`,
-    mc: formatMarketCap(marketCap),
-    volume: volumeInUsd,
-    fee: typeof risk?.fees?.total === 'number' ? risk.fees.total.toFixed(3) : '0.000',
-    age: formatTimeAgo(createdAt),
-    creationTime: createdAt, // Store for live age updates
-    holders: 0, // Not provided in WebSocket data
-    buys: risk?.buys || pool?.txns?.buys || 0,
-    sells: risk?.sells || pool?.txns?.sells || 0,
-    status: 'about-to-graduate',
-    tag: token.name,
-    contractAddress: getContractAddress(token.mint),
-    migratedTokens: 0,
-    devSold: (risk?.dev?.percentage || 0) === 0,
-    top10Holders: Math.round(risk?.top10 || 0),
-    snipers: Math.round((risk?.snipers?.totalPercentage || 0) * 100) / 100,
-    insiders: 0,
-    platform: platform as any,
-    platformLogo: platformLogo,
-    buyAmount: "5.00",
-    totalFees: risk?.fees?.total || 0,
-    tradingFees: risk?.fees?.totalTrading || 0,
-    tipsFees: risk?.fees?.totalTips || 0,
-    coinMint: token.mint,
-    dev: creation?.creator || '',
-    bondingCurveProgress: pool?.bondingCurveProgress || 0,
-    sniperCount: risk?.snipers?.count || 0,
-    graduationDate: null, // WebSocket doesn't provide this
-    devHoldingsPercentage: risk?.dev?.percentage || 0,
-    sniperOwnedPercentage: risk?.snipers?.totalPercentage || 0,
-    topHoldersPercentage: risk?.top10 || 0,
-    hasTwitter: !!(token.twitter || token.strictSocials?.twitter),
-    hasTelegram: !!(token.telegram || token.strictSocials?.telegram),
-    hasWebsite: !!(token.website || token.strictSocials?.website),
-    twitter: token.twitter || token.strictSocials?.twitter || null,
-    telegram: token.telegram || token.strictSocials?.telegram || null,
-    website: token.website || token.strictSocials?.website || null
-  }
-}
-
-// Function to convert Solana Tracker REST API data to our token format
+// Function to convert Solana Tracker data to our token format
 const convertSolanaTrackerToToken = (token: any, index: number, status: 'new' | 'about-to-graduate' | 'migrated' = 'new'): TrenchesToken => {
   const volumeInUsd = formatVolume(token.volume || 0)
   const marketCap = token.marketCap || 0
@@ -333,7 +252,6 @@ const convertSolanaTrackerToToken = (token: any, index: number, status: 'new' | 
     volume: volumeInUsd,
     fee: typeof token.totalFees === 'string' ? token.totalFees : (token.totalFees || 0).toFixed(3),
     age: token.age || formatTimeAgo(createdAt),
-    creationTime: createdAt, // Store for live age updates - each token has its own creationTime
     holders: token.holders || 0,
     buys: token.buyTransactions || 0,
     sells: token.sellTransactions || 0,
@@ -365,7 +283,9 @@ const convertSolanaTrackerToToken = (token: any, index: number, status: 'new' | 
     hasWebsite: token.hasWebsite || false,
     twitter: token.twitter || null,
     telegram: token.telegram || null,
-    website: token.website || null
+    website: token.website || null,
+    // Store creation time for live age updates and sorting
+    creationTime: createdAt
   }
 }
 
@@ -435,62 +355,755 @@ export function TrenchesPage() {
   const [moonItTokens, setMoonItTokens] = useState<TrenchesToken[]>([])
   const [moonItMCTokens, setMoonItMCTokens] = useState<TrenchesToken[]>([])
   const [moonItGraduatedTokens, setMoonItGraduatedTokens] = useState<TrenchesToken[]>([])
+  const [pumpFunTokens, setPumpFunTokens] = useState<TrenchesToken[]>([]) // Direct pump.fun API tokens
+  // Track if polling is in progress to prevent concurrent polls
+  const isPollingRef = useRef(false)
+  const isPollingMCTokensRef = useRef(false)
+  const isPollingBonkFunRef = useRef(false)
+  const isPollingMoonItRef = useRef(false)
+  // Track recently seen tokens to prevent disappearing (simple Map for speed)
+  const recentTokensRef = useRef<Map<string, { token: TrenchesToken, lastSeen: number }>>(new Map())
+  // Track recently seen MC tokens to prevent disappearing
+  const recentMCTokensRef = useRef<Map<string, { token: TrenchesToken, lastSeen: number }>>(new Map())
   const [error, setError] = useState<string | null>(null)
   const [currentTime, setCurrentTime] = useState<number>(Date.now())
   const [lastUpdateTime, setLastUpdateTime] = useState<number>(Date.now())
   
-  // Ref to track if pump.fun tokens have been successfully loaded (prevents overwrites)
-  const pumpFunTokensLoadedRef = useRef(false)
-  
-  // SOL price cache for volume conversion (pump.fun volume is in SOL, needs conversion to USD)
-  const [solPrice, setSolPrice] = useState<number>(100) // Default fallback price
-  
-  // Helper function for parsing time - defined early for use in WebSocket callback
-  const parseTimeToMinutes = useCallback((timeStr: string): number => {
-    if (!timeStr) return 0
-    if (timeStr.includes('s')) return 0
-    if (timeStr.includes('m')) return parseInt(timeStr) || 0
-    if (timeStr.includes('h')) return (parseInt(timeStr) || 0) * 60
-    if (timeStr.includes('d')) return (parseInt(timeStr) || 0) * 60 * 24
-    return 0
+  // Live timer to update token ages in real-time - ULTRA-FAST for trading platform
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(Date.now())
+    }, 10) // Update every 10ms for ultra-fast live age updates (100 updates per second)
+    
+    // Also update immediately to ensure instant display
+    setCurrentTime(Date.now())
+    
+    return () => clearInterval(interval)
   }, [])
-  
-  // Use WebSocket for SolanaTracker GRADUATING tokens (middle column) - real-time updates
-  const { isConnected: isGraduatingWebSocketConnected } = useSolanaTrackerGraduatingWebSocket({
-    onMessage: (wsTokens: SolanaTrackerGraduatingWebSocketToken[]) => {
-      // Convert WebSocket tokens to TrenchesToken format and update state
-      console.log('📨 WebSocket: Received graduating tokens:', wsTokens.length)
-      
-      const convertedTokens: TrenchesToken[] = []
-      for (let i = 0; i < wsTokens.length; i++) {
-        try {
-          const token = convertSolanaTrackerWebSocketToToken(wsTokens[i], i)
-          convertedTokens.push(token)
-        } catch (err) {
-          console.warn('Error converting WebSocket graduating token:', err)
-        }
+
+  // Fetch pump.fun tokens directly from their API via Next.js API route (to avoid CORS)
+  // ULTRA-OPTIMIZED: Parallel requests, minimal timeouts, cached SOL price
+  const fetchPumpFunTokensDirect = useCallback(async () => {
+    try {
+      // Get SOL price from cache first (updated by background fetcher every 10ms)
+      let solPrice = 150 // Default fallback
+      if (typeof window !== 'undefined' && (window as any).solPriceCache) {
+        const cache = (window as any).solPriceCache
+        solPrice = cache.price || 150
       }
       
-      // Filter out tokens older than 3 days
-      const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000)
-      const filteredTokens = convertedTokens.filter((token: any) => {
-        const tokenAge = parseTimeToMinutes(token.age)
-        const tokenAgeInMs = tokenAge * 60 * 1000
-        const tokenCreatedAt = Date.now() - tokenAgeInMs
-        return tokenCreatedAt > threeDaysAgo
-      })
+      // Fetch tokens with optimized timeout - fast but reliable
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 3000) // 3 second timeout - fast response for live trading
       
-      // Update state with converted tokens
-      setSolanaTrackerGraduatingTokens(filteredTokens)
+      try {
+        // Fetch tokens with minimal timeout
+        const response = await fetch('/api/pump-fun/coins?sortBy=creationTime&limit=30&_=' + Date.now(), {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Cache-Control': 'no-cache',
+          },
+          cache: 'no-store',
+          signal: controller.signal
+        })
+        
+        clearTimeout(timeoutId)
+        
+        if (!response.ok) {
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('⚠️ Pump.fun API returned error:', response.status, response.statusText)
+          }
+          return []
+        }
+        
+        const data = await response.json()
+        
+        // Enhanced logging to debug why tokens aren't displaying
+        if (process.env.NODE_ENV === 'development') {
+          if (!data.success) {
+            console.warn('⚠️ Pump.fun API returned success: false', data)
+          }
+          if (!data.coins || !Array.isArray(data.coins)) {
+            console.warn('⚠️ Pump.fun API response missing coins array', data)
+          } else {
+            console.log('✅ Pump.fun API returned', data.coins.length, 'coins')
+          }
+        }
+        
+        const coins = data.success ? (data.coins || []) : []
+        
+        if (coins.length === 0) {
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('⚠️ No coins returned from pump.fun API - response:', data)
+          }
+          return []
+        }
+        
+        // ULTRA-FAST conversion: Pre-allocate array, minimal processing
+        const convertedTokens: TrenchesToken[] = new Array(Math.min(coins.length, 30))
+        const now = Date.now()
+        
+        for (let i = 0; i < convertedTokens.length; i++) {
+          const coin = coins[i]
+          const creationTime = coin.creationTime || now
+          const ageDiff = now - creationTime
+          const initialAge = ageDiff < 1000 ? '0s' : formatTimeAgo(creationTime)
+          
+          // Convert volume from SOL to USD (pump.fun API returns volume in SOL)
+          const volumeInSol = typeof coin.volume === 'number' ? coin.volume : parseFloat(coin.volume || '0') || 0
+          const volumeInUsd = volumeInSol * solPrice
+          
+          convertedTokens[i] = {
+            id: coin.coinMint || (i + 1).toString(),
+            name: coin.name || '',
+            symbol: coin.ticker || '',
+            image: coin.imageUrl || `https://ui-avatars.com/api/?name=${coin.ticker || 'TOKEN'}&background=6366f1&color=fff&size=48`,
+            mc: formatMarketCap(coin.marketCap || 0),
+            volume: formatVolume(volumeInUsd),
+            fee: '0', // Pump.fun API doesn't provide fee data
+            age: initialAge,
+            holders: coin.numHolders || 0,
+            buys: coin.buyTransactions || 0,
+            sells: coin.sellTransactions || 0,
+            status: 'new' as const,
+            tag: coin.name || '',
+            contractAddress: coin.coinMint || '',
+            migratedTokens: 0,
+            devSold: (coin.devHoldingsPercentage || 0) === 0,
+            top10Holders: Math.round(coin.topHoldersPercentage || 0),
+            snipers: Math.round((coin.sniperOwnedPercentage || 0) * 100) / 100,
+            insiders: 0,
+            platform: 'pump.fun' as const,
+            platformLogo: '/icons/platforms/pump.fun-logo.svg',
+            buyAmount: "5.00",
+            totalFees: 0,
+            tradingFees: 0,
+            tipsFees: 0,
+            coinMint: coin.coinMint || '',
+            dev: coin.dev || '',
+            bondingCurveProgress: coin.bondingCurveProgress || 0,
+            sniperCount: coin.sniperCount || 0,
+            graduationDate: coin.graduationDate || null,
+            devHoldingsPercentage: coin.devHoldingsPercentage || 0,
+            sniperOwnedPercentage: coin.sniperOwnedPercentage || 0,
+            topHoldersPercentage: coin.topHoldersPercentage || 0,
+            hasTwitter: coin.hasTwitter || false,
+            hasTelegram: coin.hasTelegram || false,
+            hasWebsite: coin.hasWebsite || false,
+            twitter: coin.twitter || null,
+            telegram: coin.telegram || null,
+            website: coin.website || null,
+            priceChange24h: coin.priceChange24h || coin.priceChange || 0, // Live price change
+            creationTime: creationTime > now ? now : creationTime // Ensure creationTime is not in the future
+          } as any
+        }
+        
+        return convertedTokens
+      } catch (fetchError: any) {
+        clearTimeout(timeoutId)
+        if (fetchError.name === 'AbortError') {
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('⏱️ Pump.fun API request timed out')
+          }
+          return []
+        } else {
+          if (process.env.NODE_ENV === 'development') {
+            console.error('❌ Pump.fun API fetch error:', fetchError)
+          }
+          throw fetchError // Re-throw other errors
+        }
+      }
+    } catch (error) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('❌ Error fetching pump.fun tokens directly:', error)
+      }
+      return []
+    }
+  }, [formatMarketCap, formatVolume]) // formatTimeAgo is imported, not a local function
+
+  // Fetch pump.fun MC tokens (about to graduate) directly from their API via Next.js API route
+  // ULTRA-OPTIMIZED: Parallel requests, minimal timeouts, cached SOL price
+  const fetchPumpFunMCTokensDirect = useCallback(async () => {
+    try {
+      // Get SOL price from cache first (updated by background fetcher every 10ms)
+      let solPrice = 150 // Default fallback
+      if (typeof window !== 'undefined' && (window as any).solPriceCache) {
+        const cache = (window as any).solPriceCache
+        solPrice = cache.price || 150
+      }
+      
+      // Fetch tokens with optimized timeout - fast but reliable
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 3000) // 3 second timeout - fast response for live trading
+      
+      try {
+        // Fetch MC tokens (sorted by marketCap) with minimal timeout
+        const response = await fetch('/api/pump-fun/coins-mc?limit=30&_=' + Date.now(), {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Cache-Control': 'no-cache',
+          },
+          cache: 'no-store',
+          signal: controller.signal
+        })
+        
+        clearTimeout(timeoutId)
+        
+        if (!response.ok) {
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('⚠️ Pump.fun MC API returned error:', response.status, response.statusText)
+          }
+          return []
+        }
+        
+        const data = await response.json()
+        
+        // Enhanced logging to debug why tokens aren't displaying
+        if (process.env.NODE_ENV === 'development') {
+          if (!data.success) {
+            console.warn('⚠️ Pump.fun MC API returned success: false', data)
+          }
+          if (!data.coins || !Array.isArray(data.coins)) {
+            console.warn('⚠️ Pump.fun MC API response missing coins array', data)
+          } else {
+            console.log('✅ Pump.fun MC API returned', data.coins.length, 'coins')
+          }
+        }
+        
+        const coins = data.success ? (data.coins || []) : []
+        
+        if (coins.length === 0) {
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('⚠️ No coins returned from pump.fun MC API - response:', data)
+          }
+          return []
+        }
+        
+        // ULTRA-FAST conversion: Pre-allocate array, minimal processing
+        const convertedTokens: TrenchesToken[] = new Array(Math.min(coins.length, 30))
+        const now = Date.now()
+        
+        for (let i = 0; i < convertedTokens.length; i++) {
+          const coin = coins[i]
+          const creationTime = coin.creationTime || now
+          const ageDiff = now - creationTime
+          const initialAge = ageDiff < 1000 ? '0s' : formatTimeAgo(creationTime)
+          
+          // Convert volume from SOL to USD (pump.fun API returns volume in SOL)
+          const volumeInSol = typeof coin.volume === 'number' ? coin.volume : parseFloat(coin.volume || '0') || 0
+          const volumeInUsd = volumeInSol * solPrice
+          
+          convertedTokens[i] = {
+            id: coin.coinMint || (i + 1).toString(),
+            name: coin.name || '',
+            symbol: coin.ticker || '',
+            image: coin.imageUrl || `https://ui-avatars.com/api/?name=${coin.ticker || 'TOKEN'}&background=6366f1&color=fff&size=48`,
+            mc: formatMarketCap(coin.marketCap || 0),
+            volume: formatVolume(volumeInUsd),
+            fee: '0', // Pump.fun API doesn't provide fee data
+            age: initialAge,
+            holders: coin.numHolders || 0,
+            buys: coin.buyTransactions || 0,
+            sells: coin.sellTransactions || 0,
+            status: 'about-to-graduate' as const,
+            tag: coin.name || '',
+            contractAddress: coin.coinMint || '',
+            migratedTokens: 0,
+            devSold: (coin.devHoldingsPercentage || 0) === 0,
+            top10Holders: Math.round(coin.topHoldersPercentage || 0),
+            snipers: Math.round((coin.sniperOwnedPercentage || 0) * 100) / 100,
+            insiders: 0,
+            platform: 'pump.fun' as const,
+            platformLogo: '/icons/platforms/pump.fun-logo.svg',
+            buyAmount: "5.00",
+            totalFees: 0,
+            tradingFees: 0,
+            tipsFees: 0,
+            coinMint: coin.coinMint || '',
+            dev: coin.dev || '',
+            bondingCurveProgress: coin.bondingCurveProgress || 0,
+            sniperCount: coin.sniperCount || 0,
+            graduationDate: coin.graduationDate || null,
+            devHoldingsPercentage: coin.devHoldingsPercentage || 0,
+            sniperOwnedPercentage: coin.sniperOwnedPercentage || 0,
+            topHoldersPercentage: coin.topHoldersPercentage || 0,
+            hasTwitter: coin.hasTwitter || false,
+            hasTelegram: coin.hasTelegram || false,
+            hasWebsite: coin.hasWebsite || false,
+            twitter: coin.twitter || null,
+            telegram: coin.telegram || null,
+            website: coin.website || null,
+            priceChange24h: coin.priceChange24h || coin.priceChange || 0, // Live price change
+            creationTime: creationTime > now ? now : creationTime // Ensure creationTime is not in the future
+          } as any
+        }
+        
+        return convertedTokens
+      } catch (fetchError: any) {
+        clearTimeout(timeoutId)
+        if (fetchError.name === 'AbortError') {
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('⏱️ Pump.fun MC API request timed out')
+          }
+          return []
+        } else {
+          if (process.env.NODE_ENV === 'development') {
+            console.error('❌ Pump.fun MC API fetch error:', fetchError)
+          }
+          throw fetchError // Re-throw other errors
+        }
+      }
+    } catch (error) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('❌ Error fetching pump.fun MC tokens directly:', error)
+      }
+      return []
+    }
+  }, [formatMarketCap, formatVolume]) // formatTimeAgo is imported, not a local function
+
+  // Live streaming for pump.fun tokens - STABLE updates with smart merging
+  useEffect(() => {
+    const pollPumpFunTokens = async () => {
+      // REMOVED: Polling guard - allow continuous updates even if previous request is pending
+      // Trading platform needs maximum update frequency - let requests overlap if needed
+      // The API will handle concurrent requests, and we want fresh data every 25ms
+      isPollingRef.current = true
+      
+      try {
+        const tokens = await fetchPumpFunTokensDirect()
+        
+        // Always log to debug why tokens aren't displaying
+        if (process.env.NODE_ENV === 'development') {
+          if (tokens.length === 0) {
+            console.warn('⚠️ fetchPumpFunTokensDirect returned 0 tokens')
+          } else {
+            console.log('✅ fetchPumpFunTokensDirect returned', tokens.length, 'tokens')
+          }
+        }
+        
+        // ALWAYS update state - even if empty, to ensure React knows about the fetch
+        // Trading platform needs continuous updates - React will handle efficient rendering
+        const now = Date.now()
+        const threeDaysAgo = now - (3 * 24 * 60 * 60 * 1000)
+        
+        if (tokens.length > 0) {
+          // Filter and sort tokens directly - minimal processing
+          // Only require tokenId - don't filter by creationTime to ensure all tokens display
+          const filteredTokens = tokens.filter((token: TrenchesToken) => {
+            const tokenId = token.coinMint || token.id
+            // Only require tokenId - include all tokens that have an identifier
+            // Creation time filter removed to ensure tokens display even if timestamp is missing/invalid
+            return !!tokenId
+          })
+          
+          if (process.env.NODE_ENV === 'development') {
+            if (filteredTokens.length === 0 && tokens.length > 0) {
+              console.warn('⚠️ All tokens filtered out - tokens:', tokens.length, 'filtered:', filteredTokens.length)
+            } else if (filteredTokens.length < tokens.length) {
+              console.log(`ℹ️ Filtered ${tokens.length - filteredTokens.length} tokens (missing tokenId)`)
+            }
+          }
+          
+          // Sort by creation time (newest first), limit to 30
+          // ALWAYS create new array to ensure React detects changes
+          // Add update timestamp to force React to detect changes even if values are the same
+          const result = filteredTokens
+            .map(token => ({ 
+              ...token,
+              _updateTimestamp: now // Force React to detect changes for live updates
+            })) // Create new objects to force React update
+            .sort((a, b) => (b.creationTime || 0) - (a.creationTime || 0))
+            .slice(0, 30)
+          
+          // DIRECT UPDATE: Always replace array - forces React to re-render with fresh data
+          setPumpFunTokens(result)
+          
+          // Update tracking map for stability (non-blocking)
+          for (let i = 0; i < result.length; i++) {
+            const token = result[i]
+            const tokenId = token.coinMint || token.id
+            if (tokenId) {
+              recentTokensRef.current.set(tokenId, { token, lastSeen: now })
+            }
+          }
+        } else {
+          // If no tokens returned, only clear state if we have no existing tokens
+          // This prevents clearing tokens on temporary API failures
+          setPumpFunTokens(prev => {
+            // Keep existing tokens if we have them, otherwise clear
+            return prev.length > 0 ? prev : []
+          })
+        }
+      } catch (error) {
+        // Silently handle errors - don't clear tokens on error
+        if (process.env.NODE_ENV === 'development') {
+          console.error('❌ Error polling pump.fun tokens:', error)
+        }
+      } finally {
+        // Don't reset isPollingRef - allow concurrent requests
+      }
+    }
+    
+    // Initial fetch - IMMEDIATE (don't wait for interval)
+    // Use setTimeout(0) to ensure it runs after component mount
+    const initialTimeout = setTimeout(() => {
+      pollPumpFunTokens()
+    }, 0)
+    
+    // Poll every 50ms for FAST live updates (20 updates per second) - trading platform needs real-time data
+    // Balance between speed and API rate limits - pump.fun API can handle this frequency
+    const interval = setInterval(() => {
+      pollPumpFunTokens()
+    }, 50)
+    
+    return () => {
+      clearTimeout(initialTimeout)
+      clearInterval(interval)
+      isPollingRef.current = false
+    }
+  }, [fetchPumpFunTokensDirect])
+
+  // Live streaming for bonk.fun tokens - CONTINUOUS updates
+  useEffect(() => {
+    const pollBonkFunTokens = async () => {
+      // REMOVED: Polling guard - allow continuous updates for live trading
+      isPollingBonkFunRef.current = true
+      
+      try {
+        const tokens = await fetchBonkFunTokens()
+        if (tokens && tokens.length > 0) {
+          const now = Date.now()
+          const fourMinutesAgo = now - (4 * 60 * 1000) // 4 minutes for "New" section only
+          
+          // Convert and filter tokens - only show tokens created within last 4 minutes
+          // ALWAYS create new objects to force React updates
+          const convertedTokens = tokens
+            .slice(0, 30)
+            .map((token: any, index: number) => ({ ...convertBonkFunToToken(token, index) })) // Create new objects
+            .filter((token: TrenchesToken) => token.creationTime && token.creationTime > fourMinutesAgo)
+            .sort((a, b) => (b.creationTime || 0) - (a.creationTime || 0))
+          
+          // ALWAYS update with fresh data - direct replacement for live trading
+          // New array forces React to detect changes and re-render
+          // Add update timestamp to force React to detect changes even if values are the same
+          const updateTimestamp = Date.now()
+          setBonkFunTokens(convertedTokens.length > 0 ? convertedTokens.map(t => ({ ...t, _updateTimestamp: updateTimestamp })) : [])
+        }
+      } catch (error) {
+        if (process.env.NODE_ENV === 'development') {
+          console.error('❌ Error polling bonk.fun tokens:', error)
+        }
+      } finally {
+        isPollingBonkFunRef.current = false
+      }
+    }
+    
+    pollBonkFunTokens()
+    // Poll every 50ms for FAST live updates (20 updates per second) - balance speed and API reliability
+    const interval = setInterval(() => {
+      pollBonkFunTokens()
+    }, 50)
+    
+    return () => {
+      clearInterval(interval)
+      isPollingBonkFunRef.current = false
+    }
+  }, [])
+
+  // Live streaming for moon.it tokens - CONTINUOUS updates
+  useEffect(() => {
+    const pollMoonItTokens = async () => {
+      // REMOVED: Polling guard - allow continuous updates for live trading
+      isPollingMoonItRef.current = true
+      
+      try {
+        const tokens = await fetchMoonItTokens()
+        if (tokens && tokens.length > 0) {
+          const now = Date.now()
+          const fourMinutesAgo = now - (4 * 60 * 1000) // 4 minutes for "New" section only
+          
+          // Convert and filter tokens - only show tokens created within last 4 minutes
+          // ALWAYS create new objects to force React updates
+          const convertedTokens = tokens
+            .slice(0, 30)
+            .map((token: any, index: number) => ({ ...convertMoonItToToken(token, index) })) // Create new objects
+            .filter((token: TrenchesToken) => token.creationTime && token.creationTime > fourMinutesAgo)
+            .sort((a, b) => (b.creationTime || 0) - (a.creationTime || 0))
+          
+          // ALWAYS update with fresh data - direct replacement for live trading
+          // New array forces React to detect changes and re-render
+          // Add update timestamp to force React to detect changes even if values are the same
+          const updateTimestamp = Date.now()
+          setMoonItTokens(convertedTokens.length > 0 ? convertedTokens.map(t => ({ ...t, _updateTimestamp: updateTimestamp })) : [])
+        }
+      } catch (error) {
+        if (process.env.NODE_ENV === 'development') {
+          console.error('❌ Error polling moon.it tokens:', error)
+        }
+      } finally {
+        isPollingMoonItRef.current = false
+      }
+    }
+    
+    pollMoonItTokens()
+    // Poll every 50ms for FAST live updates (20 updates per second) - balance speed and API reliability
+    const interval = setInterval(() => {
+      pollMoonItTokens()
+    }, 50)
+    
+    return () => {
+      clearInterval(interval)
+      isPollingMoonItRef.current = false
+    }
+  }, [])
+
+  // Live streaming for pump.fun MC tokens (about to graduate) - CONTINUOUS updates
+  useEffect(() => {
+    const pollPumpFunMCTokens = async () => {
+      // REMOVED: Polling guard - allow continuous updates even if previous request is pending
+      // Trading platform needs maximum update frequency - let requests overlap if needed
+      isPollingMCTokensRef.current = true
+      
+      try {
+        const tokens = await fetchPumpFunMCTokensDirect()
+        
+        // Always log to debug why tokens aren't displaying
+        if (process.env.NODE_ENV === 'development') {
+          if (tokens.length === 0) {
+            console.warn('⚠️ fetchPumpFunMCTokensDirect returned 0 tokens')
+          } else {
+            console.log('✅ fetchPumpFunMCTokensDirect returned', tokens.length, 'tokens')
+          }
+        }
+        
+        // ALWAYS merge with existing tokens - never replace completely
+        // Trading platform needs continuous updates - React will handle efficient rendering
+        const now = Date.now()
+        
+        // Update tracking map with new tokens
+        if (tokens.length > 0) {
+          for (let i = 0; i < tokens.length; i++) {
+            const token = tokens[i]
+            const tokenId = token.coinMint || token.id
+            if (tokenId) {
+              recentMCTokensRef.current.set(tokenId, { token, lastSeen: now })
+            }
+          }
+        }
+        
+        // Clean up old entries (older than 5 minutes) - keep recent tokens visible
+        const fiveMinutesAgo = now - (5 * 60 * 1000)
+        for (const [key, value] of recentMCTokensRef.current.entries()) {
+          if (value.lastSeen < fiveMinutesAgo) {
+            recentMCTokensRef.current.delete(key)
+          }
+        }
+        
+        // Merge: Combine new tokens with recently seen tokens
+        // This ensures tokens don't disappear even if API temporarily doesn't return them
+        const tokenMap = new Map<string, TrenchesToken>()
+        
+        // First, add all recently seen tokens (preserves tokens that might not be in current API response)
+        for (const [tokenId, { token }] of recentMCTokensRef.current.entries()) {
+          const uniqueKey = `${token.platform}-${tokenId}`
+          tokenMap.set(uniqueKey, token)
+        }
+        
+        // Then, add/update with new tokens from API (overwrites with latest data)
+        if (tokens.length > 0) {
+          const filteredTokens = tokens.filter((token: TrenchesToken) => {
+            const tokenId = token.coinMint || token.id
+            return !!tokenId
+          })
+          
+          for (let i = 0; i < filteredTokens.length; i++) {
+            const token = filteredTokens[i]
+            const tokenId = token.coinMint || token.id
+            const uniqueKey = `pump.fun-${tokenId}`
+            tokenMap.set(uniqueKey, token) // Overwrite with latest data
+          }
+        }
+        
+        // Convert to array and sort
+        const mergedTokens = Array.from(tokenMap.values())
+          .map(token => ({ 
+            ...token,
+            _updateTimestamp: now // Force React to detect changes for live updates
+          }))
+            .sort((a, b) => {
+              // Sort by market cap (highest first) or bonding curve progress
+              const aMc = parseFloat((a.mc || '0').replace(/[$,]/g, '')) || 0
+              const bMc = parseFloat((b.mc || '0').replace(/[$,]/g, '')) || 0
+              if (bMc !== aMc) return bMc - aMc
+              return (b.bondingCurveProgress || 0) - (a.bondingCurveProgress || 0)
+            })
+          .slice(0, 30)
+        
+        // ALWAYS update - even if empty, merge ensures we keep existing tokens
+        setMcTokens(mergedTokens)
+      } catch (error) {
+        // NEVER clear tokens on error - preserve existing tokens
+        // Update timestamps to keep tokens visible
+        const now = Date.now()
+        setMcTokens(prev => {
+          if (prev.length > 0) {
+            // Update timestamps to force React updates, keep tokens visible
+            return prev.map(t => ({ ...t, _updateTimestamp: now }))
+          }
+          return prev
+        })
+        if (process.env.NODE_ENV === 'development') {
+          console.error('❌ Error polling pump.fun MC tokens:', error)
+        }
+      } finally {
+        // Don't reset isPollingMCTokensRef - allow concurrent requests
+      }
+    }
+    
+    // Initial fetch - IMMEDIATE (don't wait for interval)
+    // Use setTimeout(0) to ensure it runs after component mount
+    const initialTimeout = setTimeout(() => {
+      pollPumpFunMCTokens()
+    }, 0)
+    
+    // Poll every 50ms for FAST live updates (20 updates per second) - trading platform needs real-time data
+    // Balance between speed and API rate limits - pump.fun API can handle this frequency
+    const interval = setInterval(() => {
+      pollPumpFunMCTokens()
+    }, 50)
+    
+    return () => {
+      clearTimeout(initialTimeout)
+      clearInterval(interval)
+      isPollingMCTokensRef.current = false
+    }
+  }, [fetchPumpFunMCTokensDirect])
+
+  // Use WebSocket for SolanaTracker NEW tokens - always keep tokens visible
+  const { tokens: solanaTrackerWebSocketTokens, isConnected: isWebSocketConnected } = useSolanaTrackerWebSocket({
+    filterType: 'new',
+    limit: 30,
+    onMessage: (tokens) => {
+      // LIVE UPDATE: Always update with fresh token data - ALL metrics update live
+      // This ensures market cap, volume, fees, holders, dev holdings, etc. all update in real-time
+      console.log('📨 WebSocket: Received new tokens:', tokens.length)
+      
+      // FAST CONVERSION: Inline loop for maximum speed
+      const convertedTokens: TrenchesToken[] = []
+      for (let i = 0; i < tokens.length; i++) {
+        const token = tokens[i]
+        // Extract and format volume - ensure it's a number (LIVE DATA from WebSocket)
+        const volumeValue = typeof token.volume === 'number' ? token.volume : (typeof token.volume === 'string' ? parseFloat(token.volume) || 0 : 0)
+        const volumeInUsd = formatVolume(volumeValue)
+        const marketCap = token.marketCap || 0 // LIVE market cap from WebSocket
+        const createdAt = token.creationTime || Date.now()
+        const totalFeesNum = typeof token.totalFees === 'string' ? parseFloat(token.totalFees) || 0 : token.totalFees || 0 // LIVE fees from WebSocket
+        
+        // Debug: Log volume for first token to verify it's being extracted
+        if (i === 0) {
+          console.log('📊 Volume extraction:', {
+            raw: token.volume,
+            parsed: volumeValue,
+            formatted: volumeInUsd,
+            tokenName: token.name
+          })
+        }
+        
+        // Calculate initial age - start from 0s for brand new tokens
+        const now = Date.now()
+        const ageDiff = now - createdAt
+        const initialAge = ageDiff < 1000 ? '0s' : formatTimeAgo(createdAt)
+        
+        convertedTokens.push({
+          id: token.id || (i + 1).toString(),
+          name: token.name,
+          symbol: token.symbol,
+          image: token.image || `https://ui-avatars.com/api/?name=${token.symbol}&background=6366f1&color=fff&size=48`,
+          mc: formatMarketCap(marketCap),
+          volume: volumeInUsd,
+          fee: totalFeesNum.toFixed(3),
+          age: initialAge, // Start from 0s for new tokens
+          holders: token.holders || 0,
+          buys: token.buyTransactions || 0,
+          sells: token.sellTransactions || 0,
+          status: 'new' as const,
+          tag: token.name,
+          contractAddress: token.contractAddress || '',
+          migratedTokens: 0,
+          devSold: (token.devHoldingsPercentage || 0) === 0,
+          top10Holders: Math.round(token.topHoldersPercentage || 0),
+          snipers: Math.round((token.sniperOwnedPercentage || 0) * 100) / 100,
+          insiders: 0,
+          platform: token.platform as any,
+          platformLogo: token.platformLogo,
+          buyAmount: "5.00",
+          totalFees: totalFeesNum,
+          tradingFees: typeof token.tradingFees === 'string' ? parseFloat(token.tradingFees) || 0 : token.tradingFees || 0,
+          tipsFees: typeof token.tipsFees === 'string' ? parseFloat(token.tipsFees) || 0 : token.tipsFees || 0,
+          coinMint: token.contractAddress || '',
+          dev: '',
+          bondingCurveProgress: token.bondingCurveProgress || 0,
+          sniperCount: token.sniperCount || 0,
+          graduationDate: token.graduationDate || null,
+          devHoldingsPercentage: token.devHoldingsPercentage || 0,
+          sniperOwnedPercentage: token.sniperOwnedPercentage || 0,
+          topHoldersPercentage: token.topHoldersPercentage || 0,
+          hasTwitter: token.hasTwitter || false,
+          hasTelegram: token.hasTelegram || false,
+          hasWebsite: token.hasWebsite || false,
+          twitter: token.twitter || null,
+          telegram: token.telegram || null,
+          website: token.website || null,
+          // Add price change 24h for display
+          priceChange24h: token.priceChange24h || 0,
+          // Store creation time for live age updates - use current time for brand new tokens
+          creationTime: createdAt > now ? now : createdAt // Ensure creationTime is not in the future
+        } as any)
+      }
+      
+      // ULTRA-FAST update: Immediate state update with optimized merge
+      // New tokens at front, no sorting overhead
+      setRealTokens((prevTokens) => {
+        // Fast merge: Build Set of new token IDs for O(1) lookup
+        const newTokenIds = new Set<string>()
+        for (let i = 0; i < convertedTokens.length; i++) {
+          newTokenIds.add(convertedTokens[i].id)
+        }
+        
+        // Build result: new tokens first (instant visibility), then existing
+        const allTokens: TrenchesToken[] = []
+        
+        // Add new tokens first - they appear instantly
+        // ALWAYS create new objects to force React updates
+        for (let i = 0; i < convertedTokens.length; i++) {
+          allTokens.push({ ...convertedTokens[i] }) // Create new object for React
+        }
+        
+        // Add existing tokens that aren't in new tokens
+        // CRITICAL: New tokens from WebSocket ALWAYS overwrite existing tokens with fresh data
+        // This ensures ALL metrics (mc, volume, fees, holders, dev, etc.) update live
+        for (let i = 0; i < prevTokens.length; i++) {
+          if (!newTokenIds.has(prevTokens[i].id)) {
+            allTokens.push({ ...prevTokens[i] }) // Create new object for React
+          }
+          // If token exists in both, new token data (from WebSocket) already overwrote it above
+        }
+        
+        // Limit to 30 - new tokens already at front, no sorting needed
+        // Return new array to force React update
+        return allTokens.slice(0, 30).map(t => ({ ...t }))
+      })
       setLastUpdateTime(Date.now())
-      console.log('✅ WebSocket: Updated graduating tokens:', filteredTokens.length, '(filtered from', convertedTokens.length, ')')
     },
-    onError: (err: Error) => {
-      console.warn('⚠️ WebSocket error for graduating tokens:', err.message)
-    },
-    maxTokens: 30
+    onError: (err) => {
+      // Log error but don't block UI - REST API fallback will handle it
+      console.warn('⚠️ WebSocket error (REST API fallback will be used):', err.message)
+      // Don't set error state - let REST API handle data fetching
+      // The component will automatically use REST API when WebSocket is not connected
+    }
   })
-  
   const [filters, setFilters] = useState<FilterState>({
     launchpads: {
       pumpfun: true,
@@ -566,20 +1179,10 @@ export function TrenchesPage() {
     return `${seconds}s`
   }
 
-  // Live time updater for token age display - optimized for performance
-  // Update every second instead of every frame to reduce re-renders
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentTime(Date.now())
-    }, 1000) // Update every second for live time display
-    
-    return () => {
-      clearInterval(interval)
-    }
-  }, [])
+  // REMOVED: requestAnimationFrame loop - already have setInterval timer above that updates every second
+  // This was causing infinite re-renders
 
-  // SOL price fetcher from pump.fun API for volume conversion
-  // Pump.fun volume is in SOL, needs to be converted to USD
+  // Background SOL price fetcher to keep cache updated - using pump.fun API
   useEffect(() => {
     let isUpdating = false
     
@@ -588,40 +1191,33 @@ export function TrenchesPage() {
       isUpdating = true
       
       try {
-        // Fetch SOL price from pump.fun API (same source as volume data)
-        const response = await fetch('/api/pump-fun/sol-price', {
-          signal: AbortSignal.timeout(2000) // 2 second timeout
+        const response = await fetch('/api/pump-fun/sol-price?_=' + Date.now(), {
+          cache: 'no-store',
+          signal: AbortSignal.timeout(2000) // 2 second timeout for faster updates
         })
         if (response.ok) {
           const data = await response.json()
           if (data.success && data.solPrice) {
-            setSolPrice(data.solPrice)
-            console.log('✅ SOL price updated from pump.fun:', data.solPrice)
+            // Update the global cache
+            if (typeof window !== 'undefined') {
+              (window as any).solPriceCache = { 
+                price: data.solPrice, 
+                timestamp: Date.now() 
+              }
+            }
           }
         }
       } catch (error) {
-        console.warn('⚠️ Failed to fetch SOL price from pump.fun:', error)
-        // Try fallback to Moralis
-        try {
-          const fallbackResponse = await fetch('/api/moralis/token-prices?tokenAddresses=So11111111111111111111111111111111111111112&chain=solana', {
-            signal: AbortSignal.timeout(2000)
-          })
-          if (fallbackResponse.ok) {
-            const fallbackData = await fallbackResponse.json()
-            if (fallbackData.success && fallbackData.data && fallbackData.data.length > 0) {
-              setSolPrice(fallbackData.data[0].usdPrice)
-          }
-        }
-        } catch (fallbackError) {
-          console.warn('⚠️ Fallback SOL price fetch also failed:', fallbackError)
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('Background SOL price update failed:', error)
         }
       } finally {
         isUpdating = false
       }
     }
 
-    // Update SOL price every 30 seconds
-    const solPriceInterval = setInterval(updateSolPrice, 30000)
+    // Update SOL price every 10ms to match token polling frequency for live updates
+    const solPriceInterval = setInterval(updateSolPrice, 10)
     updateSolPrice() // Initial fetch
 
     return () => clearInterval(solPriceInterval)
@@ -634,14 +1230,11 @@ export function TrenchesPage() {
     let fetchTimeout: NodeJS.Timeout | null = null
     
     const fetchAllDataInParallel = async () => {
-      if (isFetching) {
-        console.log('⏸️ Fetch already in progress, skipping...')
-        return // Skip if already fetching
-      }
+      if (isFetching) return // Skip if already fetching
       isFetching = true
       
       try {
-        console.log('🚀 Fetching all trading data in parallel...')
+        console.log('🚀 Fetching all trading data in parallel for immediate loading...')
         setLastUpdateTime(Date.now())
       
       // Fetch migrated tokens through API route to avoid exposing API keys
@@ -665,9 +1258,16 @@ export function TrenchesPage() {
         }
       }
 
-      // Fetch Solana Tracker tokens for NEW column
+      // Fetch Solana Tracker tokens for NEW column (fallback if WebSocket fails)
       const fetchSolanaTrackerNewTokens = async () => {
+        // Only fetch via REST API if WebSocket is not connected
+        if (isWebSocketConnected) {
+          console.log('⏭️ Skipping REST API call - WebSocket is connected')
+          return []
+        }
+        
         try {
+          console.log('🔄 Fallback: Fetching NEW tokens via REST API...')
           const response = await fetch('/api/solanatracker/tokens?type=new&limit=30', {
             method: 'GET',
             headers: {
@@ -681,13 +1281,31 @@ export function TrenchesPage() {
           const data = await response.json()
           return data.success && Array.isArray(data.data) ? data.data : []
         } catch (error) {
-          console.warn('Error fetching Solana Tracker new tokens:', error)
+          console.warn('Error fetching Solana Tracker new tokens (fallback):', error)
           return []
         }
       }
 
-      // REMOVED: Solana Tracker graduating tokens now fetched via WebSocket (real-time)
-      // WebSocket provides faster, real-time updates for trading application
+      // Fetch Solana Tracker graduating tokens for MC column
+      const fetchSolanaTrackerGraduatingTokens = async () => {
+        try {
+          const response = await fetch('/api/solanatracker/tokens?type=graduating&limit=30', {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'
+            },
+            signal: AbortSignal.timeout(5000)
+          })
+          
+          if (!response.ok) return []
+          const data = await response.json()
+          return data.success && Array.isArray(data.data) ? data.data : []
+        } catch (error) {
+          console.warn('Error fetching Solana Tracker graduating tokens:', error)
+          return []
+        }
+      }
 
       // Fetch Solana Tracker graduated tokens for 3rd column
       const fetchSolanaTrackerGraduatedTokens = async () => {
@@ -711,9 +1329,9 @@ export function TrenchesPage() {
       }
       
       // Execute all API calls in parallel for maximum speed
-      // NOTE: Graduating tokens are now fetched via WebSocket (real-time), not REST API
       const [
         solanaTrackerNewResult,
+        solanaTrackerGraduatingResult,
         solanaTrackerGraduatedResult,
         pumpFunResult,
         pumpFunMCResult,
@@ -727,6 +1345,7 @@ export function TrenchesPage() {
         moonItGraduatedResult
       ] = await Promise.allSettled([
         fetchSolanaTrackerNewTokens(),
+        fetchSolanaTrackerGraduatingTokens(),
         fetchSolanaTrackerGraduatedTokens(),
         fetchPumpFunTokens(),
         fetchPumpFunMCTokens(),
@@ -738,25 +1357,68 @@ export function TrenchesPage() {
         fetchMoonItTokens(),
         fetchMoonItMCTokens(),
         fetchMoonItGraduatedTokens()
+        // REMOVED: fetchPumpFunTokensDirect() - now handled by live polling useEffect
       ])
 
       // Process results immediately as they come in
-      // IMPORTANT: Process pump.fun tokens LAST to ensure they don't get overwritten
-      // Pump.fun tokens are the primary source for NEW column
+      let hasSolanaTrackerTokens = false
       
-      // Skip SolanaTracker for NEW column - we use pump.fun API directly
+      // Always use REST API as primary source for now since WebSocket is having issues
+      // WebSocket will update in real-time if it works
+      // IMPORTANT: Filter out pump.fun tokens - they come from direct pump.fun API only
       if (solanaTrackerNewResult.status === 'fulfilled' && solanaTrackerNewResult.value.length > 0) {
-        console.log('ℹ️ Solana Tracker NEW tokens available (skipped - using pump.fun API directly):', solanaTrackerNewResult.value.length)
+        // Filter out pump.fun tokens BEFORE conversion
+        const filteredTokens = solanaTrackerNewResult.value.filter((token: any) => {
+          // Check platform in token data - pump.fun tokens should be excluded
+          const createdOn = token.token?.createdOn?.toLowerCase() || 
+                           token.createdOn?.toLowerCase() || 
+                           token.pools?.[0]?.market?.toLowerCase() || 
+                           ''
+          return !createdOn.includes('pump.fun') && !createdOn.includes('pump')
+        })
+        
+        const convertedTokens = filteredTokens
+          .slice(0, 30)
+          .map((token: any, index: number) => 
+            convertSolanaTrackerToToken(token, index, 'new')
+          )
+          .filter((token: TrenchesToken) => token.platform !== 'pump.fun') // Double filter after conversion
+        
+        // Only update if WebSocket hasn't provided tokens yet, or if REST API has newer data
+        if (realTokens.length === 0 || !isWebSocketConnected) {
+        setRealTokens(convertedTokens)
+        hasSolanaTrackerTokens = true
+          console.log('✅ Solana Tracker NEW tokens loaded (REST API, pump.fun filtered):', convertedTokens.length)
       } else {
-        console.log('ℹ️ Solana Tracker NEW tokens not available (using pump.fun API directly)')
+          console.log('✅ Solana Tracker NEW tokens from WebSocket:', realTokens.length, '(REST API also available)')
+          hasSolanaTrackerTokens = true
+        }
+      } else if (isWebSocketConnected && realTokens.length > 0) {
+        // Use WebSocket tokens if REST API failed but WebSocket has data
+        console.log('✅ Solana Tracker NEW tokens from WebSocket (REST API failed):', realTokens.length)
+        hasSolanaTrackerTokens = true
+      } else if (isWebSocketConnected && realTokens.length === 0) {
+        console.log('⚠️ WebSocket connected but no tokens received yet, waiting...')
+      } else {
+        console.log('⚠️ Solana Tracker NEW tokens not available from WebSocket or REST API')
       }
 
-      // REMOVED: Graduating tokens are now handled via WebSocket (real-time updates)
-      // WebSocket provides instant updates as tokens become available, no REST API needed
-      if (isGraduatingWebSocketConnected) {
-        console.log('✅ Solana Tracker GRADUATING tokens via WebSocket (real-time):', solanaTrackerGraduatingTokens.length)
-        } else {
-        console.log('⏳ Waiting for WebSocket connection for graduating tokens...')
+      if (solanaTrackerGraduatingResult.status === 'fulfilled' && solanaTrackerGraduatingResult.value.length > 0) {
+        const convertedTokens = solanaTrackerGraduatingResult.value.slice(0, 30).map((token: any, index: number) => 
+          convertSolanaTrackerToToken(token, index, 'about-to-graduate')
+        )
+        // Filter out Solana Tracker graduating tokens older than 3 days
+        const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000)
+        const filteredSolanaTrackerGraduatingTokens = convertedTokens.filter((token: any) => {
+          const tokenAge = parseTimeToMinutes(token.age)
+          const tokenAgeInMs = tokenAge * 60 * 1000
+          const tokenCreatedAt = Date.now() - tokenAgeInMs
+          return tokenCreatedAt > threeDaysAgo
+        })
+        setSolanaTrackerGraduatingTokens(filteredSolanaTrackerGraduatingTokens)
+        console.log('✅ Solana Tracker GRADUATING tokens loaded:', filteredSolanaTrackerGraduatingTokens.length, '(filtered from', convertedTokens.length, 'to exclude tokens >3 days old)')
+      } else {
+        console.log('⚠️ Solana Tracker GRADUATING tokens not available')
       }
 
       if (solanaTrackerGraduatedResult.status === 'fulfilled' && solanaTrackerGraduatedResult.value.length > 0) {
@@ -777,82 +1439,15 @@ export function TrenchesPage() {
         console.log('⚠️ Solana Tracker GRADUATED tokens not available')
       }
 
-      // Process pump.fun tokens LAST to ensure they are the primary source and don't get overwritten
-      if (pumpFunResult.status === 'fulfilled') {
-        const pumpFunCoins = pumpFunResult.value
-        console.log('📦 Pump.fun result received:', {
-          coinsLength: pumpFunCoins?.length || 0,
-          firstCoin: pumpFunCoins?.[0] ? {
-            coinMint: pumpFunCoins[0].coinMint,
-            name: pumpFunCoins[0].name,
-            ticker: pumpFunCoins[0].ticker
-          } : null
-        })
-        
-        if (pumpFunCoins && pumpFunCoins.length > 0) {
-          const convertedTokens: TrenchesToken[] = pumpFunCoins.slice(0, 30).map((coin: any, index: number) => {
-            try {
-              return convertPumpFunToToken(coin, index, 'new', solPrice)
-            } catch (err) {
-              console.error('Error converting pump.fun token:', err, coin)
-              return null
-            }
-          }).filter((token): token is TrenchesToken => token !== null)
-          
-          // Use functional update to ensure pump.fun tokens are always set (prevents race conditions)
-          // This ensures pump.fun tokens are the primary source and won't be overwritten
-          // Note: Streaming will take over after initial load, so only set if streaming hasn't started
-          if (convertedTokens.length > 0) {
-            pumpFunTokensLoadedRef.current = true
-            // Only set if streaming hasn't populated tokens yet (initial load)
-            setRealTokens(prev => {
-              if (prev.length === 0) {
-                // Initial load - set tokens
-                console.log('✅ Initial pump.fun tokens loaded:', convertedTokens.length, 'tokens')
-                return convertedTokens
-              }
-              // Streaming is active - don't overwrite, just return existing
-              return prev
-            })
-          } else {
-            // If no tokens returned, keep previous tokens to prevent disappearing
-            setRealTokens(prev => {
-              if (prev.length > 0) {
-                console.log('⚠️ Pump.fun API returned empty, keeping previous tokens:', prev.length)
-                return prev
-              }
-              return []
-            })
-          }
-        } else {
-          console.warn('⚠️ Pump.fun API returned empty array')
-        }
-      } else if (pumpFunResult.status === 'rejected') {
-        console.error('❌ Pump.fun API call failed:', pumpFunResult.reason)
-        // Don't clear existing tokens on API failure - keep previous tokens to prevent disappearing
-        setRealTokens(prev => {
-          if (prev.length > 0) {
-            console.log('⚠️ Pump.fun API failed, keeping previous tokens:', prev.length)
-            return prev
-          }
-          return []
-        })
-      } else {
-        // Promise still pending - don't update state yet
-        console.log('⏳ Pump.fun API call still pending...')
-      }
+      // REMOVED: pumpFunResult fallback for NEW column - we now use direct pump.fun API (pumpFunDirectResult)
+      // pumpFunResult is no longer used for NEW column to avoid fetching pump.fun tokens from SolanaTracker
 
-      if (pumpFunMCResult.status === 'fulfilled') {
-        const convertedMCTokens = pumpFunMCResult.value.slice(0, 30).map((coin: any, index: number) => 
-          convertPumpFunToToken(coin, index, 'about-to-graduate', solPrice)
-        )
-        setMcTokens(convertedMCTokens)
-        console.log('✅ Pump.fun MC tokens loaded:', convertedMCTokens.length)
-      }
+      // REMOVED: Old MC tokens fetch - now handled by live polling useEffect
+      // MC tokens are now streamed live every 50ms via separate useEffect
 
       if (pumpFunGraduatedResult.status === 'fulfilled') {
         const convertedGraduatedTokens = pumpFunGraduatedResult.value.slice(0, 30).map((coin: any, index: number) => 
-          convertPumpFunToToken(coin, index, 'migrated', solPrice)
+          convertPumpFunToToken(coin, index, 'migrated')
         )
         setGraduatedTokens(convertedGraduatedTokens)
         console.log('✅ Pump.fun graduated tokens loaded:', convertedGraduatedTokens.length)
@@ -860,7 +1455,7 @@ export function TrenchesPage() {
 
       if (pumpFunMigratedResult.status === 'fulfilled') {
         const convertedMigratedTokens = pumpFunMigratedResult.value.slice(0, 30).map((coin: any, index: number) => 
-          convertPumpFunToToken(coin, index, 'migrated', solPrice)
+          convertPumpFunToToken(coin, index, 'migrated')
         )
         setMigratedTokens(convertedMigratedTokens)
         console.log('✅ Pump.fun migrated tokens loaded:', convertedMigratedTokens.length)
@@ -962,13 +1557,15 @@ export function TrenchesPage() {
         console.log('✅ Moon.it graduated tokens loaded:', filteredMoonItGraduatedTokens.length, '(filtered from', convertedMoonItGraduatedTokens.length, 'to exclude tokens >3 days old)')
       }
 
+      // REMOVED: pump.fun direct API fetch from parallel fetch - now handled by live polling useEffect
+      // pump.fun tokens are now streamed live every 2 seconds via separate useEffect
+
       console.log('🚀 All trading data loaded in parallel!')
       
       } catch (error) {
         console.error('Error in fetchAllDataInParallel:', error)
       } finally {
         isFetching = false // Always reset fetching flag
-        console.log('✅ Fetch completed')
       }
     }
 
@@ -991,24 +1588,9 @@ export function TrenchesPage() {
       }
     }
 
-    const fetchMCData = async () => {
-      try {
-        console.log('Fetching Pump.fun MC data...')
-        const pumpFunMCCoins = await fetchPumpFunMCTokens()
-        console.log('Received MC coins:', pumpFunMCCoins.length)
-        const convertedMCTokens = pumpFunMCCoins.slice(0, 30).map((coin: any, index: number) => 
-          convertPumpFunToToken(coin, index, 'about-to-graduate')
-        )
-        console.log('Converted MC tokens:', convertedMCTokens.length)
-        setMcTokens(convertedMCTokens)
-        setError(null) // Clear any previous errors
-      } catch (error) {
-        console.error('Error fetching MC data:', error)
-        setError(`Failed to fetch MC tokens: ${error instanceof Error ? error.message : 'Unknown error'}`)
-        // Keep mcTokens empty if API fails
-        setMcTokens([])
-      }
-    }
+    // REMOVED: fetchMCData - now handled by live polling useEffect
+    // MC tokens are now streamed live every 50ms via separate useEffect
+    // No fallback needed - live polling handles all updates
 
     const fetchGraduatedData = async () => {
       try {
@@ -1016,7 +1598,7 @@ export function TrenchesPage() {
         const pumpFunGraduatedCoins = await fetchPumpFunGraduatedTokens()
         console.log('Received graduated coins:', pumpFunGraduatedCoins.length)
         const convertedGraduatedTokens = pumpFunGraduatedCoins.slice(0, 30).map((coin: any, index: number) => 
-          convertPumpFunToToken(coin, index, 'migrated', solPrice)
+          convertPumpFunToToken(coin, index, 'migrated')
         )
         console.log('Converted graduated tokens:', convertedGraduatedTokens.length)
         setGraduatedTokens(convertedGraduatedTokens)
@@ -1056,7 +1638,7 @@ export function TrenchesPage() {
         
         console.log('Received migrated coins:', data.coins.length)
         const convertedMigratedTokens = data.coins.slice(0, 30).map((coin: any, index: number) => 
-          convertPumpFunToToken(coin, index, 'migrated', solPrice)
+          convertPumpFunToToken(coin, index, 'migrated')
         )
         console.log('Converted migrated tokens:', convertedMigratedTokens.length)
         setMigratedTokens(convertedMigratedTokens)
@@ -1235,17 +1817,18 @@ export function TrenchesPage() {
     // Initial parallel fetch for immediate trading data
     fetchAllDataInParallel()
 
-    // Set up optimized auto-refresh - refresh every 5 seconds to balance speed and performance
+    // Set up optimized auto-refresh - WebSocket handles NEW tokens in real-time
+    // Only refresh REST API data periodically (other columns and fallback)
     const interval = setInterval(() => {
-      // Only refresh if not already fetching
-      if (!isFetching) {
-        console.log('Auto-refreshing token data in parallel...')
+      // Only refresh if WebSocket is not connected (fallback mode)
+      // WebSocket updates happen instantly, no need to poll
+      if (!isWebSocketConnected) {
+        console.log('Auto-refreshing token data (WebSocket not connected)...')
         fetchAllDataInParallel()
-      } else {
-        console.log('⏸️ Skipping refresh - previous fetch still in progress')
       }
-    }, 5000) // 5 seconds for other tokens
-    
+    }, 5000) // 5 seconds for REST API fallback only (WebSocket is instant)
+
+    // Cleanup interval and timeout on component unmount
     return () => {
       clearInterval(interval)
       if (fetchTimeout) {
@@ -1253,58 +1836,6 @@ export function TrenchesPage() {
       }
     }
   }, [])
-  
-  // Dedicated ultra-fast streaming for pump.fun tokens - NONSTOP continuous updates
-  // Pump.fun API is stable with no rate limits - streams continuously without delay
-  // All metrics (volume, market cap, holders, buys, sells, etc.) update in real-time
-  useEffect(() => {
-    let isActive = true
-    
-    const streamPumpFunTokens = async (): Promise<void> => {
-      while (isActive) {
-        try {
-          // Fetch pump.fun tokens - NONSTOP, no delays, no timeout
-          const response = await fetch('/api/pump-fun/coins?sortBy=creationTime&limit=30', {
-            method: 'GET',
-            headers: {
-              'Accept': 'application/json',
-              'Content-Type': 'application/json'
-            },
-            cache: 'no-store',
-            next: { revalidate: 0 }
-          })
-          
-          if (!response.ok || !isActive) continue
-          
-          const responseData = await response.json()
-          
-          if (responseData.coins && Array.isArray(responseData.coins) && responseData.coins.length > 0 && isActive) {
-            // Ultra-fast conversion - pre-allocated array, no sorting
-            const coins = responseData.coins.slice(0, 30)
-            const newTokens: TrenchesToken[] = new Array(coins.length)
-            for (let i = 0; i < coins.length; i++) {
-              newTokens[i] = convertPumpFunToToken(coins[i], i, 'new', solPrice)
-            }
-            
-            // Update state immediately - no batching delay
-            setRealTokens(newTokens)
-            pumpFunTokensLoadedRef.current = true
-          }
-        } catch (error) {
-          // Silent - continue immediately
-          if (!isActive) break
-        }
-        // No delay - continue immediately
-      }
-    }
-    
-    // Start streaming immediately - nonstop infinite loop
-    streamPumpFunTokens()
-    
-    return () => {
-      isActive = false
-    }
-  }, [solPrice]) // Re-run if SOL price changes
 
   // Removed all mock data - only showing real data from API
 
@@ -1328,7 +1859,14 @@ export function TrenchesPage() {
 
 
 
-  // Helper functions - memoized for performance (parseTimeToMinutes moved above for WebSocket hook)
+  // Helper functions - memoized for performance
+  const parseTimeToMinutes = useCallback((timeStr: string): number => {
+    if (timeStr.includes('s')) return 0
+    if (timeStr.includes('m')) return parseInt(timeStr) || 0
+    if (timeStr.includes('h')) return (parseInt(timeStr) || 0) * 60
+    if (timeStr.includes('d')) return (parseInt(timeStr) || 0) * 60 * 24
+    return 0
+  }, [])
 
   const parseMarketCap = useCallback((mcStr: string): number => {
     if (!mcStr) return 0
@@ -1409,44 +1947,194 @@ export function TrenchesPage() {
     })
   }, [filters, parseMarketCap])
 
-  // Memoized token processing for each category
-  const newTokens = useMemo(() => {
-    // Combine all tokens: pump.fun (from realTokens), bonk.fun, and moon.it
-    // Note: realTokens now contains pump.fun tokens (fetched directly from pump.fun API)
-    // SolanaTracker tokens are separate and only used if available
-    const combinedTokens = [...realTokens, ...bonkFunTokens, ...moonItTokens]
-    console.log('🔍 NEW tokens - combined:', combinedTokens.length, 'pump.fun (realTokens):', realTokens.length, 'bonkFun:', bonkFunTokens.length, 'moonIt:', moonItTokens.length)
+  // Removed debug logging for performance
+
+  // Live-updated tokens with real-time age calculation - OPTIMIZED for speed
+  // DEDUPLICATE: Remove duplicate tokens but ALWAYS keep the most recent/updated version for live trading
+  const tokensWithLiveAge = useMemo(() => {
+    // Priority order: realTokens (WebSocket - most live) > pumpFunTokens > bonkFunTokens > moonItTokens
+    // Process in reverse order so higher priority sources overwrite lower priority ones
+    // OPTIMIZED: Direct array concatenation for speed
+    const allTokens = [...moonItTokens, ...bonkFunTokens, ...pumpFunTokens, ...realTokens]
     
+    // FAST deduplication - use Map for O(1) lookups
+    const tokenMap = new Map<string, TrenchesToken>()
+    
+    // Single pass deduplication - later tokens overwrite earlier ones
+    for (let i = 0; i < allTokens.length; i++) {
+      const token = allTokens[i]
+      const tokenId = token.coinMint || token.id || token.contractAddress || ''
+      const uniqueKey = `${token.platform}-${tokenId}`
+      tokenMap.set(uniqueKey, token) // Always overwrite - latest data wins
+    }
+    
+    // Convert Map to array - pre-allocate for speed
+    const deduplicatedTokens = new Array(tokenMap.size)
+    let idx = 0
+    for (const token of tokenMap.values()) {
+      deduplicatedTokens[idx++] = token
+    }
+    
+    // ULTRA-FAST age calculation - inline, pre-allocated array
+    const now = currentTime
+    const updatedTokens = new Array(deduplicatedTokens.length)
+    
+    for (let i = 0; i < deduplicatedTokens.length; i++) {
+      const token = deduplicatedTokens[i]
+      // ALWAYS create new object to ensure React detects changes
+      // Preserve _updateTimestamp to force React updates
+      const updateTimestamp = (token as any)._updateTimestamp || now
+      if (token.creationTime) {
+        const diff = now - token.creationTime
+        const seconds = Math.floor(diff / 1000)
+        
+        // Fast age formatting - minimal branching
+        let age: string
+        if (seconds < 0) age = '0s'
+        else if (seconds < 60) age = `${seconds}s`
+        else {
+          const minutes = Math.floor(seconds / 60)
+          if (minutes < 60) age = `${minutes}m`
+          else {
+            const hours = Math.floor(minutes / 60)
+            age = hours < 24 ? `${hours}h` : `${Math.floor(hours / 24)}d`
+          }
+        }
+        updatedTokens[i] = { ...token, age, _updateTimestamp: updateTimestamp }
+      } else {
+        updatedTokens[i] = { ...token, _updateTimestamp: updateTimestamp }
+      }
+    }
+    
+    return updatedTokens
+  }, [realTokens, pumpFunTokens, bonkFunTokens, moonItTokens, currentTime])
+
+  // ULTRA-OPTIMIZED: Fast token processing - NO MEMOIZATION for maximum speed
+  // ALWAYS recalculate on every render - trading platform needs instant updates
+  // Removed useMemo to ensure no caching delays updates
+  const newTokens = (() => {
+    if (tokensWithLiveAge.length === 0) {
+      return []
+    }
+    
+    // FAST: Pre-allocate arrays, avoid multiple map operations
+    const combinedTokens = new Array(tokensWithLiveAge.length)
+    for (let i = 0; i < tokensWithLiveAge.length; i++) {
+      combinedTokens[i] = { 
+        ...tokensWithLiveAge[i], 
+        _updateTimestamp: currentTime // Force update detection - changes every 10ms
+      }
+    }
+    
+    // Apply filters - single pass
     const filteredTokens = applyFilters(combinedTokens)
-    console.log('🔍 NEW tokens - after filtering:', filteredTokens.length)
     
-    // Sort all tokens by time (newest first)
-    const sortedTokens = filteredTokens.sort((a, b) => {
-        const aTime = parseTimeToMinutes(a.age)
-        const bTime = parseTimeToMinutes(b.age)
-      return aTime - bTime // Newest first (lowest time = newest)
-      })
+    // FAST sort - in-place for speed, then slice
+    filteredTokens.sort((a, b) => {
+      return (b.creationTime || 0) - (a.creationTime || 0) // Descending (newest first)
+    })
     
-    return sortedTokens.slice(0, 30)
-  }, [realTokens, bonkFunTokens, moonItTokens, applyFilters, parseTimeToMinutes])
+    // Return slice with new references - limit to 30 for performance
+    const result = new Array(Math.min(30, filteredTokens.length))
+    for (let i = 0; i < result.length; i++) {
+      result[i] = { ...filteredTokens[i] }
+    }
+    return result
+  })()
+
+  // Live-updated graduating tokens with real-time age calculation
+  // STABLE: Deduplicate and preserve tokens to prevent disappearing
+  const graduatingTokensWithLiveAge = useMemo(() => {
+    // Include mcTokens (pump.fun MC tokens) for "about to graduate" section
+    // Priority: mcTokens (pump.fun - most live) > solanaTrackerGraduatingTokens > others
+    // Process in reverse order so higher priority sources overwrite lower priority ones
+    const allTokens = [...moonItGraduatedTokens, ...bonkFunGraduatedTokens, ...migratedTokens, ...graduatedTokens, ...solanaTrackerGraduatingTokens, ...mcTokens]
+    
+    // FAST deduplication - use Map for O(1) lookups, preserve latest data
+    const tokenMap = new Map<string, TrenchesToken>()
+    
+    // Single pass deduplication - later tokens (higher priority) overwrite earlier ones
+    for (let i = 0; i < allTokens.length; i++) {
+      const token = allTokens[i]
+      const tokenId = token.coinMint || token.id || token.contractAddress || ''
+      const uniqueKey = `${token.platform}-${tokenId}`
+      tokenMap.set(uniqueKey, token) // Always overwrite - latest data wins
+    }
+    
+    // Convert Map to array - pre-allocate for speed
+    const deduplicatedTokens = new Array(tokenMap.size)
+    let idx = 0
+    for (const token of tokenMap.values()) {
+      deduplicatedTokens[idx++] = token
+    }
+    
+    // Update ages based on currentTime and creationTime
+    // Preserve _updateTimestamp to force React updates
+    const now = currentTime
+    const updatedTokens = new Array(deduplicatedTokens.length)
+    
+    for (let i = 0; i < deduplicatedTokens.length; i++) {
+      const token = deduplicatedTokens[i]
+      const updateTimestamp = (token as any)._updateTimestamp || now
+      
+      if (token.creationTime) {
+        const diff = currentTime - token.creationTime
+        const seconds = Math.floor(diff / 1000)
+        const minutes = Math.floor(seconds / 60)
+        const hours = Math.floor(minutes / 60)
+        const days = Math.floor(hours / 24)
+        
+        let age = ''
+        if (days > 0) age = `${days}d`
+        else if (hours > 0) age = `${hours}h`
+        else if (minutes > 0) age = `${minutes}m`
+        else age = `${seconds}s`
+        
+        updatedTokens[i] = { ...token, age, _updateTimestamp: updateTimestamp }
+      } else {
+        updatedTokens[i] = { ...token, _updateTimestamp: updateTimestamp }
+      }
+    }
+    
+    return updatedTokens
+  }, [mcTokens, solanaTrackerGraduatingTokens, graduatedTokens, migratedTokens, bonkFunGraduatedTokens, moonItGraduatedTokens, currentTime])
 
   const mcCategoryTokens = useMemo(() => {
-    // Focus on graduating/migrating tokens, not market cap
-    const combinedGraduatingTokens = [...solanaTrackerGraduatingTokens, ...graduatedTokens, ...migratedTokens, ...bonkFunGraduatedTokens, ...moonItGraduatedTokens]
-    console.log('🔍 GRADUATING tokens - combined:', combinedGraduatingTokens.length, 'solanaTrackerGraduating:', solanaTrackerGraduatingTokens.length, 'graduated:', graduatedTokens.length, 'migrated:', migratedTokens.length, 'bonkFunGraduated:', bonkFunGraduatedTokens.length, 'moonItGraduated:', moonItGraduatedTokens.length)
+    // STABLE: Focus on graduating/migrating tokens with stable sorting
+    if (graduatingTokensWithLiveAge.length === 0) {
+      return []
+    }
     
-    const filteredGraduatingTokens = applyFilters(combinedGraduatingTokens)
-    console.log('🔍 GRADUATING tokens - after filtering:', filteredGraduatingTokens.length)
+    // Apply filters - single pass
+    const filteredGraduatingTokens = applyFilters(graduatingTokensWithLiveAge)
     
-    // Sort by time (newest first) for graduating tokens
-    return filteredGraduatingTokens
+    // STABLE sort: Sort by market cap (highest first) or bonding curve progress
+    // This ensures tokens don't disappear when their age changes
+    const sorted = filteredGraduatingTokens
+      .map(token => ({ ...token })) // Create new objects to ensure React detects changes
       .sort((a, b) => {
-        const aTime = parseTimeToMinutes(a.age)
-        const bTime = parseTimeToMinutes(b.age)
-        return aTime - bTime // Newest first
+        // Primary sort: Market cap (highest first) - most stable
+        const aMc = parseFloat((a.mc || '0').replace(/[$,]/g, '')) || 0
+        const bMc = parseFloat((b.mc || '0').replace(/[$,]/g, '')) || 0
+        if (bMc !== aMc) return bMc - aMc
+        
+        // Secondary sort: Bonding curve progress (highest first)
+        const aProgress = a.bondingCurveProgress || 0
+        const bProgress = b.bondingCurveProgress || 0
+        if (bProgress !== aProgress) return bProgress - aProgress
+        
+        // Tertiary sort: Creation time (newest first) for stability
+        return (b.creationTime || 0) - (a.creationTime || 0)
       })
       .slice(0, 30)
-  }, [solanaTrackerGraduatingTokens, graduatedTokens, migratedTokens, bonkFunGraduatedTokens, moonItGraduatedTokens, applyFilters, parseTimeToMinutes])
+    
+    // Always create new array with update timestamps to force React updates
+    const now = Date.now()
+    return sorted.map(token => ({ 
+      ...token, 
+      _updateTimestamp: (token as any)._updateTimestamp || now 
+    }))
+  }, [graduatingTokensWithLiveAge, applyFilters])
 
   const graduatedCategoryTokens = useMemo(() => {
     const combinedGraduatedTokens = [...solanaTrackerGraduatedTokens, ...migratedTokens, ...bonkFunGraduatedTokens, ...moonItGraduatedTokens]
@@ -1608,64 +2296,30 @@ export function TrenchesPage() {
 
 
       {/* Three Column Layout */}
-      {(() => {
-        const columns = echoSettings?.layout?.columns || 'Compact'
-        const columnSpacing = columns === 'Spaced' ? 'px-4' : 'px-1'
-        const showNew = echoSettings?.layout?.showNew !== false
-        const showAlmostBonded = echoSettings?.layout?.showAlmostBonded !== false
-        const showMigrated = echoSettings?.layout?.showMigrated !== false
-        
-        // Calculate visible columns
-        const visibleColumns = [showNew, showAlmostBonded, showMigrated].filter(Boolean).length
-        
-        // Responsive grid classes based on visible columns
-        let gridCols = 'grid-cols-1' // Mobile always single column
-        let containerClass = 'w-full'
-        
-        if (visibleColumns === 3) {
-          gridCols = 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
-          containerClass = 'w-full'
-        } else if (visibleColumns === 2) {
-          gridCols = 'grid-cols-1 sm:grid-cols-2'
-          containerClass = 'w-full'
-        } else if (visibleColumns === 1) {
-          gridCols = 'grid-cols-1'
-          // Single column: center it with max-width for better appearance
-          containerClass = 'w-full max-w-2xl mx-auto'
-        }
-        
-        return (
-          <div className={`grid ${gridCols} gap-2 items-start ${containerClass}`}>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 items-start w-full">
         {selectedChain === 'solana' ? (
           <>
-                {showNew && (
-                  <div className={columnSpacing}>
-              <TrenchesColumn 
-                title="New" 
+            <div className="px-1">
+              <TrenchesColumn
+                title="New"
                 tokens={newTokens} 
                 onFiltersChange={handleFiltersChange}
                 initialFilters={filters}
                 selectedChain={selectedChain}
                 echoSettings={echoSettings}
-                      currentTime={currentTime}
               />
             </div>
-                )}
-                {showAlmostBonded && (
-                  <div className={columnSpacing}>
+            <div>
               <TrenchesColumn 
-                      title="Nearly There" 
+                title="% MC" 
                 tokens={mcCategoryTokens} 
                 onFiltersChange={handleFiltersChange}
                 initialFilters={filters}
                 selectedChain={selectedChain}
                 echoSettings={echoSettings}
-                      currentTime={currentTime}
               />
             </div>
-                )}
-                {showMigrated && (
-                  <div className={columnSpacing}>
+            <div className="px-1">
               <TrenchesColumn 
                 title="Migrated" 
                 tokens={graduatedCategoryTokens} 
@@ -1673,15 +2327,12 @@ export function TrenchesPage() {
                 initialFilters={filters}
                 selectedChain={selectedChain}
                 echoSettings={echoSettings}
-                      currentTime={currentTime}
               />
             </div>
-                )}
           </>
         ) : (
           <>
-                {showNew && (
-                  <div className={columnSpacing}>
+            <div className="px-1">
               <TrenchesColumn 
                 title="New" 
                 tokens={bscRealTokens} 
@@ -1689,25 +2340,19 @@ export function TrenchesPage() {
                 initialFilters={filters}
                 selectedChain={selectedChain}
                 echoSettings={echoSettings}
-                      currentTime={currentTime}
               />
             </div>
-                )}
-                {showAlmostBonded && (
-                  <div className={columnSpacing}>
+            <div>
               <TrenchesColumn 
-                      title="Nearly There" 
+                title="% MC" 
                 tokens={bscMcTokens} 
                 onFiltersChange={handleFiltersChange}
                 initialFilters={filters}
                 selectedChain={selectedChain}
                 echoSettings={echoSettings}
-                      currentTime={currentTime}
               />
             </div>
-                )}
-                {showMigrated && (
-                  <div className={columnSpacing}>
+            <div className="px-1">
               <TrenchesColumn 
                 title="Migrated" 
                 tokens={bscGraduatedTokens} 
@@ -1715,15 +2360,11 @@ export function TrenchesPage() {
                 initialFilters={filters}
                 selectedChain={selectedChain}
                 echoSettings={echoSettings}
-                      currentTime={currentTime}
               />
             </div>
-                )}
           </>
         )}
       </div>
-        )
-      })()}
 
       {/* Customize Modal */}
       <EchoCustomizeModal 
@@ -1736,3 +2377,4 @@ export function TrenchesPage() {
     </div>
   )
 }
+
