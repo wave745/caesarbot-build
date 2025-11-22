@@ -295,7 +295,9 @@ export function useSolanaTrackerWebSocket(options: UseSolanaTrackerWebSocketOpti
         const filtered: any[] = []
         for (let i = 0; i < tokenData.length; i++) {
           const item = tokenData[i]
-          const isGraduating = item.pools?.[0]?.bondingCurveProgress && item.pools[0].bondingCurveProgress > 90
+          const bondingCurveProgress = item.pools?.[0]?.bondingCurveProgress || 0
+          // Only include tokens that are graduating (90-99%) but NOT already graduated (>= 100%)
+          const isGraduating = bondingCurveProgress > 90 && bondingCurveProgress < 100
           if (isGraduating && !item.graduationDate) {
             filtered.push(item)
           }

@@ -5,11 +5,11 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const limit = searchParams.get('limit') || '30'
     
-    // Proxy request to pump.fun API sorted by marketCap for "about to graduate" tokens
-    const url = `https://advanced-api-v2.pump.fun/coins/list?sortBy=marketCap`
+    // Proxy request to pump.fun API for graduated tokens
+    const url = `https://advanced-api-v2.pump.fun/coins/graduated?sortBy=creationTime`
     
     if (process.env.NODE_ENV === 'development') {
-      console.log('🔍 Fetching pump.fun MC tokens from:', url)
+      console.log('🔍 Fetching pump.fun graduated tokens from:', url)
     }
     
     const response = await fetch(url, {
@@ -23,11 +23,11 @@ export async function GET(request: NextRequest) {
     })
     
     if (!response.ok) {
-      console.warn('⚠️ Pump.fun MC API returned error:', response.status)
+      console.warn('⚠️ Pump.fun Graduated API returned error:', response.status)
       return NextResponse.json(
         { 
           success: false, 
-          error: `Pump.fun MC API returned status ${response.status}`,
+          error: `Pump.fun Graduated API returned status ${response.status}`,
           coins: []
         },
         { status: response.status }
@@ -37,43 +37,15 @@ export async function GET(request: NextRequest) {
     const data = await response.json()
     
     if (process.env.NODE_ENV === 'development') {
-      console.log('✅ Pump.fun MC API response:', {
+      console.log('✅ Pump.fun Graduated API response:', {
         hasCoins: !!data.coins,
         coinsLength: data.coins?.length || 0,
         hasPagination: !!data.pagination
       })
     }
     
-    // Filter tokens with high market cap (about to graduate) - typically > 80% bonding curve progress
-    // EXCLUDE already-graduated tokens (bondingCurveProgress >= 100 or graduationDate in past)
-    let filteredCoins = data.coins || []
-    if (Array.isArray(filteredCoins)) {
-      const now = Date.now()
-      // Filter for tokens that are close to graduation (high bonding curve progress or high market cap)
-      // BUT exclude tokens that have already graduated
-      filteredCoins = filteredCoins.filter((coin: any) => {
-        const bondingCurveProgress = coin.bondingCurveProgress || 0
-        const marketCap = coin.marketCap || 0
-        const graduationDate = coin.graduationDate || null
-        
-        // EXCLUDE tokens that have already graduated
-        // 1. Bonding curve progress >= 100 means already graduated
-        if (bondingCurveProgress >= 100) {
-          return false
-        }
-        
-        // 2. If graduationDate exists and is in the past, token has already graduated
-        if (graduationDate && typeof graduationDate === 'number' && graduationDate < now) {
-          return false
-        }
-        
-        // Include tokens with > 50% bonding curve progress or market cap > $10k
-        // BUT only if they haven't graduated yet
-        return bondingCurveProgress > 50 || marketCap > 10000
-      })
-    }
-    
     // Limit results if needed
+    let filteredCoins = data.coins || []
     if (filteredCoins && Array.isArray(filteredCoins)) {
       const limitNum = parseInt(limit)
       if (limitNum > 0 && filteredCoins.length > limitNum) {
@@ -95,7 +67,7 @@ export async function GET(request: NextRequest) {
       }
     })
   } catch (error) {
-    console.error('Error fetching pump.fun MC coins:', error)
+    console.error('Error fetching pump.fun graduated coins:', error)
     return NextResponse.json(
       { 
         success: false, 
