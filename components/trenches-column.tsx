@@ -675,38 +675,76 @@ function TrenchesTokenCard({ token, solAmount, echoSettings }: { token: Trenches
       <div className="flex items-center justify-between mt-3">
         {/* Engagement Metrics */}
         <div className="flex items-center gap-1 text-xs">
-          <div className="flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full border border-gray-400/30 min-w-fit">
-            <Image 
-              src="/icons/ui/top10H-icon.svg" 
-              alt="Top 10 Holders" 
-              width={10} 
-              height={10} 
-              className="opacity-80 brightness-0 invert"
-            />
-            <span className="text-green-400 text-xs">+{(token.top10HoldersPercentage ?? token.top10Holders ?? 0).toFixed(1)}%</span>
-          </div>
-          <div className="flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full border border-gray-400/30 min-w-fit">
-            <Image 
-              src="/icons/ui/dev-holding-icon.svg" 
-              alt="Dev Holding" 
-              width={10} 
-              height={10} 
-              className="opacity-80 brightness-0 invert"
-            />
-            <span className="text-green-400 text-xs">
-              {token.devSold ? 'DS' : `${(token.devPercentage ?? token.devHoldingsPercentage ?? 0).toFixed(1)}%`}
-            </span>
-          </div>
-          <div className="flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full border border-gray-400/30 min-w-fit">
-            <Image 
-              src="/icons/ui/snipers-icon.svg" 
-              alt="Snipers" 
-              width={10} 
-              height={10} 
-              className="opacity-80 brightness-0 invert"
-            />
-            <span className="text-white text-xs">{(token.snipersTotalPercentage ?? token.snipers ?? 0).toFixed(1)}%</span>
-          </div>
+          {(() => {
+            const top10HoldersValue = token.top10HoldersPercentage ?? token.top10Holders ?? 0
+            // >= 16%: red, < 16%: green
+            const isHigh = top10HoldersValue >= 16
+            const iconStyle = isHigh
+              ? { filter: 'brightness(0) saturate(100%) invert(27%) sepia(95%) saturate(2878%) hue-rotate(346deg) brightness(104%) contrast(97%)' } // Red filter
+              : { filter: 'brightness(0) saturate(100%) invert(67%) sepia(61%) saturate(456%) hue-rotate(87deg) brightness(118%) contrast(119%)' } // Green filter
+            const textColorClass = isHigh ? "text-red-400" : "text-green-400"
+            
+            return (
+              <div className="flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full border border-gray-400/30 min-w-fit">
+                <Image 
+                  src="/icons/ui/top10H-icon.svg" 
+                  alt="Top 10 Holders" 
+                  width={10} 
+                  height={10} 
+                  className="opacity-80"
+                  style={iconStyle}
+                />
+                <span className={`${textColorClass} text-xs`}>+{top10HoldersValue.toFixed(1)}%</span>
+              </div>
+            )
+          })()}
+          {(() => {
+            // Green when dev is holding, blue when dev has sold
+            const isDevSold = token.devSold
+            const iconStyle = isDevSold
+              ? { filter: 'brightness(0) saturate(100%) invert(48%) sepia(79%) saturate(2476%) hue-rotate(194deg) brightness(102%) contrast(101%)' } // Blue filter
+              : { filter: 'brightness(0) saturate(100%) invert(67%) sepia(61%) saturate(456%) hue-rotate(87deg) brightness(118%) contrast(119%)' } // Green filter
+            const textColorClass = isDevSold ? "text-blue-400" : "text-green-400"
+            
+            return (
+              <div className="flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full border border-gray-400/30 min-w-fit">
+                <Image 
+                  src="/icons/ui/dev-holding-icon.svg" 
+                  alt="Dev Holding" 
+                  width={10} 
+                  height={10} 
+                  className="opacity-80"
+                  style={iconStyle}
+                />
+                <span className={`${textColorClass} text-xs`}>
+                  {isDevSold ? 'DS' : `${(token.devPercentage ?? token.devHoldingsPercentage ?? 0).toFixed(1)}%`}
+                </span>
+              </div>
+            )
+          })()}
+          {(() => {
+            const snipersValue = token.snipersTotalPercentage ?? token.snipers ?? 0
+            // <= 5%: green, > 5%: red
+            const isHigh = snipersValue > 5
+            const iconStyle = isHigh
+              ? { filter: 'brightness(0) saturate(100%) invert(27%) sepia(95%) saturate(2878%) hue-rotate(346deg) brightness(104%) contrast(97%)' } // Red filter
+              : { filter: 'brightness(0) saturate(100%) invert(67%) sepia(61%) saturate(456%) hue-rotate(87deg) brightness(118%) contrast(119%)' } // Green filter
+            const textColorClass = isHigh ? "text-red-400" : "text-green-400"
+            
+            return (
+              <div className="flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full border border-gray-400/30 min-w-fit">
+                <Image 
+                  src="/icons/ui/snipers-icon.svg" 
+                  alt="Snipers" 
+                  width={10} 
+                  height={10} 
+                  className="opacity-80"
+                  style={iconStyle}
+                />
+                <span className={`${textColorClass} text-xs`}>{snipersValue.toFixed(1)}%</span>
+              </div>
+            )
+          })()}
           <div className="flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full border border-gray-400/30 min-w-fit">
             <Image 
               src="/icons/ui/insiders-icon.svg" 
