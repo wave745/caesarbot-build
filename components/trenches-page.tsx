@@ -2311,7 +2311,7 @@ export function TrenchesPage() {
             </div>
             <div>
               <TrenchesColumn 
-                title="% MC" 
+                title="Nearly there" 
                 tokens={mcCategoryTokens} 
                 onFiltersChange={handleFiltersChange}
                 initialFilters={filters}
