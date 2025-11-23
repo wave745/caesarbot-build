@@ -368,7 +368,7 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
 
       {/* Tokens List */}
       <div 
-        className="flex flex-col divide-y divide-zinc-800 overflow-y-auto max-h-[85vh] custom-scrollbar"
+        className="flex flex-col divide-y divide-zinc-800 overflow-y-auto overflow-x-visible max-h-[85vh] custom-scrollbar"
         style={{
           scrollbarWidth: 'thin',
           scrollbarColor: '#18181b #09090b',
@@ -672,9 +672,9 @@ function TrenchesTokenCard({ token, solAmount, echoSettings }: { token: Trenches
       </div>
 
       {/* Bottom Row: Engagement Metrics and Buy Button */}
-      <div className="flex items-center justify-between mt-3">
+      <div className="flex items-center justify-between mt-3 overflow-visible">
         {/* Engagement Metrics */}
-        <div className="flex items-center gap-1 text-xs">
+        <div className="flex items-center gap-1 text-xs overflow-visible">
           {(() => {
             const top10HoldersValue = token.top10HoldersPercentage ?? token.top10Holders ?? 0
             // >= 16%: red, < 16%: green
@@ -685,7 +685,7 @@ function TrenchesTokenCard({ token, solAmount, echoSettings }: { token: Trenches
             const textColorClass = isHigh ? "text-red-400" : "text-green-400"
             
             return (
-              <div className="flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full border border-gray-400/30 min-w-fit">
+              <div className="relative group flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full border border-gray-400/30 min-w-fit">
                 <Image 
                   src="/icons/ui/top10H-icon.svg" 
                   alt="Top 10 Holders" 
@@ -695,6 +695,10 @@ function TrenchesTokenCard({ token, solAmount, echoSettings }: { token: Trenches
                   style={iconStyle}
                 />
                 <span className={`${textColorClass} text-xs`}>+{top10HoldersValue.toFixed(1)}%</span>
+                {/* Tooltip */}
+                <div className="absolute top-full left-0 mt-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-none whitespace-nowrap z-[9999] pointer-events-none" style={{ willChange: 'opacity' }}>
+                  Top 10 holders
+                </div>
               </div>
             )
           })()}
@@ -707,7 +711,7 @@ function TrenchesTokenCard({ token, solAmount, echoSettings }: { token: Trenches
             const textColorClass = isDevSold ? "text-blue-400" : "text-green-400"
             
             return (
-              <div className="flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full border border-gray-400/30 min-w-fit">
+              <div className="relative group flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full border border-gray-400/30 min-w-fit">
                 <Image 
                   src="/icons/ui/dev-holding-icon.svg" 
                   alt="Dev Holding" 
@@ -719,6 +723,10 @@ function TrenchesTokenCard({ token, solAmount, echoSettings }: { token: Trenches
                 <span className={`${textColorClass} text-xs`}>
                   {isDevSold ? 'DS' : `${(token.devPercentage ?? token.devHoldingsPercentage ?? 0).toFixed(1)}%`}
                 </span>
+                {/* Tooltip */}
+                <div className="absolute top-full left-0 mt-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-none whitespace-nowrap z-[9999] pointer-events-none" style={{ willChange: 'opacity' }}>
+                  Dev holding
+                </div>
               </div>
             )
           })()}
@@ -732,7 +740,7 @@ function TrenchesTokenCard({ token, solAmount, echoSettings }: { token: Trenches
             const textColorClass = isHigh ? "text-red-400" : "text-green-400"
             
             return (
-              <div className="flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full border border-gray-400/30 min-w-fit">
+              <div className="relative group flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full border border-gray-400/30 min-w-fit">
                 <Image 
                   src="/icons/ui/snipers-icon.svg" 
                   alt="Snipers" 
@@ -742,10 +750,14 @@ function TrenchesTokenCard({ token, solAmount, echoSettings }: { token: Trenches
                   style={iconStyle}
                 />
                 <span className={`${textColorClass} text-xs`}>{snipersValue.toFixed(1)}%</span>
+                {/* Tooltip */}
+                <div className="absolute top-full left-0 mt-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-none whitespace-nowrap z-[9999] pointer-events-none" style={{ willChange: 'opacity' }}>
+                  Snipers
+                </div>
               </div>
             )
           })()}
-          <div className="flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full border border-gray-400/30 min-w-fit">
+          <div className="relative group flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full border border-gray-400/30 min-w-fit">
             <Image 
               src="/icons/ui/insiders-icon.svg" 
               alt="Insiders" 
@@ -754,6 +766,10 @@ function TrenchesTokenCard({ token, solAmount, echoSettings }: { token: Trenches
               className="opacity-80 brightness-0 invert"
             />
             <span className="text-white text-xs">{(token.insidersTotalPercentage ?? token.insiders ?? 0).toFixed(1)}%</span>
+            {/* Tooltip */}
+            <div className="absolute top-full left-0 mt-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-none whitespace-nowrap z-[9999] pointer-events-none" style={{ willChange: 'opacity' }}>
+              Insiders
+            </div>
           </div>
         </div>
 
