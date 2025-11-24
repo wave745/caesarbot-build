@@ -8,8 +8,8 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameMont
 interface PNLCalendarModalProps {
   isOpen: boolean
   onClose: () => void
-  currency?: "SOL" | "USD"
-  onCurrencyChange?: (currency: "SOL" | "USD") => void
+  currency?: "SOL" | "BNB" | "USD"
+  onCurrencyChange?: (currency: "SOL" | "BNB" | "USD") => void
   onDayClick?: (date: Date) => void
   onMonthlyPNLClick?: (month: Date) => void
 }
@@ -28,10 +28,9 @@ export function PNLCalendarModal({
   onMonthlyPNLClick
 }: PNLCalendarModalProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date())
-  const [selectedCurrency, setSelectedCurrency] = useState<"SOL" | "USD">(currency)
+  const [selectedCurrency, setSelectedCurrency] = useState<"SOL" | "BNB" | "USD">(currency)
 
-  const handleCurrencySwitch = () => {
-    const newCurrency = selectedCurrency === "SOL" ? "USD" : "SOL"
+  const handleCurrencySwitch = (newCurrency: "SOL" | "BNB" | "USD") => {
     setSelectedCurrency(newCurrency)
     onCurrencyChange?.(newCurrency)
   }
@@ -96,7 +95,7 @@ export function PNLCalendarModal({
   }
 
   const formatPNLValue = (pnl: number): string => {
-    if (selectedCurrency === "SOL") {
+    if (selectedCurrency === "SOL" || selectedCurrency === "BNB") {
       return pnl === 0 ? "0" : `${pnl.toFixed(4)}`
     } else {
       return pnl === 0 ? "$0" : `$${pnl.toFixed(2)}`
@@ -114,9 +113,47 @@ export function PNLCalendarModal({
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-[#282828]">
-          <h2 className="text-base sm:text-lg font-semibold text-white">
-            PNL Calendar ({selectedCurrency === "SOL" ? "Solana" : "USD"})
-          </h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-base sm:text-lg font-semibold text-white">
+              PNL Calendar
+            </h2>
+            {/* Currency Logos */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handleCurrencySwitch("SOL")}
+                className={`p-1.5 rounded-lg transition-all ${
+                  selectedCurrency === "SOL"
+                    ? "bg-[#1a1a1a] ring-2 ring-yellow-500/50"
+                    : "hover:bg-[#1a1a1a] opacity-60 hover:opacity-100"
+                }`}
+                title="Switch to Solana"
+              >
+                <Image 
+                  src="/sol-logo.png" 
+                  alt="Solana" 
+                  width={20} 
+                  height={20} 
+                  className="rounded"
+                />
+              </button>
+              <button
+                onClick={() => handleCurrencySwitch("BNB")}
+                className={`p-1.5 rounded-lg transition-all ${
+                  selectedCurrency === "BNB"
+                    ? "bg-[#1a1a1a] ring-2 ring-yellow-500/50"
+                    : "hover:bg-[#1a1a1a] opacity-60 hover:opacity-100"
+                }`}
+                title="Switch to BNB"
+              >
+                <Image 
+                  src="/bnb-chain-binance-smart-chain-logo.svg" 
+                  alt="BNB Chain" 
+                  width={20} 
+                  height={20} 
+                />
+              </button>
+            </div>
+          </div>
           <div className="flex items-center gap-3">
             {/* Month Navigation */}
             <div className="flex items-center gap-2">
@@ -138,9 +175,13 @@ export function PNLCalendarModal({
             </div>
             {/* Currency Switch */}
             <button
-              onClick={handleCurrencySwitch}
+              onClick={() => {
+                // Switch to USD if on SOL or BNB, switch to SOL if on USD
+                const newCurrency = selectedCurrency === "USD" ? "SOL" : "USD"
+                handleCurrencySwitch(newCurrency)
+              }}
               className="p-2 hover:bg-[#1a1a1a] rounded-lg transition-colors"
-              title={`Switch currency to ${selectedCurrency === "SOL" ? "USD" : "SOL"}`}
+              title={`Switch to ${selectedCurrency === "USD" ? "SOL" : "USD"}`}
             >
               <Image 
                 src="/icons/ui/switchcurrency-icon.svg" 
@@ -217,6 +258,14 @@ export function PNLCalendarModal({
                         width={12} 
                         height={12} 
                         className="rounded"
+                      />
+                    )}
+                    {selectedCurrency === "BNB" && (
+                      <Image 
+                        src="/bnb-chain-binance-smart-chain-logo.svg" 
+                        alt="BNB Chain" 
+                        width={12} 
+                        height={12} 
                       />
                     )}
                     <span className={`text-xs font-medium ${pnlTextColor}`}>

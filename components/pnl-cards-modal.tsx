@@ -386,7 +386,7 @@ export function PNLCardsModal({
     >
       <div 
         ref={cardRef}
-        className="bg-[#111111] border border-[#282828] rounded-lg shadow-2xl w-full max-w-md overflow-hidden flex flex-col relative"
+        className="bg-[#111111] border border-[#282828] rounded-lg shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col relative"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Background Image */}
@@ -416,16 +416,18 @@ export function PNLCardsModal({
 
         {/* Content Overlay */}
         <div className="content-overlay relative z-10 flex flex-col h-full">
-          {/* Header */}
-          <div className="pnl-header flex items-center justify-between px-4 py-3 border-b border-[#282828]/50 bg-[#111111]/80 backdrop-blur-sm">
-          <h2 className="text-base font-semibold bg-gradient-to-r from-yellow-500 to-orange-500 bg-clip-text text-transparent">CaesarX</h2>
+          {/* Floating CaesarX Logo */}
+          <h2 className="absolute top-4 left-4 text-base font-semibold bg-gradient-to-r from-yellow-500 to-orange-500 bg-clip-text text-transparent z-20">
+            CaesarX
+          </h2>
+          
+          {/* Floating Close Button */}
           <button
             onClick={onClose}
-            className="p-2 hover:bg-[#1a1a1a] rounded-lg transition-colors"
+            className="absolute top-4 right-4 p-2 hover:bg-[#1a1a1a]/80 rounded-lg transition-colors z-20"
           >
             <X className="w-5 h-5 text-gray-400 hover:text-white" />
           </button>
-        </div>
 
           {/* Content - This is what gets captured for download */}
           <div className="card-content p-6 flex flex-col gap-6">

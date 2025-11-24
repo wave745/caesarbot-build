@@ -15,7 +15,7 @@ export function PortfolioContent() {
   const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false)
   const [isCardsModalOpen, setIsCardsModalOpen] = useState(false)
   const [isMonthlyCard, setIsMonthlyCard] = useState(false)
-  const [selectedCurrency, setSelectedCurrency] = useState<"SOL" | "USD">("SOL")
+  const [selectedCurrency, setSelectedCurrency] = useState<"SOL" | "BNB" | "USD">("SOL")
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const [selectedMonth, setSelectedMonth] = useState<Date>(new Date())
 
