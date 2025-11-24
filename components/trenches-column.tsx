@@ -387,7 +387,7 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
             const tokenId = token.coinMint || token.id || token.contractAddress || `unknown-${index}`
             const stableKey = `${token.platform}-${tokenId}`
             return (
-              <TrenchesTokenCard key={stableKey} token={token} solAmount={solAmount} echoSettings={echoSettings} />
+              <TrenchesTokenCard key={stableKey} token={token} solAmount={solAmount} echoSettings={echoSettings} isFirstToken={index === 0} />
             )
           })
         )}
@@ -406,7 +406,13 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
 }
 
 // REMOVED memo() wrapper - trading platform needs continuous live updates, no memoization blocking
-function TrenchesTokenCard({ token, solAmount, echoSettings }: { token: TrenchesToken; solAmount: string; echoSettings?: any }) {
+function TrenchesTokenCard({ token, solAmount, echoSettings, isFirstToken = false }: { token: TrenchesToken; solAmount: string; echoSettings?: any; isFirstToken?: boolean }) {
+  const [isHovered, setIsHovered] = useState(false)
+  const [previewPosition, setPreviewPosition] = useState<'above' | 'below'>('below')
+  const [previewCoords, setPreviewCoords] = useState<{ top?: number; bottom?: number; left: number }>({ left: 0 })
+  const imageRef = useRef<HTMLDivElement>(null)
+  const cardRef = useRef<HTMLDivElement>(null)
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'migrated': return 'border-red-500/60'
@@ -431,15 +437,111 @@ function TrenchesTokenCard({ token, solAmount, echoSettings }: { token: Trenches
     return 'hover:bg-zinc-900/40'
   }
 
+  // Calculate preview position based on viewport position - optimized for instant response
+  useEffect(() => {
+    if (isHovered && imageRef.current && cardRef.current) {
+      let rafId: number | null = null
+      
+      const updatePosition = () => {
+        if (!imageRef.current || !cardRef.current) return
+        
+        const rect = imageRef.current.getBoundingClientRect()
+        const cardRect = cardRef.current.getBoundingClientRect()
+        const viewportHeight = window.innerHeight
+        const viewportWidth = window.innerWidth
+        const imageBottom = rect.bottom
+        const imageLeft = rect.left
+        const cardTop = cardRect.top
+        const cardBottom = cardRect.bottom
+        
+        // Preview image size
+        const previewHeight = 300
+        const previewWidth = 300
+        
+        // Calculate available space
+        const spaceBelow = viewportHeight - imageBottom
+        const minSpacing = 20
+        
+        // Determine position: prefer below if there's enough space, otherwise above
+        let position: 'above' | 'below' = 'below'
+        let top: number | undefined
+        let bottom: number | undefined
+        
+        // Check if this is a top token (first visible token)
+        const isTopToken = isFirstToken || cardTop < 300
+        
+        if (isTopToken) {
+          // First token (top) - always show below, use imageBottom for closer positioning
+          position = 'below'
+          top = imageBottom
+        } else if (spaceBelow < previewHeight + minSpacing) {
+          // Not enough space below, show above
+          position = 'above'
+          bottom = viewportHeight - rect.top + 8
+        } else {
+          // For other tokens, show below if there's space
+          position = 'below'
+          top = cardBottom + 12
+        }
+        
+        // Calculate left with bounds checking
+        const left = Math.max(8, Math.min(imageLeft, viewportWidth - previewWidth - 8))
+        
+        setPreviewPosition(position)
+        setPreviewCoords({ top, bottom, left })
+      }
+      
+      // Immediate position calculation - no delay
+      updatePosition()
+      
+      // Optimized scroll/resize handler - only throttle scroll, not initial render
+      const handleScrollResize = () => {
+        if (rafId !== null) return
+        rafId = requestAnimationFrame(() => {
+          updatePosition()
+          rafId = null
+        })
+      }
+      
+      window.addEventListener('scroll', handleScrollResize, { passive: true })
+      window.addEventListener('resize', handleScrollResize, { passive: true })
+      
+      return () => {
+        if (rafId !== null) {
+          cancelAnimationFrame(rafId)
+        }
+        window.removeEventListener('scroll', handleScrollResize)
+        window.removeEventListener('resize', handleScrollResize)
+      }
+    } else {
+      // Reset coordinates when not hovered - instant
+      setPreviewCoords({ left: 0 })
+    }
+  }, [isHovered, isFirstToken])
+
+  const imageUrl = token.image || `https://ui-avatars.com/api/?name=${token.symbol}&background=6366f1&color=fff&size=64`
+
   return (
-    <div className={`p-2 transition-all cursor-pointer min-h-[140px] w-full ${getBackgroundColor()}`}>
+    <div 
+      ref={cardRef}
+      className={`p-2 transition-all cursor-pointer min-h-[140px] w-full relative ${getBackgroundColor()}`}
+    >
       <div className="flex items-start gap-3 h-full">
         {/* Left: Large Token Icon and Contract Address */}
         <div className="flex flex-col items-start">
-          <div className="relative">
-            <div className={`w-16 h-16 rounded-lg overflow-hidden border ${getStatusColor(token.status)}`}>
+          <div 
+            ref={imageRef}
+            className="relative"
+            onMouseEnter={() => {
+              setIsHovered(true)
+            }}
+            onMouseLeave={() => {
+              setIsHovered(false)
+            }}
+          >
+            <div className={`w-16 h-16 rounded-lg overflow-hidden border ${getStatusColor(token.status)} transition-transform duration-300 ${isHovered ? 'scale-105' : 'scale-100'}`}>
               <img
-                src={token.image || `https://ui-avatars.com/api/?name=${token.symbol}&background=6366f1&color=fff&size=64`}
+                src={imageUrl}
                 alt={token.name}
                 className="w-full h-full object-cover"
                 onError={(e) => {
@@ -462,6 +564,50 @@ function TrenchesTokenCard({ token, solAmount, echoSettings }: { token: Trenches
                 }}
               />
             </div>
+            
+            {/* Hover Preview Image */}
+            {isHovered && previewCoords.left !== undefined && (previewCoords.top !== undefined || previewCoords.bottom !== undefined) && (
+              <div
+                className="fixed z-[10000] pointer-events-auto"
+                style={{
+                  ...(previewPosition === 'above' 
+                    ? { bottom: `${previewCoords.bottom}px`, left: `${previewCoords.left}px` }
+                    : { top: `${previewCoords.top}px`, left: `${previewCoords.left}px` }
+                  ),
+                  transform: 'translateZ(0)',
+                  willChange: 'transform',
+                  opacity: 1,
+                  transition: 'none' // No transitions for instant response
+                }}
+                onMouseEnter={() => {
+                  setIsHovered(true)
+                }}
+                onMouseLeave={() => {
+                  setIsHovered(false)
+                }}
+              >
+                <div className="relative w-[300px] h-[300px] rounded-xl overflow-hidden shadow-2xl border-2 border-zinc-700/50 bg-zinc-900/95 backdrop-blur-sm">
+                  <img
+                    src={imageUrl}
+                    alt={token.name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement
+                      target.src = `https://ui-avatars.com/api/?name=${token.symbol}&background=6366f1&color=fff&size=350`;
+                    }}
+                  />
+                  {/* Optional: Add overlay with token info */}
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-white font-semibold text-sm">{token.symbol}</p>
+                        <p className="text-zinc-400 text-xs">{token.name}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             
             {/* Pill icon overlay */}
             <div className="absolute -bottom-1 -right-1 w-5 h-5">
@@ -676,7 +822,7 @@ function TrenchesTokenCard({ token, solAmount, echoSettings }: { token: Trenches
         {/* Engagement Metrics */}
         <div className="flex items-center gap-1 text-xs overflow-visible">
           {(() => {
-            const top10HoldersValue = token.top10HoldersPercentage ?? token.top10Holders ?? 0
+            const top10HoldersValue = token.topHoldersPercentage ?? token.top10Holders ?? 0
             // >= 16%: red, < 16%: green
             const isHigh = top10HoldersValue >= 16
             const iconStyle = isHigh
@@ -721,7 +867,7 @@ function TrenchesTokenCard({ token, solAmount, echoSettings }: { token: Trenches
                   style={iconStyle}
                 />
                 <span className={`${textColorClass} text-xs`}>
-                  {isDevSold ? 'DS' : `${(token.devPercentage ?? token.devHoldingsPercentage ?? 0).toFixed(1)}%`}
+                  {isDevSold ? 'DS' : `${(token.devHoldingsPercentage ?? 0).toFixed(1)}%`}
                 </span>
                 {/* Tooltip */}
                 <div className="absolute top-full left-0 mt-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-none whitespace-nowrap z-[9999] pointer-events-none" style={{ willChange: 'opacity' }}>
@@ -731,7 +877,7 @@ function TrenchesTokenCard({ token, solAmount, echoSettings }: { token: Trenches
             )
           })()}
           {(() => {
-            const snipersValue = token.snipersTotalPercentage ?? token.snipers ?? 0
+            const snipersValue = token.sniperOwnedPercentage ?? token.snipers ?? 0
             // <= 5%: green, > 5%: red
             const isHigh = snipersValue > 5
             const iconStyle = isHigh
@@ -765,7 +911,7 @@ function TrenchesTokenCard({ token, solAmount, echoSettings }: { token: Trenches
               height={10} 
               className="opacity-80 brightness-0 invert"
             />
-            <span className="text-white text-xs">{(token.insidersTotalPercentage ?? token.insiders ?? 0).toFixed(1)}%</span>
+            <span className="text-white text-xs">{(token.insiders ?? 0).toFixed(1)}%</span>
             {/* Tooltip */}
             <div className="absolute top-full left-0 mt-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-none whitespace-nowrap z-[9999] pointer-events-none" style={{ willChange: 'opacity' }}>
               Insiders

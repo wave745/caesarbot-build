@@ -1491,7 +1491,7 @@ export function TrenchesPage() {
         }
       } catch (error) {
         if (process.env.NODE_ENV === 'development') {
-          console.warn('Background SOL price update failed:', error)
+        console.warn('Background SOL price update failed:', error)
         }
       } finally {
         isUpdating = false
@@ -1662,8 +1662,8 @@ export function TrenchesPage() {
         const convertedTokens = filteredTokens
           .slice(0, 30)
           .map((token: any, index: number) => 
-            convertSolanaTrackerToToken(token, index, 'new')
-          )
+          convertSolanaTrackerToToken(token, index, 'new')
+        )
           .filter((token: TrenchesToken) => token.platform !== 'pump.fun') // Double filter after conversion
         
         // Only update if WebSocket hasn't provided tokens yet, or if REST API has newer data
@@ -2646,8 +2646,8 @@ export function TrenchesPage() {
         {selectedChain === 'solana' ? (
           <>
             <div className="px-1">
-              <TrenchesColumn
-                title="New"
+              <TrenchesColumn 
+                title="New" 
                 tokens={newTokens} 
                 onFiltersChange={handleFiltersChange}
                 initialFilters={filters}
