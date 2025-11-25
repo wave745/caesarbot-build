@@ -412,6 +412,8 @@ function TrenchesTokenCard({ token, solAmount, echoSettings, isFirstToken = fals
   const [previewCoords, setPreviewCoords] = useState<{ top?: number; bottom?: number; left: number }>({ left: 0 })
   const imageRef = useRef<HTMLDivElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
+  const [isBubbleMapHovered, setIsBubbleMapHovered] = useState(false)
+  const bubbleMapTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -518,6 +520,15 @@ function TrenchesTokenCard({ token, solAmount, echoSettings, isFirstToken = fals
       setPreviewCoords({ left: 0 })
     }
   }, [isHovered, isFirstToken])
+
+  // Cleanup bubble map timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (bubbleMapTimeoutRef.current) {
+        clearTimeout(bubbleMapTimeoutRef.current)
+      }
+    }
+  }, [])
 
   const imageUrl = token.image || `https://ui-avatars.com/api/?name=${token.symbol}&background=6366f1&color=fff&size=64`
 
@@ -831,7 +842,28 @@ function TrenchesTokenCard({ token, solAmount, echoSettings, isFirstToken = fals
             const textColorClass = isHigh ? "text-red-400" : "text-green-400"
             
             return (
-              <div className="relative group flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full border border-gray-400/30 min-w-fit">
+              <div 
+                className="relative group flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full border border-gray-400/30 min-w-fit"
+                onMouseEnter={() => {
+                  if (bubbleMapTimeoutRef.current) {
+                    clearTimeout(bubbleMapTimeoutRef.current)
+                    bubbleMapTimeoutRef.current = null
+                  }
+                  if (token.contractAddress) {
+                    setIsBubbleMapHovered(true)
+                  }
+                }}
+                onMouseLeave={() => {
+                  // Close immediately when cursor leaves Top 10 Holders
+                  // If cursor enters bubble map modal, onMouseEnter will reopen it
+                  if (bubbleMapTimeoutRef.current) {
+                    clearTimeout(bubbleMapTimeoutRef.current)
+                    bubbleMapTimeoutRef.current = null
+                  }
+                  // Direct state update - no delays
+                  setIsBubbleMapHovered(false)
+                }}
+              >
                 <Image 
                   src="/icons/ui/top10H-icon.svg" 
                   alt="Top 10 Holders" 
@@ -931,6 +963,87 @@ function TrenchesTokenCard({ token, solAmount, echoSettings, isFirstToken = fals
           <span className="text-white text-xs">{solAmount}</span>
         </button>
       </div>
+
+      {/* Bubble Map iframe on hover - centered modal */}
+      {isBubbleMapHovered && token.contractAddress && (
+        <div 
+          data-bubble-map
+          className="fixed inset-0 z-[9999] pointer-events-none"
+          style={{ 
+            willChange: 'opacity',
+            transform: 'translateZ(0)',
+            backfaceVisibility: 'hidden'
+          }}
+          onMouseEnter={() => {
+            if (bubbleMapTimeoutRef.current) {
+              clearTimeout(bubbleMapTimeoutRef.current)
+              bubbleMapTimeoutRef.current = null
+            }
+            setIsBubbleMapHovered(true)
+          }}
+          onMouseLeave={() => {
+            // Close immediately when leaving modal
+            if (bubbleMapTimeoutRef.current) {
+              clearTimeout(bubbleMapTimeoutRef.current)
+              bubbleMapTimeoutRef.current = null
+            }
+            setIsBubbleMapHovered(false)
+          }}
+        >
+          {/* Backdrop overlay - closes on click */}
+          <div 
+            className="absolute inset-0 bg-black/50 pointer-events-auto"
+            onClick={() => {
+              if (bubbleMapTimeoutRef.current) {
+                clearTimeout(bubbleMapTimeoutRef.current)
+                bubbleMapTimeoutRef.current = null
+              }
+              setIsBubbleMapHovered(false)
+            }}
+          />
+          {/* Centered bubble map card */}
+          <div 
+            className="absolute bg-gray-900 rounded-lg shadow-2xl pointer-events-auto border-2 border-blue-400/30 overflow-hidden"
+            style={{ 
+              width: '280px', 
+              height: '320px',
+              left: '50%',
+              top: '50%',
+              transform: 'translate(-50%, -50%) translateZ(0)',
+              willChange: 'opacity, transform',
+              backfaceVisibility: 'hidden',
+              perspective: '1000px',
+              transition: 'none',
+              opacity: 1
+            }}
+            onMouseEnter={() => {
+              if (bubbleMapTimeoutRef.current) {
+                clearTimeout(bubbleMapTimeoutRef.current)
+                bubbleMapTimeoutRef.current = null
+              }
+              setIsBubbleMapHovered(true)
+            }}
+            onMouseLeave={() => {
+              // Close immediately when leaving bubble map card
+              if (bubbleMapTimeoutRef.current) {
+                clearTimeout(bubbleMapTimeoutRef.current)
+                bubbleMapTimeoutRef.current = null
+              }
+              setIsBubbleMapHovered(false)
+            }}
+          >
+            <iframe
+              src={`https://iframe.bubblemaps.io/map?address=${token.contractAddress}&chain=solana&partnerId=demo`}
+              style={{
+                width: '100%',
+                height: '100%',
+                border: 'none'
+              }}
+              title="Bubble Map"
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }
