@@ -1033,12 +1033,17 @@ function TrenchesTokenCard({ token, solAmount, echoSettings, isFirstToken = fals
             }}
           >
             <iframe
-              src={`https://iframe.bubblemaps.io/map?address=${token.contractAddress}&chain=solana&partnerId=demo`}
+              src={`https://iframe.bubblemaps.io/map?address=${encodeURIComponent(token.contractAddress)}&chain=solana&partnerId=demo`}
               style={{
                 width: '100%',
                 height: '100%',
                 border: 'none'
               }}
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
               title="Bubble Map"
             />
           </div>
