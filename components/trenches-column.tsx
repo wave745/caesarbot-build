@@ -1,10 +1,11 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { 
   Copy,
-  Zap
+  Zap,
+  Pause
 } from "lucide-react"
 import Image from "next/image"
 import { TrendingFilterModal } from "@/components/trending-filter-modal"
@@ -121,6 +122,12 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
   const [showPresets, setShowPresets] = useState(false)
   const [selectedPreset, setSelectedPreset] = useState("P1")
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false)
+  const [isPaused, setIsPaused] = useState(false)
+  const pausedTokenIdsRef = useRef<Set<string>>(new Set())
+  const previousTokensRef = useRef<TrenchesToken[]>([])
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const tokensListRef = useRef<HTMLDivElement>(null)
+  const isMouseInColumnRef = useRef<boolean>(false)
   const [filters, setFilters] = useState<FilterState>(initialFilters || {
     launchpads: {
       pumpfun: true,
@@ -178,19 +185,64 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
   const columnId = title.toLowerCase().replace(/\s+/g, '-')
   const { sound, volume, playSound, updateSound, updateVolume } = useColumnSound(columnId)
 
+  // When pause state changes, capture or release token IDs
+  useEffect(() => {
+    if (isPaused) {
+      // Capture current token IDs when pausing
+      const currentIds = new Set(tokens.map(t => {
+        const tokenId = t.coinMint || t.id || t.contractAddress || ''
+        return `${t.platform}-${tokenId}`
+      }))
+      pausedTokenIdsRef.current = currentIds
+      previousTokensRef.current = [...tokens]
+    } else {
+      // Clear paused token IDs when resuming - allow all tokens immediately
+      pausedTokenIdsRef.current.clear()
+      previousTokensRef.current = []
+    }
+  }, [isPaused])
+
+  // Filter tokens based on pause state
+  // When paused: only show tokens that were visible when paused (but allow their data to update)
+  // When not paused: show all tokens
+  const displayedTokens = useMemo(() => {
+    if (!isPaused) {
+      return tokens
+    }
+    
+    // When paused, only show tokens that were in the snapshot
+    // But merge in updated data for those tokens from the current tokens array
+    const pausedIds = pausedTokenIdsRef.current
+    const previousTokens = previousTokensRef.current
+    
+    // Create a map of current tokens by ID for fast lookup
+    const currentTokensMap = new Map<string, TrenchesToken>()
+    tokens.forEach(token => {
+      const tokenId = `${token.platform}-${token.coinMint || token.id || token.contractAddress || ''}`
+      currentTokensMap.set(tokenId, token)
+    })
+    
+    // Return tokens that were paused, but with updated data if available
+    return previousTokens.map(token => {
+      const tokenId = `${token.platform}-${token.coinMint || token.id || token.contractAddress || ''}`
+      // Use updated token data if available, otherwise use previous
+      return currentTokensMap.get(tokenId) || token
+    })
+  }, [tokens, isPaused])
+
   // Track individual tokens and play sound for each new unique token
   useEffect(() => {
-    const currentTokenIds = new Set(tokens.map(t => `${t.platform}-${t.id}-${t.coinMint || t.contractAddress}`))
+    const currentTokenIds = new Set(displayedTokens.map(t => `${t.platform}-${t.id}-${t.coinMint || t.contractAddress}`))
     const seenIds = seenTokenIdsRef.current
     
     // Find truly new tokens that haven't been seen before
-    const newTokens = tokens.filter(token => {
+    const newTokens = displayedTokens.filter(token => {
       const tokenId = `${token.platform}-${token.id}-${token.coinMint || token.contractAddress}`
       return !seenIds.has(tokenId)
     })
 
-    // Play sound for each new token (one per token)
-    if (newTokens.length > 0 && seenIds.size > 0) {
+    // Play sound for each new token (one per token) - but only if not paused
+    if (newTokens.length > 0 && seenIds.size > 0 && !isPaused) {
       // Play sound once for each new token with slight delay between them
       newTokens.forEach((_, index) => {
         setTimeout(() => {
@@ -201,7 +253,7 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
 
     // Update the seen tokens set
     seenTokenIdsRef.current = currentTokenIds
-  }, [tokens, playSound])
+  }, [displayedTokens, playSound, isPaused])
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -256,18 +308,43 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
     }
   ]
 
+  // Get pause settings from echoSettings - pauseOnHover controls both hover and scroll
+  const pauseOnHover = echoSettings?.toggles?.pauseOnHover !== false // Default to true
+
   return (
-    <div className="bg-zinc-900/40 border border-zinc-800 rounded-xl flex flex-col h-full">
+    <div 
+      className={`bg-zinc-900/40 border border-zinc-800 rounded-xl flex flex-col h-full ${isPaused ? 'opacity-95' : ''}`}
+      onMouseEnter={() => {
+        // Pause when mouse enters the column (if enabled)
+        if (pauseOnHover) {
+          isMouseInColumnRef.current = true
+          setIsPaused(true)
+        }
+      }}
+      onMouseLeave={() => {
+        // Resume immediately when mouse leaves the column
+        isMouseInColumnRef.current = false
+        setIsPaused(false)
+        // Clear any pending scroll timeout
+        if (scrollTimeoutRef.current) {
+          clearTimeout(scrollTimeoutRef.current)
+          scrollTimeoutRef.current = null
+        }
+      }}
+    >
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-1">
-        <div className="flex items-center gap-3">
-          <h2 className="font-semibold text-zinc-200 tracking-wide text-lg">
+      <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-2 h-[44px]">
+        <div className="flex items-center gap-3 flex-shrink-0">
+          {isPaused && (
+            <Pause className="w-4 h-4 text-amber-400 flex-shrink-0 animate-pulse" />
+          )}
+          <h2 className="font-semibold text-zinc-200 tracking-wide text-lg whitespace-nowrap">
             {title}
           </h2>
         </div>
-        <div className="flex items-center gap-1">
-          <div className="flex items-center gap-1 px-2 py-1 bg-zinc-800 rounded text-xs hover:bg-zinc-700 transition-colors">
-            <Zap className="w-3 h-3 text-gray-400" />
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          <div className="flex items-center gap-1 px-2 py-1.5 bg-zinc-800 rounded text-xs hover:bg-zinc-700 transition-colors h-[28px] min-w-[60px] justify-center">
+            <Zap className="w-3 h-3 text-gray-400 flex-shrink-0" />
             {isEditing ? (
               <input
                 type="number"
@@ -279,12 +356,12 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
                     setIsEditing(false)
                   }
                 }}
-                className="w-8 bg-transparent text-white font-medium text-xs border-none outline-none"
+                className="w-8 bg-transparent text-white font-medium text-xs border-none outline-none text-center"
                 autoFocus
               />
             ) : (
               <span 
-                className="text-white font-medium cursor-pointer"
+                className="text-white font-medium cursor-pointer whitespace-nowrap"
                 onClick={() => setIsEditing(true)}
               >
                 {solAmount}
@@ -293,16 +370,16 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
             <img 
               src={selectedChain === 'solana' ? "/sol-logo.png" : "/bnb-chain-binance-smart-chain-logo.svg"} 
               alt={selectedChain === 'solana' ? "SOL" : "BNB"} 
-              className="w-3 h-3" 
+              className="w-3 h-3 flex-shrink-0" 
             />
           </div>
           
-          <div className="relative" ref={presetRef}>
+          <div className="relative flex-shrink-0" ref={presetRef}>
             <button 
-              className="px-2 py-1 bg-zinc-800 rounded text-xs hover:bg-zinc-700 transition-colors"
+              className="px-2.5 py-1.5 bg-zinc-800 rounded text-xs hover:bg-zinc-700 transition-colors h-[28px] min-w-[32px] flex items-center justify-center"
               onClick={() => setShowPresets(!showPresets)}
             >
-              <span className="text-white font-medium">{selectedPreset}</span>
+              <span className="text-white font-medium whitespace-nowrap">{selectedPreset}</span>
             </button>
             
             {showPresets && (
@@ -343,16 +420,18 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
             )}
           </div>
           
-          <SoundSelector
-            selectedSound={sound}
-            volume={volume}
-            onSoundChange={updateSound}
-            onVolumeChange={updateVolume}
-            onTestSound={playSound}
-          />
+          <div className="flex-shrink-0">
+            <SoundSelector
+              selectedSound={sound}
+              volume={volume}
+              onSoundChange={updateSound}
+              onVolumeChange={updateVolume}
+              onTestSound={playSound}
+            />
+          </div>
           
           <button 
-            className="p-1 bg-zinc-800 rounded hover:bg-zinc-700 transition-colors"
+            className="p-1.5 bg-zinc-800 rounded hover:bg-zinc-700 transition-colors h-[28px] w-[28px] flex items-center justify-center flex-shrink-0"
             onClick={() => setIsFilterModalOpen(true)}
           >
             <Image 
@@ -368,11 +447,32 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
 
       {/* Tokens List */}
       <div 
-        className="flex flex-col divide-y divide-zinc-800 overflow-y-auto overflow-x-visible max-h-[85vh] custom-scrollbar"
+        ref={tokensListRef}
+        className={`flex flex-col divide-y divide-zinc-800 overflow-y-auto overflow-x-visible max-h-[85vh] custom-scrollbar ${isPaused ? 'pointer-events-auto' : ''}`}
         style={{
           scrollbarWidth: 'thin',
           scrollbarColor: '#18181b #09090b',
-          willChange: 'scroll-position'
+          willChange: 'scroll-position',
+          ...(isPaused ? { animationPlayState: 'paused' } : {})
+        }}
+        onScroll={() => {
+          // Pause when scrolling starts (if pause on hover is enabled)
+          if (pauseOnHover) {
+            setIsPaused(true)
+            
+            // Clear any existing timeout
+            if (scrollTimeoutRef.current) {
+              clearTimeout(scrollTimeoutRef.current)
+            }
+            
+            // Only auto-resume if mouse is NOT in column
+            // If mouse is in column, stay paused until mouse leaves
+            scrollTimeoutRef.current = setTimeout(() => {
+              if (!isMouseInColumnRef.current) {
+                setIsPaused(false)
+              }
+            }, 100)
+          }
         }}
       >
         {loading ? (
@@ -381,13 +481,19 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
             <span className="ml-2 text-zinc-400">Loading tokens...</span>
           </div>
         ) : (
-          tokens.map((token, index) => {
+          displayedTokens.map((token, index) => {
             // Use stable identifier: platform + coinMint (or id/contractAddress as fallback)
             // Add index as fallback to ensure uniqueness even if deduplication fails
             const tokenId = token.coinMint || token.id || token.contractAddress || `unknown-${index}`
             const stableKey = `${token.platform}-${tokenId}`
             return (
-              <TrenchesTokenCard key={stableKey} token={token} solAmount={solAmount} echoSettings={echoSettings} isFirstToken={index === 0} />
+              <TrenchesTokenCard 
+                key={stableKey} 
+                token={token} 
+                solAmount={solAmount} 
+                echoSettings={echoSettings} 
+                isFirstToken={index === 0}
+              />
             )
           })
         )}
@@ -406,7 +512,17 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
 }
 
 // REMOVED memo() wrapper - trading platform needs continuous live updates, no memoization blocking
-function TrenchesTokenCard({ token, solAmount, echoSettings, isFirstToken = false }: { token: TrenchesToken; solAmount: string; echoSettings?: any; isFirstToken?: boolean }) {
+function TrenchesTokenCard({ 
+  token, 
+  solAmount, 
+  echoSettings, 
+  isFirstToken = false
+}: { 
+  token: TrenchesToken
+  solAmount: string
+  echoSettings?: any
+  isFirstToken?: boolean
+}) {
   const [isHovered, setIsHovered] = useState(false)
   const [previewPosition, setPreviewPosition] = useState<'above' | 'below'>('below')
   const [previewCoords, setPreviewCoords] = useState<{ top?: number; bottom?: number; left: number }>({ left: 0 })
