@@ -40,8 +40,8 @@ export function PNLCardsModal({
   const [uploadedImages, setUploadedImages] = useState<string[]>([])
   const [showCustomize, setShowCustomize] = useState(false)
   const [selectedPreset, setSelectedPreset] = useState<'default' | 'gif1' | 'gif2'>('default')
-  const [opacity, setOpacity] = useState(23)
-  const [blur, setBlur] = useState(5)
+  const [opacity, setOpacity] = useState(100)
+  const [blur, setBlur] = useState(0)
   const cardRef = useRef<HTMLDivElement>(null)
 
   // Customization options
