@@ -810,6 +810,48 @@ function TrenchesTokenCard({ token, solAmount, echoSettings, isFirstToken = fals
               </div>
               <span className="text-white">{token.fee}</span>
             </div>
+            {/* TX (Transactions) with Buy/Sell progress bar */}
+            {(() => {
+              const totalTx = (token.buys || 0) + (token.sells || 0)
+              const buys = token.buys || 0
+              const sells = token.sells || 0
+              const buyPercentage = totalTx > 0 ? (buys / totalTx) * 100 : 0
+              const sellPercentage = totalTx > 0 ? (sells / totalTx) * 100 : 0
+              
+              return (
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="flex items-center gap-1">
+                    <span className="text-zinc-400">TX</span>
+                    <span className="text-white">{totalTx}</span>
+                  </div>
+                  {/* Progress bar for buys (teal/aqua green) and sells (bright pink) */}
+                  <div className="bg-zinc-700 rounded-full overflow-hidden" style={{ width: '28px', minWidth: '28px', height: '3px' }}>
+                    <div className="h-full flex">
+                      {buyPercentage > 0 && (
+                        <div 
+                          className="h-full"
+                          style={{ 
+                            width: `${buyPercentage}%`,
+                            backgroundColor: '#2dd4bf', // teal-400 / aqua green
+                            borderRadius: sellPercentage > 0 ? '9999px 0 0 9999px' : '9999px' // rounded-left if sells exist, else fully rounded
+                          }}
+                        />
+                      )}
+                      {sellPercentage > 0 && (
+                        <div 
+                          className="h-full"
+                          style={{ 
+                            width: `${sellPercentage}%`,
+                            backgroundColor: '#ec4899', // pink-500 / bright pink
+                            borderRadius: buyPercentage > 0 ? '0 9999px 9999px 0' : '9999px' // rounded-right if buys exist, else fully rounded
+                          }}
+                        />
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )
+            })()}
             {/* Price Change 24h if available */}
             {(token as any).priceChange24h !== undefined && (token as any).priceChange24h !== 0 && (
               <div className="flex items-center gap-1">
