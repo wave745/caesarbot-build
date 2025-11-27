@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef, useMemo } from "react"
+import { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { 
   Copy,
@@ -125,7 +125,6 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
   const [isPaused, setIsPaused] = useState(false)
   const pausedTokenIdsRef = useRef<Set<string>>(new Set())
   const previousTokensRef = useRef<TrenchesToken[]>([])
-  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const tokensListRef = useRef<HTMLDivElement>(null)
   const isMouseInColumnRef = useRef<boolean>(false)
   const [filters, setFilters] = useState<FilterState>(initialFilters || {
@@ -185,28 +184,35 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
   const columnId = title.toLowerCase().replace(/\s+/g, '-')
   const { sound, volume, playSound, updateSound, updateVolume } = useColumnSound(columnId)
 
-  // When pause state changes, capture or release token IDs
-  useEffect(() => {
-    if (isPaused) {
-      // Capture current token IDs when pausing
-      const currentIds = new Set(tokens.map(t => {
-        const tokenId = t.coinMint || t.id || t.contractAddress || ''
-        return `${t.platform}-${tokenId}`
-      }))
-      pausedTokenIdsRef.current = currentIds
-      previousTokensRef.current = [...tokens]
-    } else {
-      // Clear paused token IDs when resuming - allow all tokens immediately
-      pausedTokenIdsRef.current.clear()
-      previousTokensRef.current = []
+  // Helper function to capture current tokens snapshot - optimized for instant response
+  const captureTokenSnapshot = useCallback(() => {
+    // Direct synchronous capture - no delays
+    const currentIds = new Set<string>()
+    const tokensSnapshot: TrenchesToken[] = []
+    
+    for (let i = 0; i < tokens.length; i++) {
+      const t = tokens[i]
+      const tokenId = `${t.platform}-${t.coinMint || t.id || t.contractAddress || ''}`
+      currentIds.add(tokenId)
+      tokensSnapshot.push(t)
     }
-  }, [isPaused])
+    
+    pausedTokenIdsRef.current = currentIds
+    previousTokensRef.current = tokensSnapshot
+  }, [tokens])
 
-  // Filter tokens based on pause state
+  // Helper function to clear token snapshot - instant
+  const clearTokenSnapshot = useCallback(() => {
+    pausedTokenIdsRef.current.clear()
+    previousTokensRef.current = []
+  }, [])
+
+  // Filter tokens based on pause state - optimized for instant response
   // When paused: only show tokens that were visible when paused (but allow their data to update)
   // When not paused: show all tokens
   const displayedTokens = useMemo(() => {
-    if (!isPaused) {
+    // Fast path: if not paused, return all tokens immediately
+    if (!isPaused || previousTokensRef.current.length === 0) {
       return tokens
     }
     
@@ -215,19 +221,27 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
     const pausedIds = pausedTokenIdsRef.current
     const previousTokens = previousTokensRef.current
     
-    // Create a map of current tokens by ID for fast lookup
+    // Create a map of current tokens by ID for fast lookup - optimized loop
     const currentTokensMap = new Map<string, TrenchesToken>()
-    tokens.forEach(token => {
+    for (let i = 0; i < tokens.length; i++) {
+      const token = tokens[i]
       const tokenId = `${token.platform}-${token.coinMint || token.id || token.contractAddress || ''}`
       currentTokensMap.set(tokenId, token)
-    })
+    }
     
     // Return tokens that were paused, but with updated data if available
-    return previousTokens.map(token => {
+    // Filter to ensure we only return tokens that were in the paused snapshot
+    const result: TrenchesToken[] = []
+    for (let i = 0; i < previousTokens.length; i++) {
+      const token = previousTokens[i]
       const tokenId = `${token.platform}-${token.coinMint || token.id || token.contractAddress || ''}`
-      // Use updated token data if available, otherwise use previous
-      return currentTokensMap.get(tokenId) || token
-    })
+      // Only include if it was in the paused snapshot
+      if (pausedIds.has(tokenId)) {
+        // Use updated token data if available, otherwise use previous
+        result.push(currentTokensMap.get(tokenId) || token)
+      }
+    }
+    return result
   }, [tokens, isPaused])
 
   // Track individual tokens and play sound for each new unique token
@@ -315,21 +329,24 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
     <div 
       className={`bg-zinc-900/40 border border-zinc-800 rounded-xl flex flex-col h-full ${isPaused ? 'opacity-95' : ''}`}
       onMouseEnter={() => {
-        // Pause when mouse enters the column (if enabled)
+        // Pause when mouse enters the column (if enabled) - instant response
         if (pauseOnHover) {
           isMouseInColumnRef.current = true
+          // Capture snapshot synchronously before state update for instant pause
+          if (!isPaused) {
+            captureTokenSnapshot()
+          }
+          // Immediate state update - React will batch but UI responds instantly
           setIsPaused(true)
         }
       }}
       onMouseLeave={() => {
-        // Resume immediately when mouse leaves the column
+        // Resume immediately when mouse leaves the column - instant response
         isMouseInColumnRef.current = false
+        // Clear snapshot synchronously before state update
+        clearTokenSnapshot()
+        // Immediate state update for instant resume
         setIsPaused(false)
-        // Clear any pending scroll timeout
-        if (scrollTimeoutRef.current) {
-          clearTimeout(scrollTimeoutRef.current)
-          scrollTimeoutRef.current = null
-        }
       }}
     >
       {/* Header */}
@@ -421,13 +438,13 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
           </div>
           
           <div className="flex-shrink-0">
-            <SoundSelector
-              selectedSound={sound}
-              volume={volume}
-              onSoundChange={updateSound}
-              onVolumeChange={updateVolume}
-              onTestSound={playSound}
-            />
+          <SoundSelector
+            selectedSound={sound}
+            volume={volume}
+            onSoundChange={updateSound}
+            onVolumeChange={updateVolume}
+            onTestSound={playSound}
+          />
           </div>
           
           <button 
@@ -456,22 +473,15 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
           ...(isPaused ? { animationPlayState: 'paused' } : {})
         }}
         onScroll={() => {
-          // Pause when scrolling starts (if pause on hover is enabled)
-          if (pauseOnHover) {
-            setIsPaused(true)
-            
-            // Clear any existing timeout
-            if (scrollTimeoutRef.current) {
-              clearTimeout(scrollTimeoutRef.current)
+          // If pause on hover is enabled and mouse is in column, ensure we stay paused
+          // The column stays paused as long as cursor is inside, regardless of scrolling
+          if (pauseOnHover && isMouseInColumnRef.current) {
+            // Capture snapshot synchronously if not already paused
+            if (!isPaused) {
+              captureTokenSnapshot()
+              setIsPaused(true)
             }
-            
-            // Only auto-resume if mouse is NOT in column
-            // If mouse is in column, stay paused until mouse leaves
-            scrollTimeoutRef.current = setTimeout(() => {
-              if (!isMouseInColumnRef.current) {
-                setIsPaused(false)
-              }
-            }, 100)
+            // If already paused, just ensure we stay paused (no action needed)
           }
         }}
       >
@@ -523,6 +533,8 @@ function TrenchesTokenCard({
   echoSettings?: any
   isFirstToken?: boolean
 }) {
+  const [imageError, setImageError] = useState(false)
+  const [hoverImageError, setHoverImageError] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
   const [previewPosition, setPreviewPosition] = useState<'above' | 'below'>('below')
   const [previewCoords, setPreviewCoords] = useState<{ top?: number; bottom?: number; left: number }>({ left: 0 })
@@ -646,7 +658,9 @@ function TrenchesTokenCard({
     }
   }, [])
 
-  const imageUrl = token.image || `https://ui-avatars.com/api/?name=${token.symbol}&background=6366f1&color=fff&size=64`
+  const fallbackImageUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(token.symbol)}&background=6366f1&color=fff&size=64`
+  const imageUrl = imageError ? fallbackImageUrl : (token.image || fallbackImageUrl)
+  const hoverImageUrl = hoverImageError ? `https://ui-avatars.com/api/?name=${encodeURIComponent(token.symbol)}&background=6366f1&color=fff&size=350` : imageUrl
 
   return (
     <div 
@@ -672,22 +686,29 @@ function TrenchesTokenCard({
                 alt={token.name}
                 className="w-full h-full object-cover"
                 onError={(e) => {
-                  console.log('Image failed to load:', token.image);
-                  // Try multiple fallback strategies
-                  if (e.currentTarget.src.includes('solanatracker.io')) {
-                    // If Solana Tracker image fails, try direct URL
-                    const directUrl = token.image?.replace('https://image.solanatracker.io/proxy?url=', '');
-                    if (directUrl) {
-                      e.currentTarget.src = decodeURIComponent(directUrl);
-                    } else {
-                      e.currentTarget.src = `https://ui-avatars.com/api/?name=${token.symbol}&background=6366f1&color=fff&size=64`;
+                  if (!imageError) {
+                    // Try decoded URL first if we haven't tried it yet
+                    const originalUrl = token.image
+                    if (originalUrl && !imageError) {
+                      try {
+                        const decodedUrl = decodeURIComponent(originalUrl)
+                        if (decodedUrl !== originalUrl) {
+                          e.currentTarget.src = decodedUrl
+                          return
+                        }
+                      } catch (err) {
+                        // If decode fails, fall through to fallback
+                      }
                     }
-                  } else {
-                    e.currentTarget.src = `https://ui-avatars.com/api/?name=${token.symbol}&background=6366f1&color=fff&size=64`;
+                    // Mark as error and use fallback
+                    setImageError(true)
                   }
                 }}
                 onLoad={() => {
-                  console.log('Image loaded successfully:', token.image);
+                  // Reset error state if image loads successfully
+                  if (imageError) {
+                    setImageError(false)
+                  }
                 }}
               />
             </div>
@@ -715,12 +736,33 @@ function TrenchesTokenCard({
               >
                 <div className="relative w-[300px] h-[300px] rounded-xl overflow-hidden shadow-2xl border-2 border-zinc-700/50 bg-zinc-900/95 backdrop-blur-sm">
                   <img
-                    src={imageUrl}
+                    src={hoverImageUrl}
                     alt={token.name}
                     className="w-full h-full object-cover"
                     onError={(e) => {
-                      const target = e.target as HTMLImageElement
-                      target.src = `https://ui-avatars.com/api/?name=${token.symbol}&background=6366f1&color=fff&size=350`;
+                      if (!hoverImageError) {
+                        // Try decoded URL first if we haven't tried it yet
+                        const originalUrl = token.image
+                        if (originalUrl && !hoverImageError) {
+                          try {
+                            const decodedUrl = decodeURIComponent(originalUrl)
+                            if (decodedUrl !== originalUrl) {
+                              e.currentTarget.src = decodedUrl
+                              return
+                            }
+                          } catch (err) {
+                            // If decode fails, fall through to fallback
+                          }
+                        }
+                        // Mark as error and use fallback
+                        setHoverImageError(true)
+                      }
+                    }}
+                    onLoad={() => {
+                      // Reset error state if image loads successfully
+                      if (hoverImageError) {
+                        setHoverImageError(false)
+                      }
                     }}
                   />
                   {/* Optional: Add overlay with token info */}
@@ -1022,19 +1064,19 @@ function TrenchesTokenCard({
                   setIsBubbleMapHovered(false)
                 }}
               >
-                <Image 
-                  src="/icons/ui/top10H-icon.svg" 
-                  alt="Top 10 Holders" 
-                  width={10} 
-                  height={10} 
+            <Image 
+              src="/icons/ui/top10H-icon.svg" 
+              alt="Top 10 Holders" 
+              width={10} 
+              height={10} 
                   className="opacity-80"
                   style={iconStyle}
-                />
+            />
                 <span className={`${textColorClass} text-xs`}>+{top10HoldersValue.toFixed(1)}%</span>
                 {/* Tooltip */}
                 <div className="absolute top-full left-0 mt-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-none whitespace-nowrap z-[9999] pointer-events-none" style={{ willChange: 'opacity' }}>
                   Top 10 holders
-                </div>
+          </div>
               </div>
             )
           })()}
@@ -1048,21 +1090,21 @@ function TrenchesTokenCard({
             
             return (
               <div className="relative group flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full border border-gray-400/30 min-w-fit">
-                <Image 
-                  src="/icons/ui/dev-holding-icon.svg" 
-                  alt="Dev Holding" 
-                  width={10} 
-                  height={10} 
+            <Image 
+              src="/icons/ui/dev-holding-icon.svg" 
+              alt="Dev Holding" 
+              width={10} 
+              height={10} 
                   className="opacity-80"
                   style={iconStyle}
-                />
+            />
                 <span className={`${textColorClass} text-xs`}>
                   {isDevSold ? 'DS' : `${(token.devHoldingsPercentage ?? 0).toFixed(1)}%`}
-                </span>
+            </span>
                 {/* Tooltip */}
                 <div className="absolute top-full left-0 mt-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-none whitespace-nowrap z-[9999] pointer-events-none" style={{ willChange: 'opacity' }}>
                   Dev holding
-                </div>
+          </div>
               </div>
             )
           })()}
@@ -1077,19 +1119,19 @@ function TrenchesTokenCard({
             
             return (
               <div className="relative group flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full border border-gray-400/30 min-w-fit">
-                <Image 
-                  src="/icons/ui/snipers-icon.svg" 
-                  alt="Snipers" 
-                  width={10} 
-                  height={10} 
+            <Image 
+              src="/icons/ui/snipers-icon.svg" 
+              alt="Snipers" 
+              width={10} 
+              height={10} 
                   className="opacity-80"
                   style={iconStyle}
-                />
+            />
                 <span className={`${textColorClass} text-xs`}>{snipersValue.toFixed(1)}%</span>
                 {/* Tooltip */}
                 <div className="absolute top-full left-0 mt-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-none whitespace-nowrap z-[9999] pointer-events-none" style={{ willChange: 'opacity' }}>
                   Snipers
-                </div>
+          </div>
               </div>
             )
           })()}

@@ -19,8 +19,8 @@ export async function GET(request: NextRequest) {
         'Accept': 'application/json',
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
       },
-      // Add timeout to prevent hanging requests - fast response for live trading
-      signal: AbortSignal.timeout(3000) // 3 second timeout - fast response for live trading
+      // Add timeout to prevent hanging requests - faster for initial load
+      signal: AbortSignal.timeout(1500) // 1.5 second timeout - faster initial load
     })
     
     if (!response.ok) {

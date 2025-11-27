@@ -18,8 +18,8 @@ export async function GET(request: NextRequest) {
         'Accept': 'application/json',
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
       },
-      // Add timeout to prevent hanging requests - fast response for live trading
-      signal: AbortSignal.timeout(3000) // 3 second timeout - fast response for live trading
+      // Add timeout to prevent hanging requests - faster for initial load
+      signal: AbortSignal.timeout(1500) // 1.5 second timeout - faster initial load
     })
     
     if (!response.ok) {
@@ -44,16 +44,14 @@ export async function GET(request: NextRequest) {
       })
     }
     
-    // Filter tokens with high market cap (about to graduate) - typically > 80% bonding curve progress
+    // Filter tokens that are ABOUT TO GRADUATE (70-99% bonding curve progress)
     // EXCLUDE already-graduated tokens (bondingCurveProgress >= 100 or graduationDate in past)
     let filteredCoins = data.coins || []
     if (Array.isArray(filteredCoins)) {
       const now = Date.now()
-      // Filter for tokens that are close to graduation (high bonding curve progress or high market cap)
-      // BUT exclude tokens that have already graduated
+      // Filter for tokens that are about to graduate (70-99% bonding curve progress)
       filteredCoins = filteredCoins.filter((coin: any) => {
         const bondingCurveProgress = coin.bondingCurveProgress || 0
-        const marketCap = coin.marketCap || 0
         const graduationDate = coin.graduationDate || null
         
         // EXCLUDE tokens that have already graduated
@@ -67,9 +65,16 @@ export async function GET(request: NextRequest) {
           return false
         }
         
-        // Include tokens with > 50% bonding curve progress or market cap > $10k
-        // BUT only if they haven't graduated yet
-        return bondingCurveProgress > 50 || marketCap > 10000
+        // INCLUDE only tokens with bonding curve progress between 70-99%
+        // These are tokens that are about to graduate/migrate
+        return bondingCurveProgress >= 70 && bondingCurveProgress < 100
+      })
+      
+      // Sort by bonding curve progress (descending) - tokens closest to graduation first
+      filteredCoins.sort((a: any, b: any) => {
+        const progressA = a.bondingCurveProgress || 0
+        const progressB = b.bondingCurveProgress || 0
+        return progressB - progressA
       })
     }
     

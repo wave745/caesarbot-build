@@ -3,7 +3,7 @@ import { fetchPumpFunMCTokens } from '@/lib/pump-api'
 
 export async function GET() {
   try {
-    console.log('Fetching multi-platform MC tokens using SolanaTracker integration...')
+    console.log('Fetching multi-platform MC tokens...')
     
     const tokens = await fetchPumpFunMCTokens()
     console.log(`Successfully fetched ${tokens.length} multi-platform MC tokens`)

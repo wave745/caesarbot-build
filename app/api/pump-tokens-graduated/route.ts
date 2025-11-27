@@ -3,7 +3,7 @@ import { fetchPumpFunGraduatedTokens } from '@/lib/pump-api'
 
 export async function GET() {
   try {
-    console.log('Fetching multi-platform graduated tokens using SolanaTracker integration...')
+    console.log('Fetching multi-platform graduated tokens...')
     
     const tokens = await fetchPumpFunGraduatedTokens()
     console.log(`Successfully fetched ${tokens.length} multi-platform graduated tokens`)

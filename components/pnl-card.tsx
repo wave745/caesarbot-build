@@ -221,8 +221,8 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
                       src="/sol-logo.png" 
                       alt="Solana" 
                       style={{ 
-                        width: `${scale * 1.5}rem`, 
-                        height: `${scale * 1.5}rem`,
+                        width: `${scale * 0.7}rem`, 
+                        height: `${scale * 0.7}rem`,
                         objectFit: 'contain',
                       }} 
                     />
@@ -242,8 +242,8 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
                       src="/bnb-chain-binance-smart-chain-logo.svg" 
                       alt="BNB Chain" 
                       style={{ 
-                        width: `${scale * 1.5}rem`, 
-                        height: `${scale * 1.5}rem`,
+                        width: `${scale * 0.7}rem`, 
+                        height: `${scale * 0.7}rem`,
                         objectFit: 'contain',
                       }} 
                     />
@@ -307,34 +307,36 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
                 <div 
                   className="flex items-center justify-between w-full"
                   style={{ 
-                    fontSize: `${scale * 2.25}rem`,
+                    fontSize: `${scale * 2.0}rem`,
                     maxWidth: `${scale * 28}rem`,
                     gap: `${scale * 0.75}rem`
                   }}
                 >
-                  <div className="flex items-center" style={{ gap: `${scale * 0.5}rem` }}>
+                  <div className="flex items-baseline flex-1" style={{ gap: `${scale * 0.5}rem` }}>
                     <img 
                       src={selectedChain === 'sol' ? '/sol-logo.png' : '/bnb-chain-binance-smart-chain-logo.svg'} 
                       alt={selectedChain === 'sol' ? 'SOL' : 'BNB'} 
                       style={{ 
-                        width: `${scale * 1.8}rem`, 
-                        height: `${scale * 1.8}rem`,
-                        objectFit: 'contain'
+                        width: `${scale * 1.6}rem`, 
+                        height: `${scale * 1.6}rem`,
+                        objectFit: 'contain',
+                        verticalAlign: 'baseline'
                       }} 
                     />
-                    <span className="font-bold">{pnlData.balanceSOL.toFixed(3)}</span>
+                    <span className="font-bold leading-none">{pnlData.balanceSOL.toFixed(3)}</span>
                   </div>
-                  <div className="flex items-center" style={{ gap: `${scale * 0.5}rem` }}>
+                  <div className="flex items-baseline flex-1 justify-end" style={{ gap: `${scale * 0.5}rem` }}>
                     <img 
                       src={selectedChain === 'sol' ? '/sol-logo.png' : '/bnb-chain-binance-smart-chain-logo.svg'} 
                       alt={selectedChain === 'sol' ? 'SOL' : 'BNB'} 
                       style={{ 
-                        width: `${scale * 1.8}rem`, 
-                        height: `${scale * 1.8}rem`,
-                        objectFit: 'contain'
+                        width: `${scale * 1.6}rem`, 
+                        height: `${scale * 1.6}rem`,
+                        objectFit: 'contain',
+                        verticalAlign: 'baseline'
                       }} 
                     />
-                    <span className="font-bold">{pnlData.balanceUSD.toFixed(2)}</span>
+                    <span className="font-bold leading-none">{pnlData.balanceUSD.toFixed(2)}</span>
                   </div>
                 </div>
 
@@ -445,8 +447,8 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
                     src="/sol-logo.png" 
                     alt="Solana" 
                     style={{ 
-                      width: `${scale * 1.5}rem`, 
-                      height: `${scale * 1.5}rem`,
+                      width: `${scale * 0.9}rem`, 
+                      height: `${scale * 0.9}rem`,
                       objectFit: 'contain',
                     }} 
                   />
@@ -466,8 +468,8 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
                     src="/bnb-chain-binance-smart-chain-logo.svg" 
                     alt="BNB Chain" 
                     style={{ 
-                      width: `${scale * 1.5}rem`, 
-                      height: `${scale * 1.5}rem`,
+                      width: `${scale * 0.9}rem`, 
+                      height: `${scale * 0.9}rem`,
                       objectFit: 'contain',
                     }} 
                   />
@@ -537,34 +539,36 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
             <div 
               className="flex items-center justify-between w-full"
               style={{ 
-                fontSize: `${scale * 2.25}rem`,
+                fontSize: `${scale * 2.0}rem`,
                 maxWidth: `${scale * 28}rem`,
                 gap: `${scale * 0.75}rem`
               }}
             >
-              <div className="flex items-center" style={{ gap: `${scale * 0.5}rem` }}>
+              <div className="flex items-baseline flex-1" style={{ gap: `${scale * 0.5}rem` }}>
                 <img 
                   src={selectedChain === 'sol' ? '/sol-logo.png' : '/bnb-chain-binance-smart-chain-logo.svg'} 
                   alt={selectedChain === 'sol' ? 'SOL' : 'BNB'} 
                   style={{ 
-                    width: `${scale * 1.8}rem`, 
-                    height: `${scale * 1.8}rem`,
-                    objectFit: 'contain'
+                    width: `${scale * 1.6}rem`, 
+                    height: `${scale * 1.6}rem`,
+                    objectFit: 'contain',
+                    verticalAlign: 'baseline'
                   }} 
                 />
-                <span className="font-bold">{pnlData.balanceSOL.toFixed(3)}</span>
+                <span className="font-bold leading-none">{pnlData.balanceSOL.toFixed(3)}</span>
               </div>
-              <div className="flex items-center" style={{ gap: `${scale * 0.5}rem` }}>
+              <div className="flex items-baseline flex-1 justify-end" style={{ gap: `${scale * 0.5}rem` }}>
                 <img 
                   src={selectedChain === 'sol' ? '/sol-logo.png' : '/bnb-chain-binance-smart-chain-logo.svg'} 
                   alt={selectedChain === 'sol' ? 'SOL' : 'BNB'} 
                   style={{ 
-                    width: `${scale * 1.8}rem`, 
-                    height: `${scale * 1.8}rem`,
-                    objectFit: 'contain'
+                    width: `${scale * 1.6}rem`, 
+                    height: `${scale * 1.6}rem`,
+                    objectFit: 'contain',
+                    verticalAlign: 'baseline'
                   }} 
                 />
-                <span className="font-bold">{pnlData.balanceUSD.toFixed(2)}</span>
+                <span className="font-bold leading-none">{pnlData.balanceUSD.toFixed(2)}</span>
               </div>
             </div>
 

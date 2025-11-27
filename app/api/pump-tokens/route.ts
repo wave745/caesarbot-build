@@ -3,7 +3,7 @@ import { fetchPumpFunTokens } from '@/lib/pump-api'
 
 export async function GET() {
   try {
-    console.log('Fetching multi-platform tokens using SolanaTracker integration...')
+    console.log('Fetching multi-platform tokens...')
     
     const tokens = await fetchPumpFunTokens()
     console.log(`Successfully fetched ${tokens.length} multi-platform tokens`)
