@@ -42,7 +42,7 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   
   // Default background that's always present
-  const defaultBackground = '/caesarx-main-pnlcard-BG.jpg'
+  const defaultBackground = '/caesarxnewpnl-footer.png'
   const presetGif1 = '/custom-gif1.gif'
   const presetGif2 = '/custom-gif2.gif'
   
@@ -145,6 +145,26 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
     }
   }, [isOpen, isInitialized, isMobile])
 
+  // Handle window resize for responsive behavior
+  React.useEffect(() => {
+    if (!isOpen) return
+
+    const handleResize = () => {
+      if (isMobile) {
+        const newWidth = Math.min(window.innerWidth - 32, 340)
+        const newHeight = 180
+        setCardSize({ width: newWidth, height: newHeight })
+        setCardPosition({
+          x: window.innerWidth / 2 - newWidth / 2,
+          y: window.innerHeight / 2 - newHeight / 2,
+        })
+      }
+    }
+
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [isOpen, isMobile])
+
   if (!isOpen) return null
 
   return (
@@ -181,6 +201,7 @@ export function PnlCard({ isOpen, onClose }: PnlCardProps) {
                   backgroundImage: `url(${backgroundImage})`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
+                  backgroundRepeat: 'no-repeat',
                   filter: isCustomBackground ? `blur(${blur}px)` : 'none',
                   transform: isCustomBackground ? 'scale(1.1)' : 'none',
                 }}
