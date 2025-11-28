@@ -217,28 +217,28 @@ export function PNLChartInteractive({
   return (
     <div className="w-full h-full flex flex-col">
       {/* Chart Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <h3 className="text-lg font-medium text-white">PNL Chart</h3>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mb-3 sm:mb-4">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+          <h3 className="text-base sm:text-lg font-medium text-white">PNL Chart</h3>
           <button
             onClick={onCalendarClick}
-            className="flex items-center gap-2 px-3 py-1.5 bg-[#1a1a1a] hover:bg-[#222222] border border-[#282828] rounded-lg transition-colors"
+            className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-[#1a1a1a] hover:bg-[#222222] border border-[#282828] rounded-lg transition-colors"
           >
-            <Calendar className="w-4 h-4 text-gray-400" />
-            <span className="text-sm text-gray-400">Calendar</span>
+            <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400" />
+            <span className="text-xs sm:text-sm text-gray-400">Calendar</span>
           </button>
         </div>
       </div>
 
       {/* Date Range */}
-      <div className="text-sm text-gray-400 mb-4">
+      <div className="text-xs sm:text-sm text-gray-400 mb-3 sm:mb-4">
         {formatDateRange()}
       </div>
 
       {/* Chart Container */}
       <div 
         ref={chartContainerRef}
-        className="flex-1 min-h-[400px] relative overflow-hidden -mt-8"
+        className="flex-1 min-h-[250px] sm:min-h-[300px] md:min-h-[400px] relative overflow-hidden -mt-6 sm:-mt-8"
       >
         {chartData.length > 0 ? (
           <>

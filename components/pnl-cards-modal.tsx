@@ -56,7 +56,7 @@ export function PNLCardsModal({
   const [logoColor, setLogoColor] = useState('#ffffff')
 
   // Background images
-  const defaultBackground = '/caesarx-main-pnlcard-BG.jpg'
+  const defaultBackground = '/caesarxnewpnl-footer.png'
   const presetGif1 = '/custom-gif1.gif'
   const presetGif2 = '/custom-gif2.gif'
 
@@ -386,7 +386,7 @@ export function PNLCardsModal({
     >
       <div 
         ref={cardRef}
-        className="bg-[#111111] border border-[#282828] rounded-lg shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col relative"
+        className="bg-[#111111] border border-[#282828] rounded-lg shadow-2xl w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-2xl overflow-hidden flex flex-col relative mx-2 sm:mx-4"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Background Image */}
@@ -417,24 +417,24 @@ export function PNLCardsModal({
         {/* Content Overlay */}
         <div className="content-overlay relative z-10 flex flex-col h-full">
           {/* Floating CaesarX Logo */}
-          <h2 className="absolute top-4 left-4 text-base font-semibold bg-gradient-to-r from-yellow-500 to-orange-500 bg-clip-text text-transparent z-20">
+          <h2 className="absolute top-2 sm:top-4 left-2 sm:left-4 text-sm sm:text-base font-semibold bg-gradient-to-r from-yellow-500 to-orange-500 bg-clip-text text-transparent z-20">
             CaesarX
           </h2>
           
           {/* Floating Close Button */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 hover:bg-[#1a1a1a]/80 rounded-lg transition-colors z-20"
+            className="absolute top-2 sm:top-4 right-2 sm:right-4 p-1.5 sm:p-2 hover:bg-[#1a1a1a]/80 rounded-lg transition-colors z-20"
           >
-            <X className="w-5 h-5 text-gray-400 hover:text-white" />
+            <X className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 hover:text-white" />
           </button>
 
           {/* Content - This is what gets captured for download */}
-          <div className="card-content p-6 flex flex-col gap-6">
+          <div className="card-content p-4 sm:p-6 flex flex-col gap-4 sm:gap-6">
           {/* Date */}
           <div className="text-center">
             <h3 
-              className="text-2xl font-semibold leading-none"
+              className="text-lg sm:text-xl md:text-2xl font-semibold leading-none"
               style={{ 
                 color: textColor,
                 textShadow: showTextShadow ? '0 2px 4px rgba(0,0,0,0.5)' : 'none'
@@ -450,14 +450,14 @@ export function PNLCardsModal({
           {/* Main PNL Value */}
           <div className="text-center">
             <div className="inline-flex flex-col items-center gap-1">
-              <div className="inline-flex items-baseline justify-center gap-2">
+              <div className="inline-flex items-baseline justify-center gap-1.5 sm:gap-2">
                 {(mainStatValue === 'Native' && currency === "SOL") && (
                   <Image 
                     src="/sol-logo.png" 
                     alt="Solana" 
-                    width={24} 
-                    height={24} 
-                    className="rounded flex-shrink-0 align-middle"
+                    width={20} 
+                    height={20} 
+                    className="rounded flex-shrink-0 align-middle sm:w-6 sm:h-6"
                     style={{ 
                       verticalAlign: 'middle',
                       filter: hexToFilter(logoColor),
@@ -466,7 +466,7 @@ export function PNLCardsModal({
                   />
                 )}
                 <span 
-                  className="text-4xl font-bold leading-none"
+                  className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none"
                   style={{ 
                     color: pnlData.pnl >= 0 ? profitColor : lossColor,
                     textShadow: showTextShadow ? '0 2px 4px rgba(0,0,0,0.5)' : 'none'
@@ -477,7 +477,7 @@ export function PNLCardsModal({
               </div>
               {showUSDValues && mainStatValue === 'Native' && currency === "SOL" && (
                 <span 
-                  className="text-lg font-semibold leading-none text-gray-400"
+                  className="text-sm sm:text-base md:text-lg font-semibold leading-none text-gray-400"
                   style={{ 
                     textShadow: showTextShadow ? '0 1px 2px rgba(0,0,0,0.5)' : 'none'
                   }}
@@ -489,10 +489,10 @@ export function PNLCardsModal({
           </div>
 
           {/* Summary Statistics */}
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             <div className="flex items-center justify-between">
               <span 
-                className="text-sm font-medium"
+                className="text-xs sm:text-sm font-medium"
                 style={{ 
                   color: textColor,
                   textShadow: showTextShadow ? '0 1px 2px rgba(0,0,0,0.5)' : 'none'
@@ -500,15 +500,15 @@ export function PNLCardsModal({
               >
                 Total Bought
               </span>
-              <div className="inline-flex items-center gap-1.5 flex-col items-end">
-                <div className="inline-flex items-center gap-1.5">
+              <div className="inline-flex items-center gap-1 sm:gap-1.5 flex-col items-end">
+                <div className="inline-flex items-center gap-1 sm:gap-1.5">
                   {(mainStatValue === 'Native' && currency === "SOL") && (
                     <Image 
                       src="/sol-logo.png" 
                       alt="Solana" 
-                      width={16} 
-                      height={16} 
-                      className="rounded flex-shrink-0 align-middle"
+                      width={14} 
+                      height={14} 
+                      className="rounded flex-shrink-0 align-middle sm:w-4 sm:h-4"
                       style={{ 
                         verticalAlign: 'middle',
                         filter: hexToFilter(logoColor),
@@ -517,7 +517,7 @@ export function PNLCardsModal({
                     />
                   )}
                   <span 
-                    className="text-sm font-medium whitespace-nowrap leading-none"
+                    className="text-xs sm:text-sm font-medium whitespace-nowrap leading-none"
                     style={{ 
                       color: textColor,
                       textShadow: showTextShadow ? '0 1px 2px rgba(0,0,0,0.5)' : 'none'
@@ -528,7 +528,7 @@ export function PNLCardsModal({
                 </div>
                 {showUSDValues && mainStatValue === 'Native' && currency === "SOL" && (
                   <span 
-                    className="text-xs font-medium whitespace-nowrap leading-none text-gray-400"
+                    className="text-[10px] sm:text-xs font-medium whitespace-nowrap leading-none text-gray-400"
                     style={{ 
                       textShadow: showTextShadow ? '0 1px 2px rgba(0,0,0,0.5)' : 'none'
                     }}
@@ -540,7 +540,7 @@ export function PNLCardsModal({
             </div>
             <div className="flex items-center justify-between">
               <span 
-                className="text-sm font-medium"
+                className="text-xs sm:text-sm font-medium"
                 style={{ 
                   color: textColor,
                   textShadow: showTextShadow ? '0 1px 2px rgba(0,0,0,0.5)' : 'none'
@@ -549,14 +549,14 @@ export function PNLCardsModal({
                 Total Sold
               </span>
               <div className="inline-flex items-center gap-1.5 flex-col items-end">
-                <div className="inline-flex items-center gap-1.5">
+                <div className="inline-flex items-center gap-1 sm:gap-1.5">
                   {(mainStatValue === 'Native' && currency === "SOL") && (
                     <Image 
                       src="/sol-logo.png" 
                       alt="Solana" 
-                      width={16} 
-                      height={16} 
-                      className="rounded flex-shrink-0 align-middle"
+                      width={14} 
+                      height={14} 
+                      className="rounded flex-shrink-0 align-middle sm:w-4 sm:h-4"
                       style={{ 
                         verticalAlign: 'middle',
                         filter: hexToFilter(logoColor),
@@ -565,7 +565,7 @@ export function PNLCardsModal({
                     />
                   )}
                   <span 
-                    className="text-sm font-medium whitespace-nowrap leading-none"
+                    className="text-xs sm:text-sm font-medium whitespace-nowrap leading-none"
                     style={{ 
                       color: textColor,
                       textShadow: showTextShadow ? '0 1px 2px rgba(0,0,0,0.5)' : 'none'
@@ -576,7 +576,7 @@ export function PNLCardsModal({
                 </div>
                 {showUSDValues && mainStatValue === 'Native' && currency === "SOL" && (
                   <span 
-                    className="text-xs font-medium whitespace-nowrap leading-none text-gray-400"
+                    className="text-[10px] sm:text-xs font-medium whitespace-nowrap leading-none text-gray-400"
                     style={{ 
                       textShadow: showTextShadow ? '0 1px 2px rgba(0,0,0,0.5)' : 'none'
                     }}
@@ -588,7 +588,7 @@ export function PNLCardsModal({
             </div>
             <div className="flex items-center justify-between">
               <span 
-                className="text-sm font-medium"
+                className="text-xs sm:text-sm font-medium"
                 style={{ 
                   color: textColor,
                   textShadow: showTextShadow ? '0 1px 2px rgba(0,0,0,0.5)' : 'none'
@@ -598,7 +598,7 @@ export function PNLCardsModal({
               </span>
               <div className="inline-flex items-center gap-1.5 flex-col items-end">
                 <span 
-                  className="text-sm font-medium whitespace-nowrap leading-none"
+                  className="text-xs sm:text-sm font-medium whitespace-nowrap leading-none"
                   style={{ 
                     color: pnlData.pnlPercentage >= 0 ? profitColor : lossColor,
                     textShadow: showTextShadow ? '0 1px 2px rgba(0,0,0,0.5)' : 'none'
@@ -608,7 +608,7 @@ export function PNLCardsModal({
                 </span>
                 {showUSDValues && mainStatValue === 'Native' && currency === "SOL" && (
                   <span 
-                    className="text-xs font-medium whitespace-nowrap leading-none text-gray-400"
+                    className="text-[10px] sm:text-xs font-medium whitespace-nowrap leading-none text-gray-400"
                     style={{ 
                       textShadow: showTextShadow ? '0 1px 2px rgba(0,0,0,0.5)' : 'none'
                     }}

@@ -112,16 +112,16 @@ export function PNLCalendarModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[#282828]">
-          <div className="flex items-center gap-3">
-            <h2 className="text-base sm:text-lg font-semibold text-white">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 px-3 sm:px-4 py-3 border-b border-[#282828]">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+            <h2 className="text-sm sm:text-base md:text-lg font-semibold text-white">
               PNL Calendar
             </h2>
             {/* Currency Logos */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-1.5">
               <button
                 onClick={() => handleCurrencySwitch("SOL")}
-                className={`p-1.5 rounded-lg transition-all ${
+                className={`p-0.5 sm:p-1 rounded-lg transition-all ${
                   selectedCurrency === "SOL"
                     ? "bg-[#1a1a1a] ring-2 ring-yellow-500/50"
                     : "hover:bg-[#1a1a1a] opacity-60 hover:opacity-100"
@@ -131,14 +131,14 @@ export function PNLCalendarModal({
                 <Image 
                   src="/sol-logo.png" 
                   alt="Solana" 
-                  width={20} 
-                  height={20} 
-                  className="rounded"
+                  width={14} 
+                  height={14} 
+                  className="rounded sm:w-4 sm:h-4"
                 />
               </button>
               <button
                 onClick={() => handleCurrencySwitch("BNB")}
-                className={`p-1.5 rounded-lg transition-all ${
+                className={`p-0.5 sm:p-1 rounded-lg transition-all ${
                   selectedCurrency === "BNB"
                     ? "bg-[#1a1a1a] ring-2 ring-yellow-500/50"
                     : "hover:bg-[#1a1a1a] opacity-60 hover:opacity-100"
@@ -148,68 +148,71 @@ export function PNLCalendarModal({
                 <Image 
                   src="/bnb-chain-binance-smart-chain-logo.svg" 
                   alt="BNB Chain" 
-                  width={20} 
-                  height={20} 
+                  width={14} 
+                  height={14} 
+                  className="sm:w-4 sm:h-4"
                 />
               </button>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-between sm:justify-end">
             {/* Month Navigation */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2">
               <button
                 onClick={handlePreviousMonth}
-                className="p-2 hover:bg-[#1a1a1a] rounded-lg transition-colors"
+                className="p-1.5 sm:p-2 hover:bg-[#1a1a1a] rounded-lg transition-colors"
               >
-                <ChevronLeft className="w-5 h-5 text-gray-400 hover:text-white" />
+                <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 hover:text-white" />
               </button>
-              <h3 className="text-sm sm:text-base font-medium text-white">
+              <h3 className="text-xs sm:text-sm md:text-base font-medium text-white whitespace-nowrap">
                 {format(currentMonth, "MMM yyyy")}
               </h3>
               <button
                 onClick={handleNextMonth}
-                className="p-2 hover:bg-[#1a1a1a] rounded-lg transition-colors"
+                className="p-1.5 sm:p-2 hover:bg-[#1a1a1a] rounded-lg transition-colors"
               >
-                <ChevronRight className="w-5 h-5 text-gray-400 hover:text-white" />
+                <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 hover:text-white" />
               </button>
             </div>
-            {/* Currency Switch */}
-            <button
-              onClick={() => {
-                // Switch to USD if on SOL or BNB, switch to SOL if on USD
-                const newCurrency = selectedCurrency === "USD" ? "SOL" : "USD"
-                handleCurrencySwitch(newCurrency)
-              }}
-              className="p-2 hover:bg-[#1a1a1a] rounded-lg transition-colors"
-              title={`Switch to ${selectedCurrency === "USD" ? "SOL" : "USD"}`}
-            >
-              <Image 
-                src="/icons/ui/switchcurrency-icon.svg" 
-                alt="Switch currency" 
-                width={20} 
-                height={20} 
-                className="opacity-60 hover:opacity-100 transition-opacity"
-                style={{ filter: 'brightness(0) saturate(100%) invert(48%) sepia(79%) saturate(2476%) hue-rotate(86deg) brightness(118%) contrast(119%)' }}
-              />
-            </button>
-            {/* Close Button */}
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-[#1a1a1a] rounded-lg transition-colors"
-            >
-              <X className="w-5 h-5 text-gray-400 hover:text-white" />
-            </button>
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              {/* Currency Switch */}
+              <button
+                onClick={() => {
+                  // Switch to USD if on SOL or BNB, switch to SOL if on USD
+                  const newCurrency = selectedCurrency === "USD" ? "SOL" : "USD"
+                  handleCurrencySwitch(newCurrency)
+                }}
+                className="p-1.5 sm:p-2 hover:bg-[#1a1a1a] rounded-lg transition-colors"
+                title={`Switch to ${selectedCurrency === "USD" ? "SOL" : "USD"}`}
+              >
+                <Image 
+                  src="/icons/ui/switchcurrency-icon.svg" 
+                  alt="Switch currency" 
+                  width={16} 
+                  height={16} 
+                  className="opacity-60 hover:opacity-100 transition-opacity sm:w-5 sm:h-5"
+                  style={{ filter: 'brightness(0) saturate(100%) invert(48%) sepia(79%) saturate(2476%) hue-rotate(86deg) brightness(118%) contrast(119%)' }}
+                />
+              </button>
+              {/* Close Button */}
+              <button
+                onClick={onClose}
+                className="p-1.5 sm:p-2 hover:bg-[#1a1a1a] rounded-lg transition-colors"
+              >
+                <X className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 hover:text-white" />
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Calendar Grid */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <div className="flex-1 overflow-y-auto p-2 sm:p-4 md:p-6">
           {/* Week Days Header */}
-          <div className="grid grid-cols-7 gap-2 mb-2">
+          <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-1 sm:mb-2">
             {weekDays.map((day) => (
               <div
                 key={day}
-                className="text-center text-xs sm:text-sm font-medium text-gray-400 py-2"
+                className="text-center text-[10px] xs:text-xs sm:text-sm font-medium text-gray-400 py-1 sm:py-2"
               >
                 {day}
               </div>
@@ -217,7 +220,7 @@ export function PNLCalendarModal({
           </div>
 
           {/* Calendar Days */}
-          <div className="grid grid-cols-7 gap-2">
+          <div className="grid grid-cols-7 gap-1 sm:gap-2">
             {calendarDays.map((day, index) => {
               const isCurrentMonth = isSameMonth(day, currentMonth)
               const isCurrentDay = isToday(day)
@@ -233,14 +236,14 @@ export function PNLCalendarModal({
                       onDayClick(day)
                     }
                   }}
-                  className={`aspect-square rounded-lg border p-2 sm:p-3 flex flex-col items-center justify-center transition-colors ${
+                  className={`aspect-square rounded-lg border p-1 sm:p-2 md:p-3 flex flex-col items-center justify-center transition-colors ${
                     isCurrentMonth
                       ? `${pnlColor} cursor-pointer hover:opacity-80`
                       : "bg-[#0a0a0a] border-[#1a1a1a] opacity-50"
-                  } ${isCurrentDay ? "ring-2 ring-yellow-500/50" : ""}`}
+                  } ${isCurrentDay ? "ring-1 sm:ring-2 ring-yellow-500/50" : ""}`}
                 >
                   <span
-                    className={`text-xs sm:text-sm font-medium mb-1 ${
+                    className={`text-[10px] xs:text-xs sm:text-sm font-medium mb-0.5 sm:mb-1 ${
                       isCurrentMonth
                         ? isCurrentDay
                           ? "text-yellow-500"
@@ -250,25 +253,26 @@ export function PNLCalendarModal({
                   >
                     {format(day, "d")}
                   </span>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-0.5 sm:gap-1">
                     {selectedCurrency === "SOL" && (
                       <Image 
                         src="/sol-logo.png" 
                         alt="Solana" 
-                        width={12} 
-                        height={12} 
-                        className="rounded"
+                        width={10} 
+                        height={10} 
+                        className="rounded sm:w-3 sm:h-3"
                       />
                     )}
                     {selectedCurrency === "BNB" && (
                       <Image 
                         src="/bnb-chain-binance-smart-chain-logo.svg" 
                         alt="BNB Chain" 
-                        width={12} 
-                        height={12} 
+                        width={10} 
+                        height={10} 
+                        className="sm:w-3 sm:h-3"
                       />
                     )}
-                    <span className={`text-xs font-medium ${pnlTextColor}`}>
+                    <span className={`text-[9px] xs:text-[10px] sm:text-xs font-medium ${pnlTextColor}`}>
                       {formatPNLValue(pnl)}
                     </span>
                   </div>
