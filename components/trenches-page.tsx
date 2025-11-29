@@ -318,11 +318,11 @@ export function TrenchesPage() {
   const [currentTime, setCurrentTime] = useState<number>(Date.now())
   const [lastUpdateTime, setLastUpdateTime] = useState<number>(Date.now())
   
-  // Live timer to update token ages in real-time - OPTIMIZED for performance
+  // Live timer to update token ages in real-time - ULTRA-FAST for live updates
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentTime(Date.now())
-    }, 1000) // Update every 1 second - sufficient for age display, reduces re-renders
+    }, 100) // Update every 100ms for live, non-stop updates
     
     // Also update immediately to ensure instant display
     setCurrentTime(Date.now())
@@ -501,7 +501,8 @@ export function TrenchesPage() {
       
       try {
         // Fetch MC tokens (sorted by marketCap) with minimal timeout
-        const response = await fetch('/api/pump-fun/coins-mc?limit=30&_=' + Date.now(), {
+        // Request more tokens to increase chances of finding tokens in 70-99% range
+        const response = await fetch('/api/pump-fun/coins-mc?limit=100&_=' + Date.now(), {
           method: 'GET',
           headers: {
             'Accept': 'application/json',
@@ -543,45 +544,12 @@ export function TrenchesPage() {
           return []
         }
         
-        // ULTRA-FAST conversion: Pre-allocate array, minimal processing
-        // FILTER for tokens that are ABOUT TO GRADUATE (70-99% bonding curve progress)
+        // Convert all coins from API response - no filtering, no sorting, display exactly as returned
         const now = Date.now()
-        const validCoins: any[] = []
-        
-        for (let i = 0; i < coins.length; i++) {
-          const coin = coins[i]
-          const bondingCurveProgress = coin.bondingCurveProgress || 0
-          const graduationDate = coin.graduationDate || null
-          
-          // EXCLUDE tokens that have already graduated
-          // 1. Bonding curve progress >= 100 means already graduated
-          if (bondingCurveProgress >= 100) {
-            continue
-          }
-          
-          // 2. If graduationDate exists and is in the past, token has already graduated
-          if (graduationDate && typeof graduationDate === 'number' && graduationDate < now) {
-            continue
-          }
-          
-          // INCLUDE only tokens with bonding curve progress between 70-99%
-          // These are tokens that are about to graduate/migrate
-          if (bondingCurveProgress >= 70 && bondingCurveProgress < 100) {
-            validCoins.push(coin)
-          }
-        }
-        
-        // Sort by bonding curve progress (descending) - tokens closest to graduation first
-        validCoins.sort((a: any, b: any) => {
-          const progressA = a.bondingCurveProgress || 0
-          const progressB = b.bondingCurveProgress || 0
-          return progressB - progressA
-        })
-        
-        const convertedTokens: TrenchesToken[] = new Array(Math.min(validCoins.length, 30))
+        const convertedTokens: TrenchesToken[] = new Array(Math.min(coins.length, 30))
         
         for (let i = 0; i < convertedTokens.length; i++) {
-          const coin = validCoins[i]
+          const coin = coins[i]
           const creationTime = coin.creationTime || now
           const ageDiff = now - creationTime
           const initialAge = ageDiff < 1000 ? '0s' : formatTimeAgo(creationTime)
@@ -816,13 +784,10 @@ export function TrenchesPage() {
     }
   }, [formatMarketCap, formatVolume]) // formatTimeAgo is imported, not a local function
 
-  // Live streaming for pump.fun tokens - OPTIMIZED for faster initial load
+  // Live streaming for pump.fun tokens - ULTRA-FAST for live, non-stop updates
   useEffect(() => {
-    let isFirstLoad = true
-    
     const pollPumpFunTokens = async () => {
-      // Prevent concurrent requests on first load
-      if (isPollingRef.current && !isFirstLoad) return
+      // Allow concurrent requests for live updates - don't block
       isPollingRef.current = true
       
       try {
@@ -877,18 +842,16 @@ export function TrenchesPage() {
         }
       } finally {
         isPollingRef.current = false
-        isFirstLoad = false
       }
     }
     
     // Initial fetch - IMMEDIATE for fast first load
     pollPumpFunTokens()
     
-    // Poll every 2 seconds for live updates (balanced between speed and API rate limits)
-    // Reduced from 50ms to 2s to improve performance and reduce API load
+    // Poll every 1 second for live, non-stop updates
     const interval = setInterval(() => {
       pollPumpFunTokens()
-    }, 2000)
+    }, 1000)
     
     return () => {
       clearInterval(interval)
@@ -896,13 +859,10 @@ export function TrenchesPage() {
     }
   }, [fetchPumpFunTokensDirect])
 
-  // Live streaming for bonk.fun tokens - OPTIMIZED for faster initial load
+  // Live streaming for bonk.fun tokens - ULTRA-FAST for live, non-stop updates
   useEffect(() => {
-    let isFirstLoad = true
-    
     const pollBonkFunTokens = async () => {
-      // Prevent concurrent requests on first load
-      if (isPollingBonkFunRef.current && !isFirstLoad) return
+      // Allow concurrent requests for live updates - don't block
       isPollingBonkFunRef.current = true
       
       try {
@@ -945,17 +905,16 @@ export function TrenchesPage() {
         setBonkFunTokens(prev => prev.length > 0 ? prev : [])
       } finally {
         isPollingBonkFunRef.current = false
-        isFirstLoad = false
       }
     }
     
     // Initial fetch - IMMEDIATE for fast first load
     pollBonkFunTokens()
     
-    // Poll every 3 seconds for live updates (balanced between speed and API rate limits)
+    // Poll every 1 second for live, non-stop updates
     const interval = setInterval(() => {
       pollBonkFunTokens()
-    }, 3000)
+    }, 1000)
     
     return () => {
       clearInterval(interval)
@@ -999,10 +958,10 @@ export function TrenchesPage() {
     }
     
     pollMoonItTokens()
-    // Poll every 3 seconds for live updates (balanced between speed and API rate limits)
+    // Poll every 1 second for live, non-stop updates
     const interval = setInterval(() => {
       pollMoonItTokens()
-    }, 3000)
+    }, 1000)
     
     return () => {
       clearInterval(interval)
@@ -1029,71 +988,14 @@ export function TrenchesPage() {
           }
         }
         
-        // ALWAYS merge with existing tokens - never replace completely
-        // Trading platform needs continuous updates - React will handle efficient rendering
-        const now = Date.now()
-        
-        // Update tracking map with new tokens
+        // Display exactly what API returns - no filtering, no sorting, no merging
+        // Just update with fresh tokens from API
         if (tokens.length > 0) {
-          for (let i = 0; i < tokens.length; i++) {
-            const token = tokens[i]
-            const tokenId = token.coinMint || token.id
-            if (tokenId) {
-              recentMCTokensRef.current.set(tokenId, { token, lastSeen: now })
-            }
-          }
+          setMcTokens(tokens)
+        } else {
+          // Keep existing tokens if API returns empty
+          setMcTokens(prev => prev.length > 0 ? prev : [])
         }
-        
-        // Clean up old entries (older than 5 minutes) - keep recent tokens visible
-        const fiveMinutesAgo = now - (5 * 60 * 1000)
-        for (const [key, value] of recentMCTokensRef.current.entries()) {
-          if (value.lastSeen < fiveMinutesAgo) {
-            recentMCTokensRef.current.delete(key)
-          }
-        }
-        
-        // Merge: Combine new tokens with recently seen tokens
-        // This ensures tokens don't disappear even if API temporarily doesn't return them
-        const tokenMap = new Map<string, TrenchesToken>()
-        
-        // First, add all recently seen tokens (preserves tokens that might not be in current API response)
-        for (const [tokenId, { token }] of recentMCTokensRef.current.entries()) {
-          const uniqueKey = `${token.platform}-${tokenId}`
-          tokenMap.set(uniqueKey, token)
-        }
-        
-        // Then, add/update with new tokens from API (overwrites with latest data)
-        if (tokens.length > 0) {
-          const filteredTokens = tokens.filter((token: TrenchesToken) => {
-            const tokenId = token.coinMint || token.id
-            return !!tokenId
-          })
-          
-          for (let i = 0; i < filteredTokens.length; i++) {
-            const token = filteredTokens[i]
-            const tokenId = token.coinMint || token.id
-            const uniqueKey = `pump.fun-${tokenId}`
-            tokenMap.set(uniqueKey, token) // Overwrite with latest data
-          }
-        }
-        
-        // Convert to array and sort
-        const mergedTokens = Array.from(tokenMap.values())
-          .map(token => ({ 
-            ...token,
-            _updateTimestamp: now // Force React to detect changes for live updates
-          }))
-            .sort((a, b) => {
-              // Sort by market cap (highest first) or bonding curve progress
-              const aMc = parseFloat((a.mc || '0').replace(/[$,]/g, '')) || 0
-              const bMc = parseFloat((b.mc || '0').replace(/[$,]/g, '')) || 0
-              if (bMc !== aMc) return bMc - aMc
-              return (b.bondingCurveProgress || 0) - (a.bondingCurveProgress || 0)
-            })
-          .slice(0, 30)
-        
-        // ALWAYS update - even if empty, merge ensures we keep existing tokens
-        setMcTokens(mergedTokens)
       } catch (error) {
         // NEVER clear tokens on error - preserve existing tokens
         // Update timestamps to keep tokens visible
@@ -1116,11 +1018,10 @@ export function TrenchesPage() {
     // Initial fetch - IMMEDIATE for fast first load
     pollPumpFunMCTokens()
     
-    // Poll every 2 seconds for live updates (balanced between speed and API rate limits)
-    // Reduced from 50ms to 2s to improve performance and reduce API load
+    // Poll every 1 second for live, non-stop updates
     const interval = setInterval(() => {
       pollPumpFunMCTokens()
-    }, 2000)
+    }, 1000)
     
     return () => {
       clearInterval(interval)
@@ -1130,11 +1031,8 @@ export function TrenchesPage() {
 
   // Live streaming for pump.fun Graduated tokens - OPTIMIZED for faster initial load
   useEffect(() => {
-    let isFirstLoad = true
-    
     const pollPumpFunGraduatedTokens = async () => {
-      // Prevent concurrent requests on first load
-      if (isPollingGraduatedRef.current && !isFirstLoad) return
+      // Allow concurrent requests for live updates - don't block
       isPollingGraduatedRef.current = true
       
       try {
@@ -1245,18 +1143,16 @@ export function TrenchesPage() {
         }
       } finally {
         isPollingGraduatedRef.current = false
-        isFirstLoad = false
       }
     }
     
     // Initial fetch - IMMEDIATE for fast first load
     pollPumpFunGraduatedTokens()
     
-    // Poll every 2 seconds for live updates (balanced between speed and API rate limits)
-    // Reduced from 50ms to 2s to improve performance and reduce API load
+    // Poll every 1 second for live, non-stop updates
     const interval = setInterval(() => {
       pollPumpFunGraduatedTokens()
-    }, 2000)
+    }, 1000)
     
     return () => {
       clearInterval(interval)
@@ -1811,7 +1707,7 @@ export function TrenchesPage() {
     const interval = setInterval(() => {
       // Auto-refresh token data
       console.log('Auto-refreshing token data...')
-      fetchAllDataInParallel()
+        fetchAllDataInParallel()
     }, 5000) // 5 seconds for REST API fallback only (WebSocket is instant)
 
     // Cleanup interval and timeout on component unmount
@@ -2026,46 +1922,10 @@ export function TrenchesPage() {
   // Live-updated graduating tokens with real-time age calculation
   // STABLE: Deduplicate and preserve tokens to prevent disappearing
   const graduatingTokensWithLiveAge = useMemo(() => {
-    // Include ONLY tokens that are about to graduate (NOT already graduated)
+    // Display ALL tokens from API - no filtering, no sorting, display exactly as returned
     // Priority: mcTokens (pump.fun - most live) > bonkFunMCTokens > moonItMCTokens
     // Process in reverse order so higher priority sources overwrite lower priority ones
-    // EXCLUDE: moonItGraduatedTokens, bonkFunGraduatedTokens, migratedTokens, graduatedTokens (these are already graduated!)
-    const currentTimeMs = Date.now()
     const allTokens = [...moonItMCTokens, ...bonkFunMCTokens, ...mcTokens]
-      .filter((token) => {
-        const bondingCurveProgress = token.bondingCurveProgress || 0
-        
-        // EXCLUDE tokens that have already graduated
-        // 1. Bonding curve progress >= 100 means already graduated
-        if (bondingCurveProgress >= 100) {
-          return false
-        }
-        
-        // 2. If graduationDate exists and is in the past, token has already graduated
-        if (token.graduationDate && typeof token.graduationDate === 'number' && token.graduationDate < currentTimeMs) {
-          return false
-        }
-        
-        // 3. If status is 'migrated', token has already graduated
-        if (token.status === 'migrated') {
-          return false
-        }
-        
-        // 4. If migratedTokens > 0, token has already migrated/graduated
-        if ((token.migratedTokens || 0) > 0) {
-          return false
-        }
-        
-        // INCLUDE only tokens with bonding curve progress between 70-99%
-        // These are tokens that are about to graduate/migrate
-        return bondingCurveProgress >= 70 && bondingCurveProgress < 100
-      })
-      .sort((a, b) => {
-        // Sort by bonding curve progress (descending) - tokens closest to graduation first
-        const progressA = a.bondingCurveProgress || 0
-        const progressB = b.bondingCurveProgress || 0
-        return progressB - progressA
-      })
     
     // FAST deduplication - use Map for O(1) lookups, preserve latest data
     const tokenMap = new Map<string, TrenchesToken>()

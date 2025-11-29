@@ -63,8 +63,8 @@ export async function GET(request: NextRequest) {
         }
         return true
       })
-      
-      // Limit results if needed
+    
+    // Limit results if needed
       const limitNum = parseInt(limit)
       if (limitNum > 0 && filteredCoins.length > limitNum) {
         filteredCoins = filteredCoins.slice(0, limitNum)

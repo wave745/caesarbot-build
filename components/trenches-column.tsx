@@ -542,6 +542,11 @@ function TrenchesTokenCard({
   const cardRef = useRef<HTMLDivElement>(null)
   const [isBubbleMapHovered, setIsBubbleMapHovered] = useState(false)
   const bubbleMapTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const imageUrlRef = useRef<string>('')
+  const workingImageUrlRef = useRef<string>('') // Store the URL that actually works
+  const retryCountRef = useRef<number>(0)
+  const imgElementRef = useRef<HTMLImageElement | null>(null)
+  const isImageLoadedRef = useRef<boolean>(false)
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -658,9 +663,92 @@ function TrenchesTokenCard({
     }
   }, [])
 
-  const fallbackImageUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(token.symbol)}&background=6366f1&color=fff&size=64`
-  const imageUrl = imageError ? fallbackImageUrl : (token.image || fallbackImageUrl)
-  const hoverImageUrl = hoverImageError ? `https://ui-avatars.com/api/?name=${encodeURIComponent(token.symbol)}&background=6366f1&color=fff&size=350` : imageUrl
+  // Stable fallback URLs - memoized to prevent recreation
+  const fallbackImageUrl = useMemo(() => 
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(token.symbol)}&background=6366f1&color=fff&size=64`,
+    [token.symbol]
+  )
+  const fallbackHoverImageUrl = useMemo(() => 
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(token.symbol)}&background=6366f1&color=fff&size=350`,
+    [token.symbol]
+  )
+
+  // Get stable image URL - use working URL if available, otherwise use token image or fallback
+  const stableImageUrl = useMemo(() => {
+    // If we have a working image URL and it's still valid, use it (prevents flickering)
+    if (workingImageUrlRef.current && isImageLoadedRef.current && !imageError) {
+      return workingImageUrlRef.current
+    }
+    
+    const currentImageUrl = token.image || ''
+    
+    // Reset state when image URL actually changes
+    if (currentImageUrl !== imageUrlRef.current) {
+      imageUrlRef.current = currentImageUrl
+      // Only reset if the URL actually changed, not on every render
+      if (currentImageUrl && currentImageUrl !== workingImageUrlRef.current) {
+        setImageError(false)
+        setHoverImageError(false)
+        retryCountRef.current = 0
+        isImageLoadedRef.current = false
+      }
+    }
+    
+    // Validate and sanitize image URL
+    if (!currentImageUrl || currentImageUrl.trim() === '') {
+      return fallbackImageUrl
+    }
+    
+    // Check if URL is valid
+    try {
+      new URL(currentImageUrl)
+      return currentImageUrl
+    } catch {
+      // Invalid URL, use fallback
+      return fallbackImageUrl
+    }
+  }, [token.image, token.symbol, fallbackImageUrl, imageError])
+  
+  // Use stable image URL - prefer working URL if available
+  const imageUrl = imageError ? fallbackImageUrl : stableImageUrl
+  const hoverImageUrl = hoverImageError ? fallbackHoverImageUrl : imageUrl
+
+  // Preload image for faster loading - only for first token
+  useEffect(() => {
+    if (isFirstToken && imageUrl && !imageError && imageUrl !== fallbackImageUrl) {
+      const link = document.createElement('link')
+      link.rel = 'preload'
+      link.as = 'image'
+      link.href = imageUrl
+      link.crossOrigin = 'anonymous'
+      document.head.appendChild(link)
+      
+      return () => {
+        if (document.head.contains(link)) {
+          document.head.removeChild(link)
+        }
+      }
+    }
+  }, [isFirstToken, imageUrl, imageError, fallbackImageUrl])
+
+  // Prevent unnecessary image src changes - keep working image if URL hasn't actually changed
+  useEffect(() => {
+    if (imgElementRef.current && isImageLoadedRef.current && workingImageUrlRef.current) {
+      const currentSrc = imgElementRef.current.src
+      const newImageUrl = imageError ? fallbackImageUrl : stableImageUrl
+      
+      // Only change src if it's actually different and not already the working URL
+      if (currentSrc !== newImageUrl && currentSrc === workingImageUrlRef.current && !imageError) {
+        // Keep the working image - don't change it unnecessarily
+        return
+      }
+      
+      // If the new URL is the same as working URL, ensure src matches
+      if (newImageUrl === workingImageUrlRef.current && currentSrc !== workingImageUrlRef.current) {
+        imgElementRef.current.src = workingImageUrlRef.current
+      }
+    }
+  }, [stableImageUrl, fallbackImageUrl, imageError]) // Removed imageUrl from dependencies to avoid initialization issues
 
   return (
     <div 
@@ -680,35 +768,73 @@ function TrenchesTokenCard({
               setIsHovered(false)
             }}
           >
-            <div className={`w-16 h-16 rounded-lg overflow-hidden border ${getStatusColor(token.status)} transition-transform duration-300 ${isHovered ? 'scale-105' : 'scale-100'}`}>
+            <div className={`w-16 h-16 rounded-lg overflow-hidden border ${getStatusColor(token.status)} transition-transform duration-300 ${isHovered ? 'scale-105' : 'scale-100'} relative bg-zinc-800`}>
               <img
+                ref={(el) => {
+                  imgElementRef.current = el
+                  // Prevent src change if image is already loaded and working
+                  if (el && isImageLoadedRef.current && workingImageUrlRef.current && el.src !== workingImageUrlRef.current && !imageError) {
+                    el.src = workingImageUrlRef.current
+                  }
+                }}
                 src={imageUrl}
                 alt={token.name}
                 className="w-full h-full object-cover"
+                loading={isFirstToken ? "eager" : "lazy"}
+                decoding="async"
+                fetchPriority={isFirstToken ? "high" : "auto"}
+                crossOrigin="anonymous"
+                style={{ 
+                  minWidth: '64px', 
+                  minHeight: '64px',
+                  backgroundColor: '#27272a' // zinc-800 background while loading
+                }}
                 onError={(e) => {
-                  if (!imageError) {
-                    // Try decoded URL first if we haven't tried it yet
-                    const originalUrl = token.image
-                    if (originalUrl && !imageError) {
-                      try {
-                        const decodedUrl = decodeURIComponent(originalUrl)
-                        if (decodedUrl !== originalUrl) {
-                          e.currentTarget.src = decodedUrl
-                          return
-                        }
-                      } catch (err) {
-                        // If decode fails, fall through to fallback
+                  const target = e.currentTarget as HTMLImageElement
+                  
+                  // Prevent infinite error loops - if already showing fallback, don't do anything
+                  if (target.src === fallbackImageUrl || imageError) {
+                    return
+                  }
+                  
+                  // Retry logic: try decoded URL first, then fallback
+                  if (retryCountRef.current === 0 && token.image && token.image !== fallbackImageUrl && !token.image.includes('ui-avatars.com')) {
+                    retryCountRef.current = 1
+                    try {
+                      const decodedUrl = decodeURIComponent(token.image)
+                      if (decodedUrl !== token.image && decodedUrl !== target.src && !decodedUrl.includes('ui-avatars.com')) {
+                        target.src = decodedUrl
+                        workingImageUrlRef.current = decodedUrl
+                        isImageLoadedRef.current = false
+                        return
                       }
+                    } catch (err) {
+                      // Decode failed, continue to fallback
                     }
-                    // Mark as error and use fallback
-                    setImageError(true)
+                  }
+                  
+                  // If retry failed or already retried, use fallback
+                  if (retryCountRef.current >= 1 || !token.image || token.image === fallbackImageUrl || token.image.includes('ui-avatars.com')) {
+                    if (target.src !== fallbackImageUrl) {
+                      setImageError(true)
+                      workingImageUrlRef.current = fallbackImageUrl
+                      target.src = fallbackImageUrl
+                      isImageLoadedRef.current = false
+                    }
                   }
                 }}
                 onLoad={() => {
+                  // Store working URL and mark as loaded
+                  if (imgElementRef.current) {
+                    workingImageUrlRef.current = imgElementRef.current.src
+                    isImageLoadedRef.current = true
+                  }
+                  
                   // Reset error state if image loads successfully
                   if (imageError) {
                     setImageError(false)
                   }
+                  retryCountRef.current = 0
                 }}
               />
             </div>
@@ -739,23 +865,36 @@ function TrenchesTokenCard({
                     src={hoverImageUrl}
                     alt={token.name}
                     className="w-full h-full object-cover"
+                    loading="eager"
+                    decoding="async"
+                    fetchPriority="high"
+                    crossOrigin="anonymous"
                     onError={(e) => {
-                      if (!hoverImageError) {
-                        // Try decoded URL first if we haven't tried it yet
-                        const originalUrl = token.image
-                        if (originalUrl && !hoverImageError) {
-                          try {
-                            const decodedUrl = decodeURIComponent(originalUrl)
-                            if (decodedUrl !== originalUrl) {
-                              e.currentTarget.src = decodedUrl
-                              return
-                            }
-                          } catch (err) {
-                            // If decode fails, fall through to fallback
+                      const target = e.currentTarget as HTMLImageElement
+                      
+                      // Prevent infinite error loops - if already showing fallback, don't do anything
+                      if (target.src === fallbackHoverImageUrl || hoverImageError) {
+                        return
+                      }
+                      
+                      // Retry logic: try decoded URL first, then fallback
+                      if (token.image && token.image !== fallbackImageUrl && token.image !== fallbackHoverImageUrl && !token.image.includes('ui-avatars.com')) {
+                        try {
+                          const decodedUrl = decodeURIComponent(token.image)
+                          if (decodedUrl !== token.image && decodedUrl !== target.src && !decodedUrl.includes('ui-avatars.com')) {
+                            target.src = decodedUrl
+                            setHoverImageError(false)
+                            return
                           }
+                        } catch (err) {
+                          // Decode failed, continue to fallback
                         }
-                        // Mark as error and use fallback
+                      }
+                      
+                      // Use fallback
+                      if (target.src !== fallbackHoverImageUrl) {
                         setHoverImageError(true)
+                        target.src = fallbackHoverImageUrl
                       }
                     }}
                     onLoad={() => {
