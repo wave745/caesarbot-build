@@ -3,13 +3,11 @@
 import { useState, useEffect, useMemo } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { 
   ArrowUpRight, 
   ArrowDownRight,
   ExternalLink,
-  Eye,
-  Zap
+  Eye
 } from "lucide-react"
 import { tokenCache } from "@/lib/services/token-cache"
 import { useRouter } from "next/navigation"
@@ -384,41 +382,46 @@ export function TrendingTokensSection({ sortBy: propSortBy, filters }: TrendingT
   
   return (
     <div className="w-full">
-
-      {/* Loading State */}
-      {isLoading && (
-        <div className="flex items-center justify-center py-12">
-          <div className="flex items-center gap-3">
-            <div className="w-6 h-6 animate-spin rounded-full border-2 border-yellow-500 border-t-transparent" />
-            <span className="text-gray-400">Loading trending tokens...</span>
-          </div>
-        </div>
-      )}
-
-
-
-
       {/* Tokens Table */}
-      {!isLoading && (
-        <div className="bg-black border border-gray-800 rounded-lg overflow-hidden">
-          {/* Table Header - Fixed */}
-          <div className="grid grid-cols-7 gap-4 px-4 py-3 bg-gray-900 border-b border-gray-800 sticky top-0 z-10">
-            <div className="text-xs font-medium text-gray-400 uppercase tracking-wide">Pair info</div>
-            <div className="text-xs font-medium text-gray-400 uppercase tracking-wide">Market Cap</div>
-            <div className="text-xs font-medium text-gray-400 uppercase tracking-wide">Liquidity</div>
-            <div className="text-xs font-medium text-gray-400 uppercase tracking-wide">Volume</div>
-            <div className="text-xs font-medium text-gray-400 uppercase tracking-wide">TXNS</div>
-            <div className="text-xs font-medium text-gray-400 uppercase tracking-wide">Token info</div>
-            <div className="text-xs font-medium text-gray-400 uppercase tracking-wide">Action</div>
-            </div>
+      <div className="bg-black border border-gray-800 rounded-lg overflow-hidden">
+        {/* Table Header - Fixed */}
+        <div className="grid py-3 bg-[#1f1f1f] border-b border-gray-800 sticky top-0 z-10" style={{ gridTemplateColumns: 'auto 120px 120px 120px 80px auto' }}>
+          <div className="text-xs font-medium text-gray-400 tracking-wide pl-4">Pair info</div>
+          <div className="text-xs font-medium text-gray-400 tracking-wide">Market Cap</div>
+          <div className="text-xs font-medium text-gray-400 tracking-wide">Liquidity</div>
+          <div className="text-xs font-medium text-gray-400 tracking-wide">Volume</div>
+          <div className="text-xs font-medium text-gray-400 tracking-wide">Txns</div>
+          <div className="text-xs font-medium text-gray-400 tracking-wide pl-12 pr-4">Token info</div>
+        </div>
 
-          {/* Scrollable Table Body */}
-          <div className="max-h-[60vh] overflow-y-auto">
+        {/* Scrollable Table Body */}
+        <div className="max-h-[60vh] overflow-y-auto bg-black">
+          {isLoading ? (
+            <>
+              <div className="flex items-center justify-center py-12">
+                <span className="text-white">Loading trending tokens...</span>
+              </div>
+              {/* Show empty rows when loading */}
+              <div className="divide-y divide-gray-800">
+                {Array.from({ length: 9 }).map((_, index) => (
+                  <div key={index} className="grid py-3 min-h-[60px] border-b border-gray-800" style={{ gridTemplateColumns: 'auto 120px 120px 120px 80px auto' }}>
+                    <div className="flex items-center pl-4"></div>
+                    <div className="flex items-center"></div>
+                    <div className="flex items-center"></div>
+                    <div className="flex items-center"></div>
+                    <div className="flex items-center"></div>
+                    <div className="flex items-center pl-12 pr-4"></div>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
             <div className="divide-y divide-gray-800">
               {sortedTokens.length > 0 ? sortedTokens.map((token, index) => (
                 <div 
                   key={token.tokenAddress} 
-                  className="grid grid-cols-7 gap-4 px-4 py-3 hover:bg-gray-900/50 transition-colors cursor-pointer"
+                  className="grid py-3 hover:bg-gray-900/50 transition-colors cursor-pointer"
+                  style={{ gridTemplateColumns: 'auto 120px 120px 120px 80px auto' }}
                   onClick={() => {
                     try {
                       window.location.href = `/trade/${token.tokenAddress}`
@@ -428,7 +431,7 @@ export function TrendingTokensSection({ sortBy: propSortBy, filters }: TrendingT
                   }}
                 >
                   {/* Pair info */}
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 pl-4">
                     <div className="relative">
                       <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-700 flex items-center justify-center">
                         {(() => {
@@ -574,7 +577,7 @@ export function TrendingTokensSection({ sortBy: propSortBy, filters }: TrendingT
                   </div>
 
                   {/* Token info */}
-                  <div className="flex flex-col justify-center">
+                  <div className="flex flex-col justify-center pl-12 pr-4">
                     {/* Top 10 holders percentage */}
                     <div className="flex items-center gap-1 text-xs mb-2">
                       <div className="w-3 h-3 rounded-full flex items-center justify-center overflow-hidden">
@@ -619,17 +622,6 @@ export function TrendingTokensSection({ sortBy: propSortBy, filters }: TrendingT
                     </div>
 
                   </div>
-
-                  {/* Action */}
-                  <div className="flex items-center">
-                    <Button 
-                      size="sm" 
-                      className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1 rounded flex items-center gap-1"
-                    >
-                      <Zap className="w-3 h-3" />
-                      5.00
-                      </Button>
-                  </div>
                 </div>
               )) : (
                 <div className="px-4 py-8 text-center text-gray-400">
@@ -637,9 +629,9 @@ export function TrendingTokensSection({ sortBy: propSortBy, filters }: TrendingT
                 </div>
               )}
             </div>
-          </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   )
 }

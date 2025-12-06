@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import Link from "next/link"
 import { Search } from "lucide-react"
 import { useState } from "react"
-import { MetaCard } from "@/components/meta-card"
+// import { MetaCard } from "@/components/meta-card"
 
 export function DashboardContent() {
   const [selectedView, setSelectedView] = useState<"price" | "volume" | "wallet">("price")
@@ -141,8 +141,8 @@ export function DashboardContent() {
 
       {/* Bottom Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-        {/* META Section */}
-        <MetaCard />
+        {/* META Section - Removed */}
+        {/* <MetaCard /> */}
 
         {/* Recently Added */}
         <Card className="bg-[#111111] border-[#282828]">

@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { 
-  Copy,
   Zap,
   Pause
 } from "lucide-react"
@@ -540,8 +539,11 @@ function TrenchesTokenCard({
   const [previewCoords, setPreviewCoords] = useState<{ top?: number; bottom?: number; left: number }>({ left: 0 })
   const imageRef = useRef<HTMLDivElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
-  const [isBubbleMapHovered, setIsBubbleMapHovered] = useState(false)
-  const bubbleMapTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const tooltipRef = useRef<HTMLDivElement>(null)
+  const top10TooltipRef = useRef<HTMLDivElement>(null)
+  const devTooltipRef = useRef<HTMLDivElement>(null)
+  const snipersTooltipRef = useRef<HTMLDivElement>(null)
+  const insidersTooltipRef = useRef<HTMLDivElement>(null)
   const imageUrlRef = useRef<string>('')
   const workingImageUrlRef = useRef<string>('') // Store the URL that actually works
   const retryCountRef = useRef<number>(0)
@@ -654,14 +656,6 @@ function TrenchesTokenCard({
     }
   }, [isHovered, isFirstToken])
 
-  // Cleanup bubble map timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (bubbleMapTimeoutRef.current) {
-        clearTimeout(bubbleMapTimeoutRef.current)
-      }
-    }
-  }, [])
 
   // Stable fallback URLs - memoized to prevent recreation
   const fallbackImageUrl = useMemo(() => 
@@ -713,6 +707,26 @@ function TrenchesTokenCard({
   const imageUrl = imageError ? fallbackImageUrl : stableImageUrl
   const hoverImageUrl = hoverImageError ? fallbackHoverImageUrl : imageUrl
 
+  // Use bonding curve progress directly from API - no calculation needed, instant updates
+  const bondingCurveProgress = token.bondingCurveProgress
+  
+  // Memoize formatted value to avoid recalculation on every render
+  const formattedProgress = useMemo(() => {
+    if (bondingCurveProgress == null) return null
+    return typeof bondingCurveProgress === 'number' 
+      ? `${bondingCurveProgress.toFixed(2)}%` 
+      : `${bondingCurveProgress}%`
+  }, [bondingCurveProgress])
+  
+  // Memoize background color to avoid function call on every render
+  const backgroundColor = useMemo(() => {
+    if (echoSettings?.toggles?.backgroundColor && echoSettings?.toggles?.launchpadColorMatching) {
+      return getLaunchpadColor(token.platform)
+    }
+    return 'hover:bg-zinc-900/40'
+  }, [echoSettings?.toggles?.backgroundColor, echoSettings?.toggles?.launchpadColorMatching, token.platform])
+
+
   // Preload image for faster loading - only for first token
   useEffect(() => {
     if (isFirstToken && imageUrl && !imageError && imageUrl !== fallbackImageUrl) {
@@ -753,7 +767,26 @@ function TrenchesTokenCard({
   return (
     <div 
       ref={cardRef}
-      className={`p-2 transition-all cursor-pointer min-h-[140px] w-full relative ${getBackgroundColor()}`}
+      className={`p-2 transition-all cursor-pointer min-h-[140px] w-full relative ${backgroundColor}`}
+      onMouseEnter={(e) => {
+        // INSTANT - direct DOM class manipulation, no React state delays
+        // Only manipulate if tooltip exists (bondingCurveProgress available)
+        // Don't stop propagation - allow other hover handlers to work
+        const tooltip = tooltipRef.current
+        if (tooltip && bondingCurveProgress != null) {
+          tooltip.classList.remove('tooltip-hidden')
+          tooltip.classList.add('tooltip-visible')
+        }
+      }}
+      onMouseLeave={(e) => {
+        // INSTANT - direct DOM class manipulation
+        // Don't stop propagation - allow other hover handlers to work
+        const tooltip = tooltipRef.current
+        if (tooltip) {
+          tooltip.classList.remove('tooltip-visible')
+          tooltip.classList.add('tooltip-hidden')
+        }
+      }}
     >
       <div className="flex items-start gap-3 h-full">
         {/* Left: Large Token Icon and Contract Address */}
@@ -986,12 +1019,6 @@ function TrenchesTokenCard({
                 
                 // Clean the contract address to remove any extra spaces or characters
                 const cleanAddress = token.contractAddress.trim().replace(/\s+/g, '');
-                console.log('Contract Address Debug:', {
-                  original: token.contractAddress,
-                  clean: cleanAddress,
-                  length: cleanAddress.length
-                });
-                
                 return `${cleanAddress.substring(0, 3)}...${cleanAddress.substring(cleanAddress.length - 4)}`;
               })()}
             </span>
@@ -1167,6 +1194,29 @@ function TrenchesTokenCard({
         </div>
       </div>
 
+      {/* Bonding Curve Progress Tooltip - Always in DOM when data available, instant show/hide via CSS classes */}
+      {bondingCurveProgress != null && formattedProgress && (
+        <div
+          ref={tooltipRef}
+          className="tooltip-hidden absolute z-[10001] pointer-events-none top-2 left-1/2 -translate-x-1/2"
+          style={{
+            transform: 'translate3d(-50%, 0, 0)',
+            willChange: 'opacity',
+            backfaceVisibility: 'hidden',
+            perspective: '1000px'
+          }}
+        >
+          <div className="bg-zinc-900/95 backdrop-blur-sm border border-zinc-700/50 rounded-lg px-2.5 py-1.5 shadow-xl">
+            <div className="flex flex-col gap-0.5">
+              <div className="text-zinc-400 text-[10px] leading-tight">B. Curve</div>
+              <div className="text-green-400 font-semibold text-xs leading-tight">
+                {formattedProgress}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Bottom Row: Engagement Metrics and Buy Button */}
       <div className="flex items-center justify-between mt-3 overflow-visible">
         {/* Engagement Metrics */}
@@ -1182,25 +1232,20 @@ function TrenchesTokenCard({
             
             return (
               <div 
-                className="relative group flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full border border-gray-400/30 min-w-fit"
+                className="relative flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full border border-gray-400/30 min-w-fit"
                 onMouseEnter={() => {
-                  if (bubbleMapTimeoutRef.current) {
-                    clearTimeout(bubbleMapTimeoutRef.current)
-                    bubbleMapTimeoutRef.current = null
-                  }
-                  if (token.contractAddress) {
-                    setIsBubbleMapHovered(true)
+                  // INSTANT - direct DOM manipulation for tooltip
+                  if (top10TooltipRef.current) {
+                    top10TooltipRef.current.style.opacity = '1'
+                    top10TooltipRef.current.style.visibility = 'visible'
                   }
                 }}
                 onMouseLeave={() => {
-                  // Close immediately when cursor leaves Top 10 Holders
-                  // If cursor enters bubble map modal, onMouseEnter will reopen it
-                  if (bubbleMapTimeoutRef.current) {
-                    clearTimeout(bubbleMapTimeoutRef.current)
-                    bubbleMapTimeoutRef.current = null
+                  // INSTANT - direct DOM manipulation for tooltip
+                  if (top10TooltipRef.current) {
+                    top10TooltipRef.current.style.opacity = '0'
+                    top10TooltipRef.current.style.visibility = 'hidden'
                   }
-                  // Direct state update - no delays
-                  setIsBubbleMapHovered(false)
                 }}
               >
             <Image 
@@ -1213,7 +1258,15 @@ function TrenchesTokenCard({
             />
                 <span className={`${textColorClass} text-xs`}>+{top10HoldersValue.toFixed(1)}%</span>
                 {/* Tooltip */}
-                <div className="absolute top-full left-0 mt-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-none whitespace-nowrap z-[9999] pointer-events-none" style={{ willChange: 'opacity' }}>
+                <div 
+                  ref={top10TooltipRef}
+                  className="absolute top-full left-0 mt-2 px-2 py-1 bg-black text-white text-xs rounded transition-none whitespace-nowrap z-[9999] pointer-events-none"
+                  style={{ 
+                    willChange: 'opacity',
+                    opacity: 0,
+                    visibility: 'hidden'
+                  }}
+                >
                   Top 10 holders
           </div>
               </div>
@@ -1228,7 +1281,23 @@ function TrenchesTokenCard({
             const textColorClass = isDevSold ? "text-blue-400" : "text-green-400"
             
             return (
-              <div className="relative group flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full border border-gray-400/30 min-w-fit">
+              <div 
+                className="relative flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full border border-gray-400/30 min-w-fit"
+                onMouseEnter={() => {
+                  // INSTANT - direct DOM manipulation
+                  if (devTooltipRef.current) {
+                    devTooltipRef.current.style.opacity = '1'
+                    devTooltipRef.current.style.visibility = 'visible'
+                  }
+                }}
+                onMouseLeave={() => {
+                  // INSTANT - direct DOM manipulation
+                  if (devTooltipRef.current) {
+                    devTooltipRef.current.style.opacity = '0'
+                    devTooltipRef.current.style.visibility = 'hidden'
+                  }
+                }}
+              >
             <Image 
               src="/icons/ui/dev-holding-icon.svg" 
               alt="Dev Holding" 
@@ -1241,7 +1310,15 @@ function TrenchesTokenCard({
                   {isDevSold ? 'DS' : `${(token.devHoldingsPercentage ?? 0).toFixed(1)}%`}
             </span>
                 {/* Tooltip */}
-                <div className="absolute top-full left-0 mt-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-none whitespace-nowrap z-[9999] pointer-events-none" style={{ willChange: 'opacity' }}>
+                <div 
+                  ref={devTooltipRef}
+                  className="absolute top-full left-0 mt-2 px-2 py-1 bg-black text-white text-xs rounded transition-none whitespace-nowrap z-[9999] pointer-events-none"
+                  style={{ 
+                    willChange: 'opacity',
+                    opacity: 0,
+                    visibility: 'hidden'
+                  }}
+                >
                   Dev holding
           </div>
               </div>
@@ -1257,7 +1334,23 @@ function TrenchesTokenCard({
             const textColorClass = isHigh ? "text-red-400" : "text-green-400"
             
             return (
-              <div className="relative group flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full border border-gray-400/30 min-w-fit">
+              <div 
+                className="relative flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full border border-gray-400/30 min-w-fit"
+                onMouseEnter={() => {
+                  // INSTANT - direct DOM manipulation
+                  if (snipersTooltipRef.current) {
+                    snipersTooltipRef.current.style.opacity = '1'
+                    snipersTooltipRef.current.style.visibility = 'visible'
+                  }
+                }}
+                onMouseLeave={() => {
+                  // INSTANT - direct DOM manipulation
+                  if (snipersTooltipRef.current) {
+                    snipersTooltipRef.current.style.opacity = '0'
+                    snipersTooltipRef.current.style.visibility = 'hidden'
+                  }
+                }}
+              >
             <Image 
               src="/icons/ui/snipers-icon.svg" 
               alt="Snipers" 
@@ -1268,13 +1361,37 @@ function TrenchesTokenCard({
             />
                 <span className={`${textColorClass} text-xs`}>{snipersValue.toFixed(1)}%</span>
                 {/* Tooltip */}
-                <div className="absolute top-full left-0 mt-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-none whitespace-nowrap z-[9999] pointer-events-none" style={{ willChange: 'opacity' }}>
+                <div 
+                  ref={snipersTooltipRef}
+                  className="absolute top-full left-0 mt-2 px-2 py-1 bg-black text-white text-xs rounded transition-none whitespace-nowrap z-[9999] pointer-events-none"
+                  style={{ 
+                    willChange: 'opacity',
+                    opacity: 0,
+                    visibility: 'hidden'
+                  }}
+                >
                   Snipers
           </div>
               </div>
             )
           })()}
-          <div className="relative group flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full border border-gray-400/30 min-w-fit">
+          <div 
+            className="relative flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full border border-gray-400/30 min-w-fit"
+            onMouseEnter={() => {
+              // INSTANT - direct DOM manipulation
+              if (insidersTooltipRef.current) {
+                insidersTooltipRef.current.style.opacity = '1'
+                insidersTooltipRef.current.style.visibility = 'visible'
+              }
+            }}
+            onMouseLeave={() => {
+              // INSTANT - direct DOM manipulation
+              if (insidersTooltipRef.current) {
+                insidersTooltipRef.current.style.opacity = '0'
+                insidersTooltipRef.current.style.visibility = 'hidden'
+              }
+            }}
+          >
             <Image 
               src="/icons/ui/insiders-icon.svg" 
               alt="Insiders" 
@@ -1284,7 +1401,15 @@ function TrenchesTokenCard({
             />
             <span className="text-white text-xs">{(token.insiders ?? 0).toFixed(1)}%</span>
             {/* Tooltip */}
-            <div className="absolute top-full left-0 mt-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-none whitespace-nowrap z-[9999] pointer-events-none" style={{ willChange: 'opacity' }}>
+            <div 
+              ref={insidersTooltipRef}
+              className="absolute top-full left-0 mt-2 px-2 py-1 bg-black text-white text-xs rounded transition-none whitespace-nowrap z-[9999] pointer-events-none"
+              style={{ 
+                willChange: 'opacity',
+                opacity: 0,
+                visibility: 'hidden'
+              }}
+            >
               Insiders
             </div>
           </div>
@@ -1303,91 +1428,6 @@ function TrenchesTokenCard({
         </button>
       </div>
 
-      {/* Bubble Map iframe on hover - centered modal */}
-      {isBubbleMapHovered && token.contractAddress && (
-        <div 
-          data-bubble-map
-          className="fixed inset-0 z-[9999] pointer-events-none"
-          style={{ 
-            willChange: 'opacity',
-            transform: 'translateZ(0)',
-            backfaceVisibility: 'hidden'
-          }}
-          onMouseEnter={() => {
-            if (bubbleMapTimeoutRef.current) {
-              clearTimeout(bubbleMapTimeoutRef.current)
-              bubbleMapTimeoutRef.current = null
-            }
-            setIsBubbleMapHovered(true)
-          }}
-          onMouseLeave={() => {
-            // Close immediately when leaving modal
-            if (bubbleMapTimeoutRef.current) {
-              clearTimeout(bubbleMapTimeoutRef.current)
-              bubbleMapTimeoutRef.current = null
-            }
-            setIsBubbleMapHovered(false)
-          }}
-        >
-          {/* Backdrop overlay - closes on click */}
-          <div 
-            className="absolute inset-0 bg-black/50 pointer-events-auto"
-            onClick={() => {
-              if (bubbleMapTimeoutRef.current) {
-                clearTimeout(bubbleMapTimeoutRef.current)
-                bubbleMapTimeoutRef.current = null
-              }
-              setIsBubbleMapHovered(false)
-            }}
-          />
-          {/* Centered bubble map card */}
-          <div 
-            className="absolute bg-gray-900 rounded-lg shadow-2xl pointer-events-auto border-2 border-blue-400/30 overflow-hidden"
-            style={{ 
-              width: '280px', 
-              height: '320px',
-              left: '50%',
-              top: '50%',
-              transform: 'translate(-50%, -50%) translateZ(0)',
-              willChange: 'opacity, transform',
-              backfaceVisibility: 'hidden',
-              perspective: '1000px',
-              transition: 'none',
-              opacity: 1
-            }}
-            onMouseEnter={() => {
-              if (bubbleMapTimeoutRef.current) {
-                clearTimeout(bubbleMapTimeoutRef.current)
-                bubbleMapTimeoutRef.current = null
-              }
-              setIsBubbleMapHovered(true)
-            }}
-            onMouseLeave={() => {
-              // Close immediately when leaving bubble map card
-              if (bubbleMapTimeoutRef.current) {
-                clearTimeout(bubbleMapTimeoutRef.current)
-                bubbleMapTimeoutRef.current = null
-              }
-              setIsBubbleMapHovered(false)
-            }}
-          >
-            <iframe
-              src={`https://iframe.bubblemaps.io/map?address=${encodeURIComponent(token.contractAddress)}&chain=solana&partnerId=demo`}
-              style={{
-                width: '100%',
-                height: '100%',
-                border: 'none'
-              }}
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              title="Bubble Map"
-            />
-          </div>
-        </div>
-      )}
     </div>
   )
 }

@@ -1,5 +1,5 @@
-import { DashboardContent } from "@/components/dashboard-content"
+import { TrendingPage } from "@/components/trending-page"
 
 export default function HomePage() {
-  return <DashboardContent />
+  return <TrendingPage />
 }

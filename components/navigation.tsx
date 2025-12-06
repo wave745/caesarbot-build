@@ -8,14 +8,14 @@ import { Button } from "@/components/ui/button"
 import { useState, useRef, useEffect } from "react"
 
 const navItems = [
-  { name: "Discover", href: "/" },
+  // { name: "Discover", href: "/" },
   { name: "Trending", href: "/trending" },
   { name: "Echo", href: "/echo" },
   { name: "Tracker", href: "/tracker" },
   { name: "Sniper", href: "/sniper" },
   { name: "Portfolio", href: "/portfolio" },
   { name: "Deployer", href: "/deployer" },
-  { name: "Meta", href: "/meta" },
+  // { name: "Meta", href: "/meta" },
   { name: "Rewards", href: "/rewards" },
 ]
 

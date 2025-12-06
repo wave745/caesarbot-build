@@ -461,3 +461,16 @@
 .delay-1400 {
   animation-delay: 1.4s;
 }
+
+/* Instant tooltip visibility - no transitions, pure CSS */
+.tooltip-hidden {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+}
+
+.tooltip-visible {
+  opacity: 1 !important;
+  pointer-events: none !important;
+  visibility: visible !important;
+}

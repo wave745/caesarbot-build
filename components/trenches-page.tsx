@@ -125,7 +125,9 @@ const convertPumpFunToToken = (coin: PumpFunCoin, index: number, status: 'new' |
     // Pump.fun specific fields
     coinMint: coin.coinMint,
     dev: coin.dev,
-    bondingCurveProgress: coin.bondingCurveProgress,
+    bondingCurveProgress: (coin.bondingCurveProgress != null && typeof coin.bondingCurveProgress === 'number' && !isNaN(coin.bondingCurveProgress))
+      ? Math.max(0, Math.min(100, coin.bondingCurveProgress))
+      : undefined, // Validate and clamp bonding curve progress
     sniperCount: coin.sniperCount,
     graduationDate: coin.graduationDate,
     devHoldingsPercentage: coin.devHoldingsPercentage,
@@ -170,7 +172,9 @@ const convertBonkFunToToken = (token: BonkFunToken, index: number): TrenchesToke
     buyAmount: "5.00",
     // Store creation time for live age updates
     creationTime: new Date(token.createAt).getTime(),
-    bondingCurveProgress: token.finishingRate * 100, // Convert to percentage
+    bondingCurveProgress: (token.finishingRate != null && typeof token.finishingRate === 'number' && !isNaN(token.finishingRate)) 
+      ? Math.max(0, Math.min(100, token.finishingRate * 100)) 
+      : undefined, // Convert to percentage with validation
     // Bonk.fun specific fields
     coinMint: token.mint,
     dev: token.creator,
@@ -216,7 +220,9 @@ const convertMoonItToToken = (token: MoonItToken, index: number): TrenchesToken 
     insiders: 0, // Not provided in moon.it API
     platform: 'moon.it' as const,
     buyAmount: "5.00",
-    bondingCurveProgress: token.progressPercent,
+    bondingCurveProgress: (token.progressPercent != null && typeof token.progressPercent === 'number' && !isNaN(token.progressPercent))
+      ? Math.max(0, Math.min(100, token.progressPercent))
+      : undefined, // Validate and clamp progress percent
     // Moon.it specific fields
     coinMint: token.mintAddress,
     dev: token.creatorPK,
@@ -444,7 +450,9 @@ export function TrenchesPage() {
             tipsFees: 0,
             coinMint: coin.coinMint || '',
             dev: coin.dev || '',
-            bondingCurveProgress: coin.bondingCurveProgress || 0,
+            bondingCurveProgress: (coin.bondingCurveProgress != null && typeof coin.bondingCurveProgress === 'number' && !isNaN(coin.bondingCurveProgress))
+              ? Math.max(0, Math.min(100, coin.bondingCurveProgress))
+              : 0,
             sniperCount: coin.sniperCount || 0,
             graduationDate: coin.graduationDate || null,
             devHoldingsPercentage: coin.devHoldingsPercentage || 0,
@@ -586,7 +594,9 @@ export function TrenchesPage() {
             tipsFees: 0,
             coinMint: coin.coinMint || '',
             dev: coin.dev || '',
-            bondingCurveProgress: coin.bondingCurveProgress || 0,
+            bondingCurveProgress: (coin.bondingCurveProgress != null && typeof coin.bondingCurveProgress === 'number' && !isNaN(coin.bondingCurveProgress))
+              ? Math.max(0, Math.min(100, coin.bondingCurveProgress))
+              : 0,
             sniperCount: coin.sniperCount || 0,
             graduationDate: coin.graduationDate || null,
             devHoldingsPercentage: coin.devHoldingsPercentage || 0,
@@ -744,7 +754,9 @@ export function TrenchesPage() {
             tipsFees: 0,
             coinMint: coin.coinMint || '',
             dev: coin.dev || '',
-            bondingCurveProgress: coin.bondingCurveProgress || 100, // Graduated tokens are at 100%
+            bondingCurveProgress: (coin.bondingCurveProgress != null && typeof coin.bondingCurveProgress === 'number' && !isNaN(coin.bondingCurveProgress))
+              ? Math.max(0, Math.min(100, coin.bondingCurveProgress))
+              : 100, // Graduated tokens default to 100% if no data
             sniperCount: coin.sniperCount || 0,
             graduationDate: coin.graduationDate || null,
             devHoldingsPercentage: coin.devHoldingsPercentage || 0,
