@@ -1526,7 +1526,6 @@ function TrenchesTokenCard({
           }}
           onClick={() => {
             // TODO: Implement buy functionality
-            console.log(`Buying ${solAmount} SOL worth of ${token.symbol}`)
           }}
         >
           <Zap className={`${echoSettings?.quickBuy?.size === 'Small' ? 'w-3 h-3' :

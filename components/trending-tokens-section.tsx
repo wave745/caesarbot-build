@@ -77,7 +77,6 @@ interface TrendingTokensSectionProps {
 }
 
 export function TrendingTokensSection({ sortBy: propSortBy, filters }: TrendingTokensSectionProps = {}) {
-  console.log('TrendingTokensSection: Component rendering - START')
   const [tokens, setTokens] = useState<MoralisTrendingToken[]>([])
   const [isLoading, setIsLoading] = useState(false) // Start with false for instant display
   const [error, setError] = useState<string | null>(null)
@@ -111,7 +110,6 @@ export function TrendingTokensSection({ sortBy: propSortBy, filters }: TrendingT
 
   const fetchDexPaidStatus = async (tokens: MoralisTrendingToken[], signal?: AbortSignal) => {
     try {
-      console.log('Fetching Dex paid status for tokens...')
       
       const tokensToCheck = tokens.map(token => ({
         chainId: token.chainId || 'solana',
@@ -139,7 +137,6 @@ export function TrendingTokensSection({ sortBy: propSortBy, filters }: TrendingT
       }
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
-        console.log('Dex paid status fetch was aborted')
         return
       }
       console.error('Error fetching Dex paid status:', error)
@@ -148,10 +145,8 @@ export function TrendingTokensSection({ sortBy: propSortBy, filters }: TrendingT
 
   const fetchTokenMetadata = async (tokens: MoralisTrendingToken[], signal?: AbortSignal) => {
     try {
-      console.log('Fetching token metadata for tokens...', tokens.length)
       
       const tokenAddresses = tokens.map(token => token.tokenAddress)
-      console.log('Token addresses to fetch metadata for:', tokenAddresses)
 
       const response = await fetch('/api/moralis/token-metadata', {
         method: 'POST',
@@ -162,26 +157,21 @@ export function TrendingTokensSection({ sortBy: propSortBy, filters }: TrendingT
         signal
       })
 
-      console.log('Metadata API response status:', response.status)
 
       if (response.ok) {
         const data = await response.json()
-        console.log('Metadata API response data:', data)
         if (data.success && data.data) {
           const metadataMap = new Map<string, any>()
           Object.entries(data.data).forEach(([tokenAddress, metadata]) => {
-            console.log(`Setting metadata for ${tokenAddress}:`, metadata)
             metadataMap.set(tokenAddress, metadata)
           })
           setTokenMetadata(metadataMap)
-          console.log('Token metadata map updated:', metadataMap.size, 'entries')
         }
       } else {
         console.error('Metadata API error:', response.status, response.statusText)
       }
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
-        console.log('Token metadata fetch was aborted')
         return
       }
       console.error('Error fetching token metadata:', error)
@@ -190,7 +180,6 @@ export function TrendingTokensSection({ sortBy: propSortBy, filters }: TrendingT
 
   const fetchTrendingTokens = async () => {
     try {
-      console.log('TrendingTokensSection: Starting INSTANT fetch...')
       // NO LOADING STATE - show tokens immediately
       setError(null)
 
@@ -227,14 +216,10 @@ export function TrendingTokensSection({ sortBy: propSortBy, filters }: TrendingT
         signal: controller.signal
       })
       clearTimeout(timeoutId)
-      
-      console.log('TrendingTokensSection: Response status:', response.status)
 
       const data = await response.json()
-      console.log('TrendingTokensSection: Response data:', data)
 
       if (data.success && data.data.length > 0) {
-        console.log('TrendingTokensSection: Setting tokens INSTANTLY:', data.data.length)
         setTokens(data.data)
         setLastUpdate(new Date())
         setIsLoading(false) // Never show loading - always show tokens immediately
@@ -243,17 +228,14 @@ export function TrendingTokensSection({ sortBy: propSortBy, filters }: TrendingT
         fetchDexPaidStatus(data.data, controller.signal)
         fetchTokenMetadata(data.data, controller.signal)
       } else {
-        console.log('TrendingTokensSection: No tokens or error:', data.error)
         setTokens([])
         setError(data.error || 'No trending tokens available')
         setIsLoading(false) // Show empty state immediately
       }
     } catch (err: any) {
       if (err.name === 'AbortError') {
-        console.log('TrendingTokensSection: Request was aborted')
         return
       }
-      console.error('TrendingTokensSection: Error fetching trending tokens:', err)
       setError(err.message || 'Failed to load trending tokens')
       setTokens([])
       setIsLoading(false) // Show error state immediately
@@ -263,13 +245,11 @@ export function TrendingTokensSection({ sortBy: propSortBy, filters }: TrendingT
   // Refetch when filters change
   useEffect(() => {
     if (filters) {
-      console.log('TrendingTokensSection: Filters changed, refetching...')
       fetchTrendingTokens()
     }
   }, [filters])
 
   useEffect(() => {
-    console.log('TrendingTokensSection: useEffect triggered - INSTANT LOADING')
     let abortController: AbortController | null = null
 
     // Check cache first for INSTANT display
@@ -278,7 +258,6 @@ export function TrendingTokensSection({ sortBy: propSortBy, filters }: TrendingT
       if (cachedTokens.length > 0) {
         setTokens(cachedTokens)
         setIsLoading(false)
-        console.log('INSTANT: Using cached trending tokens:', cachedTokens.length)
       }
     }
 
@@ -296,7 +275,6 @@ export function TrendingTokensSection({ sortBy: propSortBy, filters }: TrendingT
       if (abortController) {
         abortController.abort()
       }
-      console.log('TrendingTokensSection: Cleaning up on unmount')
     }
   }, [])
 
@@ -378,8 +356,6 @@ export function TrendingTokensSection({ sortBy: propSortBy, filters }: TrendingT
   }
 
 
-  console.log('TrendingTokensSection: About to render, tokens:', tokens.length, 'isLoading:', isLoading, 'error:', error)
-  
   return (
     <div className="w-full">
       {/* Tokens Table */}

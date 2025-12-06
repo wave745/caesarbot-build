@@ -14,10 +14,6 @@ export function VolumeCard({ isOpen, onClose }: { isOpen: boolean; onClose: () =
   const animationFrameRef = useRef<number>();
 
   const { data: jupiterData, loading, error } = useJupiterStats();
-  
-  console.log('VolumeCard - jupiterData:', jupiterData);
-  console.log('VolumeCard - loading:', loading);
-  console.log('VolumeCard - error:', error);
 
   const tabs = ["1d", "7d", "30d"];
 
