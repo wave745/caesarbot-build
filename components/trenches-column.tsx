@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import { Button } from "@/components/ui/button"
-import { 
+import {
   Zap,
   Pause
 } from "lucide-react"
@@ -188,14 +188,14 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
     // Direct synchronous capture - no delays
     const currentIds = new Set<string>()
     const tokensSnapshot: TrenchesToken[] = []
-    
+
     for (let i = 0; i < tokens.length; i++) {
       const t = tokens[i]
       const tokenId = `${t.platform}-${t.coinMint || t.id || t.contractAddress || ''}`
       currentIds.add(tokenId)
       tokensSnapshot.push(t)
     }
-    
+
     pausedTokenIdsRef.current = currentIds
     previousTokensRef.current = tokensSnapshot
   }, [tokens])
@@ -214,12 +214,12 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
     if (!isPaused || previousTokensRef.current.length === 0) {
       return tokens
     }
-    
+
     // When paused, only show tokens that were in the snapshot
     // But merge in updated data for those tokens from the current tokens array
     const pausedIds = pausedTokenIdsRef.current
     const previousTokens = previousTokensRef.current
-    
+
     // Create a map of current tokens by ID for fast lookup - optimized loop
     const currentTokensMap = new Map<string, TrenchesToken>()
     for (let i = 0; i < tokens.length; i++) {
@@ -227,7 +227,7 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
       const tokenId = `${token.platform}-${token.coinMint || token.id || token.contractAddress || ''}`
       currentTokensMap.set(tokenId, token)
     }
-    
+
     // Return tokens that were paused, but with updated data if available
     // Filter to ensure we only return tokens that were in the paused snapshot
     const result: TrenchesToken[] = []
@@ -247,7 +247,7 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
   useEffect(() => {
     const currentTokenIds = new Set(displayedTokens.map(t => `${t.platform}-${t.id}-${t.coinMint || t.contractAddress}`))
     const seenIds = seenTokenIdsRef.current
-    
+
     // Find truly new tokens that haven't been seen before
     const newTokens = displayedTokens.filter(token => {
       const tokenId = `${token.platform}-${token.id}-${token.coinMint || token.contractAddress}`
@@ -298,7 +298,7 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
     {
       id: "P1",
       gasPump: "0.003",
-      handCoins: "0.004", 
+      handCoins: "0.004",
       personFalling: "20%",
       robot: "On",
       robotActive: true
@@ -307,7 +307,7 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
       id: "P2",
       gasPump: "0.008",
       handCoins: "0.012",
-      personFalling: "10%", 
+      personFalling: "10%",
       robot: "Off",
       robotActive: false
     },
@@ -316,7 +316,7 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
       gasPump: "0.012",
       handCoins: "0.03",
       personFalling: "10%",
-      robot: "Off", 
+      robot: "Off",
       robotActive: false
     }
   ]
@@ -325,7 +325,7 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
   const pauseOnHover = echoSettings?.toggles?.pauseOnHover !== false // Default to true
 
   return (
-    <div 
+    <div
       className={`bg-zinc-900/40 border border-zinc-800 rounded-xl flex flex-col h-full ${isPaused ? 'opacity-95' : ''}`}
       onMouseEnter={() => {
         // Pause when mouse enters the column (if enabled) - instant response
@@ -376,36 +376,35 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
                 autoFocus
               />
             ) : (
-              <span 
+              <span
                 className="text-white font-medium cursor-pointer whitespace-nowrap"
                 onClick={() => setIsEditing(true)}
               >
                 {solAmount}
               </span>
             )}
-            <img 
-              src={selectedChain === 'solana' ? "/sol-logo.png" : "/bnb-chain-binance-smart-chain-logo.svg"} 
-              alt={selectedChain === 'solana' ? "SOL" : "BNB"} 
-              className="w-3 h-3 flex-shrink-0" 
+            <img
+              src={selectedChain === 'solana' ? "/sol-logo.png" : "/bnb-chain-binance-smart-chain-logo.svg"}
+              alt={selectedChain === 'solana' ? "SOL" : "BNB"}
+              className="w-3 h-3 flex-shrink-0"
             />
           </div>
-          
+
           <div className="relative flex-shrink-0" ref={presetRef}>
-            <button 
+            <button
               className="px-2.5 py-1.5 bg-zinc-800 rounded text-xs hover:bg-zinc-700 transition-colors h-[28px] min-w-[32px] flex items-center justify-center"
               onClick={() => setShowPresets(!showPresets)}
             >
               <span className="text-white font-medium whitespace-nowrap">{selectedPreset}</span>
             </button>
-            
+
             {showPresets && (
               <div className="absolute top-full left-0 mt-1 bg-zinc-800 border border-zinc-700 rounded-lg shadow-lg z-50 min-w-[200px]">
                 {presets.map((preset) => (
-                  <div 
+                  <div
                     key={preset.id}
-                    className={`px-3 py-2 flex items-center justify-between cursor-pointer hover:bg-zinc-700 transition-colors ${
-                      selectedPreset === preset.id ? 'bg-zinc-700' : ''
-                    } ${preset.id === 'P1' ? 'rounded-t-lg' : ''} ${preset.id === 'P3' ? 'rounded-b-lg' : ''}`}
+                    className={`px-3 py-2 flex items-center justify-between cursor-pointer hover:bg-zinc-700 transition-colors ${selectedPreset === preset.id ? 'bg-zinc-700' : ''
+                      } ${preset.id === 'P1' ? 'rounded-t-lg' : ''} ${preset.id === 'P3' ? 'rounded-b-lg' : ''}`}
                     onClick={() => {
                       setSelectedPreset(preset.id)
                       setShowPresets(false)
@@ -435,26 +434,26 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
               </div>
             )}
           </div>
-          
+
           <div className="flex-shrink-0">
-          <SoundSelector
-            selectedSound={sound}
-            volume={volume}
-            onSoundChange={updateSound}
-            onVolumeChange={updateVolume}
-            onTestSound={playSound}
-          />
+            <SoundSelector
+              selectedSound={sound}
+              volume={volume}
+              onSoundChange={updateSound}
+              onVolumeChange={updateVolume}
+              onTestSound={playSound}
+            />
           </div>
-          
-          <button 
+
+          <button
             className="p-1.5 bg-zinc-800 rounded hover:bg-zinc-700 transition-colors h-[28px] w-[28px] flex items-center justify-center flex-shrink-0"
             onClick={() => setIsFilterModalOpen(true)}
           >
-            <Image 
-              src="/icons/ui/filter-icon.svg" 
-              alt="Filter" 
-              width={12} 
-              height={12} 
+            <Image
+              src="/icons/ui/filter-icon.svg"
+              alt="Filter"
+              width={12}
+              height={12}
               className="opacity-60"
             />
           </button>
@@ -462,7 +461,7 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
       </div>
 
       {/* Tokens List */}
-      <div 
+      <div
         ref={tokensListRef}
         className={`flex flex-col divide-y divide-zinc-800 overflow-y-auto overflow-x-visible max-h-[85vh] custom-scrollbar ${isPaused ? 'pointer-events-auto' : ''}`}
         style={{
@@ -495,12 +494,14 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
             // Add index as fallback to ensure uniqueness even if deduplication fails
             const tokenId = token.coinMint || token.id || token.contractAddress || `unknown-${index}`
             const stableKey = `${token.platform}-${tokenId}`
+            // Include metricsSize in key to force clean re-render when size changes, preventing layout flash
+            const metricsSize = echoSettings?.layout?.metricsSize || 'Small'
             return (
-              <TrenchesTokenCard 
-                key={stableKey} 
-                token={token} 
-                solAmount={solAmount} 
-                echoSettings={echoSettings} 
+              <TrenchesTokenCard
+                key={`${stableKey}-${metricsSize}`}
+                token={token}
+                solAmount={solAmount}
+                echoSettings={echoSettings}
                 isFirstToken={index === 0}
               />
             )
@@ -521,12 +522,12 @@ export function TrenchesColumn({ title, tokens, loading = false, onFiltersChange
 }
 
 // REMOVED memo() wrapper - trading platform needs continuous live updates, no memoization blocking
-function TrenchesTokenCard({ 
-  token, 
-  solAmount, 
-  echoSettings, 
+function TrenchesTokenCard({
+  token,
+  solAmount,
+  echoSettings,
   isFirstToken = false
-}: { 
+}: {
   token: TrenchesToken
   solAmount: string
   echoSettings?: any
@@ -560,6 +561,35 @@ function TrenchesTokenCard({
   }
 
   const getAgeColor = (age: string) => {
+    // Parse age to minutes for threshold comparison
+    const ageStr = age || ''
+    const ageMinutes = ageStr.includes('d') ? parseFloat(ageStr.replace(/[^0-9.]/g, '')) * 1440 :
+                       ageStr.includes('h') ? parseFloat(ageStr.replace(/[^0-9.]/g, '')) * 60 :
+                       ageStr.includes('m') ? parseFloat(ageStr.replace(/[^0-9.]/g, '')) : 0
+    
+    // Use threshold values if available
+    if (echoSettings?.thresholds && echoSettings?.thresholdColors) {
+      const tweet1 = parseFloat(echoSettings.thresholds.tweetAge1 || '30')
+      const tweet2 = parseFloat(echoSettings.thresholds.tweetAge2 || '10')
+      const tweet3 = parseFloat(echoSettings.thresholds.tweetAge3 || '10')
+      
+      if (ageMinutes >= tweet1) {
+        return echoSettings.thresholdColors.tweet1 || 'text-red-400'
+      } else if (ageMinutes >= tweet2) {
+        return echoSettings.thresholdColors.tweet2 || 'text-yellow-400'
+      } else if (ageMinutes >= tweet3) {
+        return echoSettings.thresholdColors.tweet3 || 'text-green-400'
+      }
+    }
+    
+    // Fallback: Use threshold colors with unit-based logic if thresholds not set
+    if (echoSettings?.thresholdColors) {
+      if (age.includes('d')) return echoSettings.thresholdColors.tweet3 || 'text-pink-400'
+      if (age.includes('h')) return echoSettings.thresholdColors.tweet2 || 'text-yellow-400'
+      if (age.includes('m')) return echoSettings.thresholdColors.tweet1 || 'text-green-400'
+    }
+    
+    // Default colors
     if (age.includes('d')) return 'text-pink-400'
     if (age.includes('h')) return 'text-yellow-400'
     if (age.includes('m')) return 'text-green-400'
@@ -578,10 +608,10 @@ function TrenchesTokenCard({
   useEffect(() => {
     if (isHovered && imageRef.current && cardRef.current) {
       let rafId: number | null = null
-      
+
       const updatePosition = () => {
         if (!imageRef.current || !cardRef.current) return
-        
+
         const rect = imageRef.current.getBoundingClientRect()
         const cardRect = cardRef.current.getBoundingClientRect()
         const viewportHeight = window.innerHeight
@@ -590,23 +620,23 @@ function TrenchesTokenCard({
         const imageLeft = rect.left
         const cardTop = cardRect.top
         const cardBottom = cardRect.bottom
-        
+
         // Preview image size
         const previewHeight = 300
         const previewWidth = 300
-        
+
         // Calculate available space
         const spaceBelow = viewportHeight - imageBottom
         const minSpacing = 20
-        
+
         // Determine position: prefer below if there's enough space, otherwise above
         let position: 'above' | 'below' = 'below'
         let top: number | undefined
         let bottom: number | undefined
-        
+
         // Check if this is a top token (first visible token)
         const isTopToken = isFirstToken || cardTop < 300
-        
+
         if (isTopToken) {
           // First token (top) - always show below, use imageBottom for closer positioning
           position = 'below'
@@ -620,17 +650,17 @@ function TrenchesTokenCard({
           position = 'below'
           top = cardBottom + 12
         }
-        
+
         // Calculate left with bounds checking
         const left = Math.max(8, Math.min(imageLeft, viewportWidth - previewWidth - 8))
-        
+
         setPreviewPosition(position)
         setPreviewCoords({ top, bottom, left })
       }
-      
+
       // Immediate position calculation - no delay
       updatePosition()
-      
+
       // Optimized scroll/resize handler - only throttle scroll, not initial render
       const handleScrollResize = () => {
         if (rafId !== null) return
@@ -639,10 +669,10 @@ function TrenchesTokenCard({
           rafId = null
         })
       }
-      
+
       window.addEventListener('scroll', handleScrollResize, { passive: true })
       window.addEventListener('resize', handleScrollResize, { passive: true })
-      
+
       return () => {
         if (rafId !== null) {
           cancelAnimationFrame(rafId)
@@ -658,11 +688,11 @@ function TrenchesTokenCard({
 
 
   // Stable fallback URLs - memoized to prevent recreation
-  const fallbackImageUrl = useMemo(() => 
+  const fallbackImageUrl = useMemo(() =>
     `https://ui-avatars.com/api/?name=${encodeURIComponent(token.symbol)}&background=6366f1&color=fff&size=64`,
     [token.symbol]
   )
-  const fallbackHoverImageUrl = useMemo(() => 
+  const fallbackHoverImageUrl = useMemo(() =>
     `https://ui-avatars.com/api/?name=${encodeURIComponent(token.symbol)}&background=6366f1&color=fff&size=350`,
     [token.symbol]
   )
@@ -673,9 +703,9 @@ function TrenchesTokenCard({
     if (workingImageUrlRef.current && isImageLoadedRef.current && !imageError) {
       return workingImageUrlRef.current
     }
-    
+
     const currentImageUrl = token.image || ''
-    
+
     // Reset state when image URL actually changes
     if (currentImageUrl !== imageUrlRef.current) {
       imageUrlRef.current = currentImageUrl
@@ -687,12 +717,12 @@ function TrenchesTokenCard({
         isImageLoadedRef.current = false
       }
     }
-    
+
     // Validate and sanitize image URL
     if (!currentImageUrl || currentImageUrl.trim() === '') {
       return fallbackImageUrl
     }
-    
+
     // Check if URL is valid
     try {
       new URL(currentImageUrl)
@@ -702,22 +732,22 @@ function TrenchesTokenCard({
       return fallbackImageUrl
     }
   }, [token.image, token.symbol, fallbackImageUrl, imageError])
-  
+
   // Use stable image URL - prefer working URL if available
   const imageUrl = imageError ? fallbackImageUrl : stableImageUrl
   const hoverImageUrl = hoverImageError ? fallbackHoverImageUrl : imageUrl
 
   // Use bonding curve progress directly from API - no calculation needed, instant updates
   const bondingCurveProgress = token.bondingCurveProgress
-  
+
   // Memoize formatted value to avoid recalculation on every render
   const formattedProgress = useMemo(() => {
     if (bondingCurveProgress == null) return null
-    return typeof bondingCurveProgress === 'number' 
-      ? `${bondingCurveProgress.toFixed(2)}%` 
+    return typeof bondingCurveProgress === 'number'
+      ? `${bondingCurveProgress.toFixed(2)}%`
       : `${bondingCurveProgress}%`
   }, [bondingCurveProgress])
-  
+
   // Memoize background color to avoid function call on every render
   const backgroundColor = useMemo(() => {
     if (echoSettings?.toggles?.backgroundColor && echoSettings?.toggles?.launchpadColorMatching) {
@@ -736,7 +766,7 @@ function TrenchesTokenCard({
       link.href = imageUrl
       link.crossOrigin = 'anonymous'
       document.head.appendChild(link)
-      
+
       return () => {
         if (document.head.contains(link)) {
           document.head.removeChild(link)
@@ -750,13 +780,13 @@ function TrenchesTokenCard({
     if (imgElementRef.current && isImageLoadedRef.current && workingImageUrlRef.current) {
       const currentSrc = imgElementRef.current.src
       const newImageUrl = imageError ? fallbackImageUrl : stableImageUrl
-      
+
       // Only change src if it's actually different and not already the working URL
       if (currentSrc !== newImageUrl && currentSrc === workingImageUrlRef.current && !imageError) {
         // Keep the working image - don't change it unnecessarily
         return
       }
-      
+
       // If the new URL is the same as working URL, ensure src matches
       if (newImageUrl === workingImageUrlRef.current && currentSrc !== workingImageUrlRef.current) {
         imgElementRef.current.src = workingImageUrlRef.current
@@ -765,9 +795,10 @@ function TrenchesTokenCard({
   }, [stableImageUrl, fallbackImageUrl, imageError]) // Removed imageUrl from dependencies to avoid initialization issues
 
   return (
-    <div 
+    <div
       ref={cardRef}
-      className={`p-2 transition-all cursor-pointer min-h-[140px] w-full relative ${backgroundColor}`}
+      className={`cursor-pointer ${echoSettings?.layout?.metricsSize === 'Large' ? 'p-3 min-h-[160px] gap-1' : 'p-2 min-h-[140px]'} w-full relative ${backgroundColor}`}
+      style={{ transition: 'none' }}
       onMouseEnter={(e) => {
         // INSTANT - direct DOM class manipulation, no React state delays
         // Only manipulate if tooltip exists (bondingCurveProgress available)
@@ -788,10 +819,10 @@ function TrenchesTokenCard({
         }
       }}
     >
-      <div className="flex items-start gap-3 h-full">
+      <div className={`flex items-start h-full ${echoSettings?.layout?.metricsSize === 'Large' ? 'gap-4' : 'gap-3'}`}>
         {/* Left: Large Token Icon and Contract Address */}
         <div className="flex flex-col items-start">
-          <div 
+          <div
             ref={imageRef}
             className="relative"
             onMouseEnter={() => {
@@ -801,7 +832,10 @@ function TrenchesTokenCard({
               setIsHovered(false)
             }}
           >
-            <div className={`w-16 h-16 rounded-lg overflow-hidden border ${getStatusColor(token.status)} transition-transform duration-300 ${isHovered ? 'scale-105' : 'scale-100'} relative bg-zinc-800`}>
+            <div 
+              className={`w-16 h-16 ${echoSettings?.layout?.avatarShape === 'Circle' ? 'rounded-full' : 'rounded-lg'} overflow-hidden border ${getStatusColor(token.status)} ${isHovered ? 'scale-105' : 'scale-100'} relative bg-zinc-800`}
+              style={{ transition: 'none' }}
+            >
               <img
                 ref={(el) => {
                   imgElementRef.current = el
@@ -817,19 +851,19 @@ function TrenchesTokenCard({
                 decoding="async"
                 fetchPriority={isFirstToken ? "high" : "auto"}
                 crossOrigin="anonymous"
-                style={{ 
-                  minWidth: '64px', 
+                style={{
+                  minWidth: '64px',
                   minHeight: '64px',
                   backgroundColor: '#27272a' // zinc-800 background while loading
                 }}
                 onError={(e) => {
                   const target = e.currentTarget as HTMLImageElement
-                  
+
                   // Prevent infinite error loops - if already showing fallback, don't do anything
                   if (target.src === fallbackImageUrl || imageError) {
                     return
                   }
-                  
+
                   // Retry logic: try decoded URL first, then fallback
                   if (retryCountRef.current === 0 && token.image && token.image !== fallbackImageUrl && !token.image.includes('ui-avatars.com')) {
                     retryCountRef.current = 1
@@ -845,7 +879,7 @@ function TrenchesTokenCard({
                       // Decode failed, continue to fallback
                     }
                   }
-                  
+
                   // If retry failed or already retried, use fallback
                   if (retryCountRef.current >= 1 || !token.image || token.image === fallbackImageUrl || token.image.includes('ui-avatars.com')) {
                     if (target.src !== fallbackImageUrl) {
@@ -862,7 +896,7 @@ function TrenchesTokenCard({
                     workingImageUrlRef.current = imgElementRef.current.src
                     isImageLoadedRef.current = true
                   }
-                  
+
                   // Reset error state if image loads successfully
                   if (imageError) {
                     setImageError(false)
@@ -871,13 +905,13 @@ function TrenchesTokenCard({
                 }}
               />
             </div>
-            
+
             {/* Hover Preview Image */}
             {isHovered && previewCoords.left !== undefined && (previewCoords.top !== undefined || previewCoords.bottom !== undefined) && (
               <div
                 className="fixed z-[10000] pointer-events-auto"
                 style={{
-                  ...(previewPosition === 'above' 
+                  ...(previewPosition === 'above'
                     ? { bottom: `${previewCoords.bottom}px`, left: `${previewCoords.left}px` }
                     : { top: `${previewCoords.top}px`, left: `${previewCoords.left}px` }
                   ),
@@ -904,12 +938,12 @@ function TrenchesTokenCard({
                     crossOrigin="anonymous"
                     onError={(e) => {
                       const target = e.currentTarget as HTMLImageElement
-                      
+
                       // Prevent infinite error loops - if already showing fallback, don't do anything
                       if (target.src === fallbackHoverImageUrl || hoverImageError) {
                         return
                       }
-                      
+
                       // Retry logic: try decoded URL first, then fallback
                       if (token.image && token.image !== fallbackImageUrl && token.image !== fallbackHoverImageUrl && !token.image.includes('ui-avatars.com')) {
                         try {
@@ -923,7 +957,7 @@ function TrenchesTokenCard({
                           // Decode failed, continue to fallback
                         }
                       }
-                      
+
                       // Use fallback
                       if (target.src !== fallbackHoverImageUrl) {
                         setHoverImageError(true)
@@ -949,191 +983,242 @@ function TrenchesTokenCard({
                 </div>
               </div>
             )}
-            
+
             {/* Pill icon overlay */}
             <div className="absolute -bottom-1 -right-1 w-5 h-5">
-              <Image 
+              <Image
                 src={
                   token.platformLogo || (
                     token.platform === 'bonk.fun' ? "/icons/platforms/bonk.fun-logo.svg" :
-                    token.platform === 'moon.it' ? "/icons/platforms/moon.it-logo.png" :
-                    token.platform === 'pumpswap' ? "/icons/platforms/pumpswap-logo.svg" :
-                    token.platform === 'moonshot' ? "/icons/platforms/moonshot-logo.svg" :
-                    token.platform === 'boop.fun' ? "/icons/platforms/boop.fun-logo.svg" :
-                    token.platform === 'orca' ? "/icons/platforms/orca.so-logo.svg" :
-                    token.platform === 'meteora' ? "/icons/platforms/meteora.ag(met-dbc)-logo.png" :
-                    token.platform === 'raydium' ? "/icons/platforms/raydium-launchlab-logo.svg" :
-                    token.platform === 'jupiter' ? "/icons/platforms/jupiter-ag-jup-logo.svg" :
-                    token.platform === 'birdeye' ? "/icons/platforms/birdeye-logo.svg" :
-                    token.platform === 'dexscreener' ? "/icons/platforms/dexscreener-logo.svg" :
-                    token.platform === 'solscan' ? "/icons/platforms/solscan-logo.svg" :
-                    token.platform === 'solana' ? "/icons/platforms/solana-logo.svg" :
-                    token.platform === 'trends.fun' ? "/icons/platforms/trends.fun-logo.svg" :
-                  token.platform === 'rupert' ? "/icons/platforms/rupert-logo.svg" :
-                  token.platform === 'bags.fm' ? "/icons/platforms/bags.fm-logo.png" :
-                  token.platform === 'believe.app' ? "/icons/platforms/believe.app-logo.png" :
-                  "/icons/platforms/pump.fun-logo.svg"
+                      token.platform === 'moon.it' ? "/icons/platforms/moon.it-logo.png" :
+                        token.platform === 'pumpswap' ? "/icons/platforms/pumpswap-logo.svg" :
+                          token.platform === 'moonshot' ? "/icons/platforms/moonshot-logo.svg" :
+                            token.platform === 'boop.fun' ? "/icons/platforms/boop.fun-logo.svg" :
+                              token.platform === 'orca' ? "/icons/platforms/orca.so-logo.svg" :
+                                token.platform === 'meteora' ? "/icons/platforms/meteora.ag(met-dbc)-logo.png" :
+                                  token.platform === 'raydium' ? "/icons/platforms/raydium-launchlab-logo.svg" :
+                                    token.platform === 'jupiter' ? "/icons/platforms/jupiter-ag-jup-logo.svg" :
+                                      token.platform === 'birdeye' ? "/icons/platforms/birdeye-logo.svg" :
+                                        token.platform === 'dexscreener' ? "/icons/platforms/dexscreener-logo.svg" :
+                                          token.platform === 'solscan' ? "/icons/platforms/solscan-logo.svg" :
+                                            token.platform === 'solana' ? "/icons/platforms/solana-logo.svg" :
+                                              token.platform === 'trends.fun' ? "/icons/platforms/trends.fun-logo.svg" :
+                                                token.platform === 'rupert' ? "/icons/platforms/rupert-logo.svg" :
+                                                  token.platform === 'bags.fm' ? "/icons/platforms/bags.fm-logo.png" :
+                                                    token.platform === 'believe.app' ? "/icons/platforms/believe.app-logo.png" :
+                                                      "/icons/platforms/pump.fun-logo.svg"
                   )
-                } 
+                }
                 alt={
                   token.platform === 'bonk.fun' ? "Bonk.fun" :
-                  token.platform === 'moon.it' ? "Moon.it" :
-                  token.platform === 'pumpswap' ? "PumpSwap" :
-                  token.platform === 'moonshot' ? "Moonshot" :
-                  token.platform === 'boop.fun' ? "Boop.fun" :
-                  token.platform === 'orca' ? "Orca" :
-                  token.platform === 'meteora' ? "Meteora" :
-                  token.platform === 'raydium' ? "Raydium Launchpad" :
-                  token.platform === 'jupiter' ? "Jupiter" :
-                  token.platform === 'birdeye' ? "Birdeye" :
-                  token.platform === 'dexscreener' ? "DexScreener" :
-                  token.platform === 'solscan' ? "Solscan" :
-                  token.platform === 'solana' ? "Solana" :
-                  token.platform === 'trends.fun' ? "Trends.fun" :
-                  token.platform === 'rupert' ? "Rupert" :
-                  token.platform === 'bags.fm' ? "Bags.fm" :
-                  token.platform === 'believe.app' ? "Believe.app" :
-                  "Pump.fun"
-                } 
-                width={20} 
-                height={20} 
+                    token.platform === 'moon.it' ? "Moon.it" :
+                      token.platform === 'pumpswap' ? "PumpSwap" :
+                        token.platform === 'moonshot' ? "Moonshot" :
+                          token.platform === 'boop.fun' ? "Boop.fun" :
+                            token.platform === 'orca' ? "Orca" :
+                              token.platform === 'meteora' ? "Meteora" :
+                                token.platform === 'raydium' ? "Raydium Launchpad" :
+                                  token.platform === 'jupiter' ? "Jupiter" :
+                                    token.platform === 'birdeye' ? "Birdeye" :
+                                      token.platform === 'dexscreener' ? "DexScreener" :
+                                        token.platform === 'solscan' ? "Solscan" :
+                                          token.platform === 'solana' ? "Solana" :
+                                            token.platform === 'trends.fun' ? "Trends.fun" :
+                                              token.platform === 'rupert' ? "Rupert" :
+                                                token.platform === 'bags.fm' ? "Bags.fm" :
+                                                  token.platform === 'believe.app' ? "Believe.app" :
+                                                    "Pump.fun"
+                }
+                width={20}
+                height={20}
                 className="drop-shadow-sm brightness-150 contrast-125"
               />
             </div>
           </div>
-          
+
           {/* Contract Address under the icon */}
-          <div className="flex items-center gap-1 text-zinc-500 text-xs mt-1 w-16">
-            <span 
-              className="cursor-pointer hover:text-white transition-colors font-mono text-center flex-1"
-              onClick={() => {
-                if (token.contractAddress) {
-                  navigator.clipboard.writeText(token.contractAddress);
-                }
-              }}
-              title={token.contractAddress}
-            >
-              {(() => {
-                if (!token.contractAddress) return 'N/A';
-                if (token.contractAddress.length < 7) return token.contractAddress;
-                
-                // Clean the contract address to remove any extra spaces or characters
-                const cleanAddress = token.contractAddress.trim().replace(/\s+/g, '');
-                return `${cleanAddress.substring(0, 3)}...${cleanAddress.substring(cleanAddress.length - 4)}`;
-              })()}
-            </span>
-          </div>
+          {echoSettings?.dataDisplay?.contractAddress !== false && (
+            <div className={`flex items-center gap-1 text-zinc-500 mt-1 w-16 ${echoSettings?.layout?.metricsSize === 'Large' ? 'text-sm' : 'text-xs'}`}>
+              <span
+                className="cursor-pointer hover:text-white transition-colors font-mono text-center flex-1"
+                onClick={() => {
+                  if (token.contractAddress) {
+                    navigator.clipboard.writeText(token.contractAddress);
+                  }
+                }}
+                title={token.contractAddress}
+              >
+                {(() => {
+                  if (!token.contractAddress) return 'N/A';
+                  if (token.contractAddress.length < 7) return token.contractAddress;
+
+                  // Clean the contract address to remove any extra spaces or characters
+                  const cleanAddress = token.contractAddress.trim().replace(/\s+/g, '');
+                  return `${cleanAddress.substring(0, 3)}...${cleanAddress.substring(cleanAddress.length - 4)}`;
+                })()}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Center: Token Info and Metrics */}
         <div className="flex flex-col flex-1">
           {/* Top Row: Ticker (bold) then Name */}
-          <div className="flex items-baseline gap-2 mb-1">
-            <h3 className="font-bold text-white text-sm leading-tight">
+          {/* Top Row: Ticker (bold) then Name - Click to Copy */}
+          <div className={`flex items-baseline mb-1 ${echoSettings?.layout?.metricsSize === 'Large' ? 'gap-3' : 'gap-2'}`}>
+            <h3 
+              className={`font-bold text-white leading-tight ${echoSettings?.layout?.metricsSize === 'Large' ? 'text-base' : 'text-sm'} ${echoSettings?.toggles?.copyNameOnClick ? 'cursor-pointer hover:text-cyan-400' : ''}`}
+              onClick={(e) => {
+                if (echoSettings?.toggles?.copyNameOnClick && token.symbol) {
+                  e.stopPropagation();
+                  navigator.clipboard.writeText(token.symbol)
+                }
+              }}
+              title={echoSettings?.toggles?.copyNameOnClick ? "Click to copy ticker" : undefined}
+            >
               {token.symbol}
             </h3>
-            <span className="text-zinc-500 text-xs leading-tight">
+            <span 
+              className={`text-zinc-500 leading-tight ${echoSettings?.layout?.metricsSize === 'Large' ? 'text-sm' : 'text-xs'} ${echoSettings?.toggles?.copyNameOnClick ? 'cursor-pointer hover:text-cyan-400' : ''}`}
+              onClick={(e) => {
+                if (echoSettings?.toggles?.copyNameOnClick && token.name) {
+                  e.stopPropagation();
+                  navigator.clipboard.writeText(token.name)
+                }
+              }}
+              title={echoSettings?.toggles?.copyNameOnClick ? "Click to copy name" : undefined}
+            >
               {token.name}
             </span>
           </div>
 
           {/* Middle Row: Time and Social Icons */}
-          <div className="flex items-center gap-2 mb-1">
+          <div className={`flex items-center mb-1 ${echoSettings?.layout?.metricsSize === 'Large' ? 'gap-3' : 'gap-2'}`}>
             <div className="flex items-center gap-1.5">
-              <span className={`text-xs font-medium ${getAgeColor(token.age)}`}>{token.age}</span>
+              <span className={`font-medium ${getAgeColor(token.age)} ${echoSettings?.layout?.metricsSize === 'Large' ? 'text-sm' : 'text-xs'}`}>{token.age}</span>
             </div>
-            <div className="flex items-center gap-1">
-              {token.hasTwitter && (
-                <Image 
-                  src="/icons/social/x-logo.svg" 
-                  alt="Twitter" 
-                  width={12} 
-                  height={12} 
+            {echoSettings?.dataDisplay?.socials !== false && (
+              <div className="flex items-center gap-1">
+                {token.hasTwitter && (
+                  <Image
+                    src="/icons/social/x-logo.svg"
+                    alt="Twitter"
+                    width={12}
+                    height={12}
+                    className="opacity-80 brightness-0 invert cursor-pointer hover:opacity-100"
+                    onClick={() => window.open(token.twitter || '#', '_blank')}
+                  />
+                )}
+                {token.hasWebsite && (
+                  <Image
+                    src="/icons/ui/web-icon.svg"
+                    alt="Website"
+                    width={12}
+                    height={12}
+                    className="opacity-80 brightness-0 invert cursor-pointer hover:opacity-100"
+                    onClick={() => window.open(token.website || '#', '_blank')}
+                  />
+                )}
+                {token.hasTelegram && (
+                  <Image
+                    src="/icons/social/telegram-logo.svg"
+                    alt="Telegram"
+                    width={12}
+                    height={12}
+                    className="opacity-80 brightness-0 invert cursor-pointer hover:opacity-100"
+                    onClick={() => window.open(token.telegram || '#', '_blank')}
+                  />
+                )}
+                <Image
+                  src="/icons/ui/search-icon.svg"
+                  alt="Search"
+                  width={12}
+                  height={12}
                   className="opacity-80 brightness-0 invert cursor-pointer hover:opacity-100"
-                  onClick={() => window.open(token.twitter || '#', '_blank')}
                 />
-              )}
-              {token.hasWebsite && (
-                <Image 
-                  src="/icons/ui/web-icon.svg" 
-                  alt="Website" 
-                  width={12} 
-                  height={12} 
-                  className="opacity-80 brightness-0 invert cursor-pointer hover:opacity-100"
-                  onClick={() => window.open(token.website || '#', '_blank')}
-                />
-              )}
-              {token.hasTelegram && (
-                <Image 
-                  src="/icons/social/telegram-logo.svg" 
-                  alt="Telegram" 
-                  width={12} 
-                  height={12} 
-                  className="opacity-80 brightness-0 invert cursor-pointer hover:opacity-100"
-                  onClick={() => window.open(token.telegram || '#', '_blank')}
-                />
-              )}
-              <Image 
-                src="/icons/ui/search-icon.svg" 
-                alt="Search" 
-                width={12} 
-                height={12} 
-                className="opacity-80 brightness-0 invert cursor-pointer hover:opacity-100"
-              />
-            </div>
+              </div>
+            )}
           </div>
 
           {/* Counts Row: Holders */}
-          <div className="flex items-center gap-3 text-xs text-zinc-400 mb-2">
-            <div className="flex items-center gap-1">
-              <Image 
-                src="/icons/ui/totalholders-icon.svg" 
-                alt="Holders" 
-                width={12} 
-                height={12} 
-                className="opacity-80 brightness-0 invert"
-              />
-              <span>{token.holders}</span>
-            </div>
-            {token.migratedTokens > 0 && (
-            <div className="flex items-center gap-1">
-              <Image 
-                src="/icons/ui/dev-migrated-icon.svg" 
-                alt="Migrated" 
-                width={12} 
-                height={12} 
-                className="opacity-80 brightness-0 invert"
-              />
-              <span>{token.migratedTokens}</span>
-            </div>
+          <div className={`flex items-center text-zinc-400 mb-2 ${echoSettings?.layout?.metricsSize === 'Large' ? 'gap-4 text-sm' : 'gap-3 text-xs'}`}>
+            {echoSettings?.dataDisplay?.totalHolders !== false && (
+              <div className="flex items-center gap-1">
+                <Image
+                  src="/icons/ui/totalholders-icon.svg"
+                  alt="Holders"
+                  width={12}
+                  height={12}
+                  className="opacity-80 brightness-0 invert"
+                />
+                <span>{token.holders}</span>
+              </div>
+            )}
+            {(token.migratedTokens > 0 && echoSettings?.dataDisplay?.devBonded !== false) && (
+              <div className="flex items-center gap-1">
+                <Image
+                  src="/icons/ui/dev-migrated-icon.svg"
+                  alt="Migrated"
+                  width={12}
+                  height={12}
+                  className="opacity-80 brightness-0 invert"
+                />
+                <span>{token.migratedTokens}</span>
+              </div>
             )}
           </div>
 
         </div>
 
-        {/* Right: Key Metrics */}
-        <div className="flex flex-col items-end text-right text-xs flex-shrink-0">
+        {/* Right: Key Metrics */
+        /* Use metricsSize for font size */}
+        <div className={`flex flex-col items-end text-right flex-shrink-0 ${echoSettings?.layout?.metricsSize === 'Large' ? 'text-sm' : 'text-xs'}`}>
           {/* Key Metrics */}
-          <div className="mb-2">
-            <div className="flex items-center gap-1 mb-1">
-              <span className="text-zinc-400">MC</span>
-              <span className="text-cyan-400 font-medium">{token.mc}</span>
-            </div>
-            <div className="flex items-center gap-1 mb-1">
-              <span className="text-zinc-400">V</span>
-              <span className="text-white">{token.volume}</span>
-            </div>
-            <div className="flex items-center gap-1 mb-1">
-              <div className="flex items-center gap-1">
-                <span className="text-zinc-400">F</span>
-                <img 
-                  src="/sol-logo.png" 
-                  alt="Solana" 
-                  className="w-2 h-2 mt-0.5"
-                />
+          <div className={echoSettings?.layout?.metricsSize === 'Large' ? 'mb-3' : 'mb-2'}>
+            {echoSettings?.dataDisplay?.marketCap !== false && (() => {
+              // Get threshold colors for market cap
+              const mcValue = parseFloat(token.mc?.replace(/[^0-9.]/g, '') || '0')
+              const mc1 = parseFloat(echoSettings?.thresholds?.mc1 || '100000')
+              const mc2 = parseFloat(echoSettings?.thresholds?.mc2 || '20000')
+              const mc3 = parseFloat(echoSettings?.thresholds?.mc3 || '1000')
+              
+              let mcColor = '#22c55e' // default green
+              if (echoSettings?.thresholdColors) {
+                if (mcValue >= mc1) {
+                  mcColor = echoSettings.thresholdColors.mc1 || '#22c55e'
+                } else if (mcValue >= mc2) {
+                  mcColor = echoSettings.thresholdColors.mc2 || '#f59e0b'
+                } else if (mcValue >= mc3) {
+                  mcColor = echoSettings.thresholdColors.mc3 || '#06b6d4'
+                }
+              }
+              
+              return (
+                <div className="flex items-center gap-1 mb-1">
+                  <span className="text-zinc-400">MC</span>
+                  <span className="font-medium" style={{ color: mcColor }}>{token.mc}</span>
+                </div>
+              )
+            })()}
+            {echoSettings?.dataDisplay?.volume !== false && (
+              <div className="flex items-center gap-1 mb-1">
+                <span className="text-zinc-400">V</span>
+                <span className="text-white">{token.volume}</span>
               </div>
-              <span className="text-white">{token.fee}</span>
-            </div>
+            )}
+            {echoSettings?.dataDisplay?.totalFees !== false && (
+              <div className="flex items-center gap-1 mb-1">
+                <div className="flex items-center gap-1">
+                  <span className="text-zinc-400">F</span>
+                  <img
+                    src="/sol-logo.png"
+                    alt="Solana"
+                    className="w-2 h-2 mt-0.5"
+                  />
+                </div>
+                <span className="text-white">{token.fee}</span>
+              </div>
+            )}
             {/* TX (Transactions) with Buy/Sell progress bar */}
             {(() => {
               const totalTx = (token.buys || 0) + (token.sells || 0)
@@ -1141,9 +1226,9 @@ function TrenchesTokenCard({
               const sells = token.sells || 0
               const buyPercentage = totalTx > 0 ? (buys / totalTx) * 100 : 0
               const sellPercentage = totalTx > 0 ? (sells / totalTx) * 100 : 0
-              
+
               return (
-                <div className="flex items-center gap-2 mb-1">
+                <div className={`flex items-center mb-1 ${echoSettings?.layout?.metricsSize === 'Large' ? 'gap-3' : 'gap-2'}`}>
                   <div className="flex items-center gap-1">
                     <span className="text-zinc-400">TX</span>
                     <span className="text-white">{totalTx}</span>
@@ -1152,9 +1237,9 @@ function TrenchesTokenCard({
                   <div className="bg-zinc-700 rounded-full overflow-hidden" style={{ width: '28px', minWidth: '28px', height: '3px' }}>
                     <div className="h-full flex">
                       {buyPercentage > 0 && (
-                        <div 
+                        <div
                           className="h-full"
-                          style={{ 
+                          style={{
                             width: `${buyPercentage}%`,
                             backgroundColor: '#2dd4bf', // teal-400 / aqua green
                             borderRadius: sellPercentage > 0 ? '9999px 0 0 9999px' : '9999px' // rounded-left if sells exist, else fully rounded
@@ -1162,9 +1247,9 @@ function TrenchesTokenCard({
                         />
                       )}
                       {sellPercentage > 0 && (
-                        <div 
+                        <div
                           className="h-full"
-                          style={{ 
+                          style={{
                             width: `${sellPercentage}%`,
                             backgroundColor: '#ec4899', // pink-500 / bright pink
                             borderRadius: buyPercentage > 0 ? '0 9999px 9999px 0' : '9999px' // rounded-right if buys exist, else fully rounded
@@ -1180,11 +1265,10 @@ function TrenchesTokenCard({
             {(token as any).priceChange24h !== undefined && (token as any).priceChange24h !== 0 && (
               <div className="flex items-center gap-1">
                 <span className="text-zinc-400">24h</span>
-                <span className={`font-medium ${
-                  (token as any).priceChange24h > 0 ? 'text-green-400' : 
-                  (token as any).priceChange24h < 0 ? 'text-red-400' : 
-                  'text-zinc-400'
-                }`}>
+                <span className={`font-medium ${(token as any).priceChange24h > 0 ? 'text-green-400' :
+                  (token as any).priceChange24h < 0 ? 'text-red-400' :
+                    'text-zinc-400'
+                  }`}>
                   {(token as any).priceChange24h > 0 ? '+' : ''}
                   {((token as any).priceChange24h || 0).toFixed(2)}%
                 </span>
@@ -1208,8 +1292,8 @@ function TrenchesTokenCard({
         >
           <div className="bg-zinc-900/95 backdrop-blur-sm border border-zinc-700/50 rounded-lg px-2.5 py-1.5 shadow-xl">
             <div className="flex flex-col gap-0.5">
-              <div className="text-zinc-400 text-[10px] leading-tight">B. Curve</div>
-              <div className="text-green-400 font-semibold text-xs leading-tight">
+              <div className={`text-zinc-400 leading-tight ${echoSettings?.layout?.metricsSize === 'Large' ? 'text-xs' : 'text-[10px]'}`}>B. Curve</div>
+              <div className={`text-green-400 font-semibold leading-tight ${echoSettings?.layout?.metricsSize === 'Large' ? 'text-sm' : 'text-xs'}`}>
                 {formattedProgress}
               </div>
             </div>
@@ -1218,10 +1302,11 @@ function TrenchesTokenCard({
       )}
 
       {/* Bottom Row: Engagement Metrics and Buy Button */}
-      <div className="flex items-center justify-between mt-3 overflow-visible">
+      <div className={`flex items-center justify-between overflow-visible ${echoSettings?.layout?.metricsSize === 'Large' ? 'mt-4' : 'mt-3'}`}>
         {/* Engagement Metrics */}
-        <div className="flex items-center gap-1 text-xs overflow-visible">
+        <div className={`flex items-center gap-1 overflow-visible ${echoSettings?.layout?.metricsSize === 'Large' ? 'text-sm' : 'text-xs'}`}>
           {(() => {
+            if (echoSettings?.dataDisplay?.top10Holders === false) return null
             const top10HoldersValue = token.topHoldersPercentage ?? token.top10Holders ?? 0
             // >= 16%: red, < 16%: green
             const isHigh = top10HoldersValue >= 16
@@ -1229,9 +1314,9 @@ function TrenchesTokenCard({
               ? { filter: 'brightness(0) saturate(100%) invert(27%) sepia(95%) saturate(2878%) hue-rotate(346deg) brightness(104%) contrast(97%)' } // Red filter
               : { filter: 'brightness(0) saturate(100%) invert(67%) sepia(61%) saturate(456%) hue-rotate(87deg) brightness(118%) contrast(119%)' } // Green filter
             const textColorClass = isHigh ? "text-red-400" : "text-green-400"
-            
+
             return (
-              <div 
+              <div
                 className="relative flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full border border-gray-400/30 min-w-fit"
                 onMouseEnter={() => {
                   // INSTANT - direct DOM manipulation for tooltip
@@ -1248,40 +1333,41 @@ function TrenchesTokenCard({
                   }
                 }}
               >
-            <Image 
-              src="/icons/ui/top10H-icon.svg" 
-              alt="Top 10 Holders" 
-              width={10} 
-              height={10} 
+                <Image
+                  src="/icons/ui/top10H-icon.svg"
+                  alt="Top 10 Holders"
+                  width={10}
+                  height={10}
                   className="opacity-80"
                   style={iconStyle}
-            />
-                <span className={`${textColorClass} text-xs`}>+{top10HoldersValue.toFixed(1)}%</span>
+                />
+                <span className={`${textColorClass} ${echoSettings?.layout?.metricsSize === 'Large' ? 'text-sm' : 'text-xs'}`}>+{top10HoldersValue.toFixed(1)}%</span>
                 {/* Tooltip */}
-                <div 
+                <div
                   ref={top10TooltipRef}
-                  className="absolute top-full left-0 mt-2 px-2 py-1 bg-black text-white text-xs rounded transition-none whitespace-nowrap z-[9999] pointer-events-none"
-                  style={{ 
+                  className={`absolute top-full left-0 mt-2 px-2 py-1 bg-black text-white rounded transition-none whitespace-nowrap z-[9999] pointer-events-none ${echoSettings?.layout?.metricsSize === 'Large' ? 'text-sm' : 'text-xs'}`}
+                  style={{
                     willChange: 'opacity',
                     opacity: 0,
                     visibility: 'hidden'
                   }}
                 >
                   Top 10 holders
-          </div>
+                </div>
               </div>
             )
           })()}
           {(() => {
+            if (echoSettings?.dataDisplay?.devHolding === false) return null
             // Green when dev is holding, blue when dev has sold
             const isDevSold = token.devSold
             const iconStyle = isDevSold
               ? { filter: 'brightness(0) saturate(100%) invert(48%) sepia(79%) saturate(2476%) hue-rotate(194deg) brightness(102%) contrast(101%)' } // Blue filter
               : { filter: 'brightness(0) saturate(100%) invert(67%) sepia(61%) saturate(456%) hue-rotate(87deg) brightness(118%) contrast(119%)' } // Green filter
             const textColorClass = isDevSold ? "text-blue-400" : "text-green-400"
-            
+
             return (
-              <div 
+              <div
                 className="relative flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full border border-gray-400/30 min-w-fit"
                 onMouseEnter={() => {
                   // INSTANT - direct DOM manipulation
@@ -1298,33 +1384,34 @@ function TrenchesTokenCard({
                   }
                 }}
               >
-            <Image 
-              src="/icons/ui/dev-holding-icon.svg" 
-              alt="Dev Holding" 
-              width={10} 
-              height={10} 
+                <Image
+                  src="/icons/ui/dev-holding-icon.svg"
+                  alt="Dev Holding"
+                  width={10}
+                  height={10}
                   className="opacity-80"
                   style={iconStyle}
-            />
-                <span className={`${textColorClass} text-xs`}>
+                />
+                <span className={`${textColorClass} ${echoSettings?.layout?.metricsSize === 'Large' ? 'text-sm' : 'text-xs'}`}>
                   {isDevSold ? 'DS' : `${(token.devHoldingsPercentage ?? 0).toFixed(1)}%`}
-            </span>
+                </span>
                 {/* Tooltip */}
-                <div 
+                <div
                   ref={devTooltipRef}
-                  className="absolute top-full left-0 mt-2 px-2 py-1 bg-black text-white text-xs rounded transition-none whitespace-nowrap z-[9999] pointer-events-none"
-                  style={{ 
+                  className={`absolute top-full left-0 mt-2 px-2 py-1 bg-black text-white rounded transition-none whitespace-nowrap z-[9999] pointer-events-none ${echoSettings?.layout?.metricsSize === 'Large' ? 'text-sm' : 'text-xs'}`}
+                  style={{
                     willChange: 'opacity',
                     opacity: 0,
                     visibility: 'hidden'
                   }}
                 >
                   Dev holding
-          </div>
+                </div>
               </div>
             )
           })()}
           {(() => {
+            if (echoSettings?.dataDisplay?.snipersHoldings === false) return null
             const snipersValue = token.sniperOwnedPercentage ?? token.snipers ?? 0
             // <= 5%: green, > 5%: red
             const isHigh = snipersValue > 5
@@ -1332,9 +1419,9 @@ function TrenchesTokenCard({
               ? { filter: 'brightness(0) saturate(100%) invert(27%) sepia(95%) saturate(2878%) hue-rotate(346deg) brightness(104%) contrast(97%)' } // Red filter
               : { filter: 'brightness(0) saturate(100%) invert(67%) sepia(61%) saturate(456%) hue-rotate(87deg) brightness(118%) contrast(119%)' } // Green filter
             const textColorClass = isHigh ? "text-red-400" : "text-green-400"
-            
+
             return (
-              <div 
+              <div
                 className="relative flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full border border-gray-400/30 min-w-fit"
                 onMouseEnter={() => {
                   // INSTANT - direct DOM manipulation
@@ -1351,80 +1438,105 @@ function TrenchesTokenCard({
                   }
                 }}
               >
-            <Image 
-              src="/icons/ui/snipers-icon.svg" 
-              alt="Snipers" 
-              width={10} 
-              height={10} 
+                <Image
+                  src="/icons/ui/snipers-icon.svg"
+                  alt="Snipers"
+                  width={10}
+                  height={10}
                   className="opacity-80"
                   style={iconStyle}
-            />
-                <span className={`${textColorClass} text-xs`}>{snipersValue.toFixed(1)}%</span>
+                />
+                <span className={`${textColorClass} ${echoSettings?.layout?.metricsSize === 'Large' ? 'text-sm' : 'text-xs'}`}>{snipersValue.toFixed(1)}%</span>
                 {/* Tooltip */}
-                <div 
+                <div
                   ref={snipersTooltipRef}
-                  className="absolute top-full left-0 mt-2 px-2 py-1 bg-black text-white text-xs rounded transition-none whitespace-nowrap z-[9999] pointer-events-none"
-                  style={{ 
+                  className={`absolute top-full left-0 mt-2 px-2 py-1 bg-black text-white rounded transition-none whitespace-nowrap z-[9999] pointer-events-none ${echoSettings?.layout?.metricsSize === 'Large' ? 'text-sm' : 'text-xs'}`}
+                  style={{
                     willChange: 'opacity',
                     opacity: 0,
                     visibility: 'hidden'
                   }}
                 >
                   Snipers
-          </div>
+                </div>
               </div>
             )
           })()}
-          <div 
-            className="relative flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full border border-gray-400/30 min-w-fit"
-            onMouseEnter={() => {
-              // INSTANT - direct DOM manipulation
-              if (insidersTooltipRef.current) {
-                insidersTooltipRef.current.style.opacity = '1'
-                insidersTooltipRef.current.style.visibility = 'visible'
-              }
-            }}
-            onMouseLeave={() => {
-              // INSTANT - direct DOM manipulation
-              if (insidersTooltipRef.current) {
-                insidersTooltipRef.current.style.opacity = '0'
-                insidersTooltipRef.current.style.visibility = 'hidden'
-              }
-            }}
-          >
-            <Image 
-              src="/icons/ui/insiders-icon.svg" 
-              alt="Insiders" 
-              width={10} 
-              height={10} 
-              className="opacity-80 brightness-0 invert"
-            />
-            <span className="text-white text-xs">{(token.insiders ?? 0).toFixed(1)}%</span>
-            {/* Tooltip */}
-            <div 
-              ref={insidersTooltipRef}
-              className="absolute top-full left-0 mt-2 px-2 py-1 bg-black text-white text-xs rounded transition-none whitespace-nowrap z-[9999] pointer-events-none"
-              style={{ 
-                willChange: 'opacity',
-                opacity: 0,
-                visibility: 'hidden'
+          {echoSettings?.dataDisplay?.insidersHolding !== false && (
+            <div
+              className="relative flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full border border-gray-400/30 min-w-fit"
+              onMouseEnter={() => {
+                // INSTANT - direct DOM manipulation
+                if (insidersTooltipRef.current) {
+                  insidersTooltipRef.current.style.opacity = '1'
+                  insidersTooltipRef.current.style.visibility = 'visible'
+                }
+              }}
+              onMouseLeave={() => {
+                // INSTANT - direct DOM manipulation
+                if (insidersTooltipRef.current) {
+                  insidersTooltipRef.current.style.opacity = '0'
+                  insidersTooltipRef.current.style.visibility = 'hidden'
+                }
               }}
             >
-              Insiders
+              <Image
+                src="/icons/ui/insiders-icon.svg"
+                alt="Insiders"
+                width={10}
+                height={10}
+                className="opacity-80 brightness-0 invert"
+              />
+              <span className={`text-white ${echoSettings?.layout?.metricsSize === 'Large' ? 'text-sm' : 'text-xs'}`}>{(token.insiders ?? 0).toFixed(1)}%</span>
+              {/* Tooltip */}
+              <div
+                ref={insidersTooltipRef}
+                className={`absolute top-full left-0 mt-2 px-2 py-1 bg-black text-white rounded transition-none whitespace-nowrap z-[9999] pointer-events-none ${echoSettings?.layout?.metricsSize === 'Large' ? 'text-sm' : 'text-xs'}`}
+                style={{
+                  willChange: 'opacity',
+                  opacity: 0,
+                  visibility: 'hidden'
+                }}
+              >
+                Insiders
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Buy Button */}
-        <button 
-          className="flex items-center gap-1 px-4 py-1.5 bg-zinc-800 hover:bg-zinc-700 rounded-full text-xs transition-colors"
+        <button
+          className="flex items-center gap-1 hover:opacity-90 transition-none"
+          style={{
+            backgroundColor: echoSettings?.quickBuy?.buttonColor || '#27272a',
+            color: echoSettings?.quickBuy?.buttonTextColor || '#ffffff',
+            opacity: echoSettings?.quickBuy?.transparency !== undefined ? (100 - echoSettings.quickBuy.transparency) / 100 : 1,
+            width: echoSettings?.quickBuy?.width ? `${echoSettings.quickBuy.width}px` : 'auto',
+            padding: echoSettings?.quickBuy?.size === 'Small' ? '0.375rem 1rem' :
+                    echoSettings?.quickBuy?.size === 'Large' ? '0.625rem 1.5rem' :
+                    echoSettings?.quickBuy?.size === 'Mega' ? '0.875rem 2rem' :
+                    echoSettings?.quickBuy?.size === 'Ultra' ? '1.125rem 2.5rem' :
+                    '0.375rem 1rem',
+            fontSize: echoSettings?.quickBuy?.size === 'Small' ? '0.75rem' :
+                     echoSettings?.quickBuy?.size === 'Large' ? '0.875rem' :
+                     echoSettings?.quickBuy?.size === 'Mega' ? '1rem' :
+                     echoSettings?.quickBuy?.size === 'Ultra' ? '1.125rem' :
+                     '0.75rem',
+            borderRadius: echoSettings?.quickBuy?.shape === 'Square' ? '8px' : '9999px'
+          }}
           onClick={() => {
             // TODO: Implement buy functionality
             console.log(`Buying ${solAmount} SOL worth of ${token.symbol}`)
           }}
         >
-          <Zap className="w-3 h-3 text-zinc-400" />
-          <span className="text-white text-xs">{solAmount}</span>
+          <Zap className={`${echoSettings?.quickBuy?.size === 'Small' ? 'w-3 h-3' :
+                          echoSettings?.quickBuy?.size === 'Large' ? 'w-4 h-4' :
+                          echoSettings?.quickBuy?.size === 'Mega' ? 'w-5 h-5' :
+                          echoSettings?.quickBuy?.size === 'Ultra' ? 'w-6 h-6' :
+                          'w-3 h-3'}`} 
+               style={{ color: echoSettings?.quickBuy?.buttonTextColor || '#a1a1aa' }} 
+          />
+          <span style={{ color: echoSettings?.quickBuy?.buttonTextColor || '#ffffff' }}>{solAmount}</span>
         </button>
       </div>
 

@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { TrenchesColumn } from "@/components/trenches-column"
 import { TrendingFilterModal } from "@/components/trending-filter-modal"
 import { EchoCustomizeModal, type EchoSettings } from "@/components/echo-customize-modal"
-import { 
+import {
   Search,
   Zap,
   TrendingUp,
@@ -23,8 +23,8 @@ import {
   Square,
   Plus
 } from "lucide-react"
-import { 
-  fetchPumpFunTokens, 
+import {
+  fetchPumpFunTokens,
   fetchPumpFunMCTokens,
   fetchPumpFunGraduatedTokens,
   fetchBonkFunTokens,
@@ -33,9 +33,9 @@ import {
   fetchMoonItTokens,
   fetchMoonItMCTokens,
   fetchMoonItGraduatedTokens,
-  formatMarketCap, 
-  formatVolume, 
-  formatTimeAgo, 
+  formatMarketCap,
+  formatVolume,
+  formatTimeAgo,
   getContractAddress,
   type PumpFunCoin,
   type BonkFunToken,
@@ -91,11 +91,11 @@ interface TrenchesToken {
 // Function to convert Pump.fun data to our token format - moved inside component
 const convertPumpFunToToken = (coin: PumpFunCoin, index: number, status: 'new' | 'about-to-graduate' | 'migrated' = 'new'): TrenchesToken => {
   const volumeInUsd = formatVolume(coin.volume)
-  
+
   // Determine platform based on coin data
   const platform = coin.platform || 'unknown'
   const platformLogo = coin.platformLogo
-  
+
   return {
     id: (index + 1).toString(),
     name: coin.name,
@@ -147,7 +147,7 @@ const convertPumpFunToToken = (coin: PumpFunCoin, index: number, status: 'new' |
 // Function to convert Bonk.fun data to our token format - moved inside component
 const convertBonkFunToToken = (token: BonkFunToken, index: number): TrenchesToken => {
   const volumeInUsd = formatVolume(token.volumeU)
-  
+
   return {
     id: (index + 1).toString(),
     name: token.name,
@@ -172,8 +172,8 @@ const convertBonkFunToToken = (token: BonkFunToken, index: number): TrenchesToke
     buyAmount: "5.00",
     // Store creation time for live age updates
     creationTime: new Date(token.createAt).getTime(),
-    bondingCurveProgress: (token.finishingRate != null && typeof token.finishingRate === 'number' && !isNaN(token.finishingRate)) 
-      ? Math.max(0, Math.min(100, token.finishingRate * 100)) 
+    bondingCurveProgress: (token.finishingRate != null && typeof token.finishingRate === 'number' && !isNaN(token.finishingRate))
+      ? Math.max(0, Math.min(100, token.finishingRate * 100))
       : undefined, // Convert to percentage with validation
     // Bonk.fun specific fields
     coinMint: token.mint,
@@ -197,7 +197,7 @@ const convertMoonItToToken = (token: MoonItToken, index: number): TrenchesToken 
   const volumeInUsd = formatVolume(parseFloat(token.volumeUSD))
   const marketCap = parseFloat(token.marketcap)
   const createdAt = new Date(token.createdAt).getTime()
-  
+
   return {
     id: (index + 1).toString(),
     name: token.name,
@@ -323,16 +323,16 @@ export function TrenchesPage() {
   const [error, setError] = useState<string | null>(null)
   const [currentTime, setCurrentTime] = useState<number>(Date.now())
   const [lastUpdateTime, setLastUpdateTime] = useState<number>(Date.now())
-  
+
   // Live timer to update token ages in real-time - ULTRA-FAST for live updates
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentTime(Date.now())
     }, 100) // Update every 100ms for live, non-stop updates
-    
+
     // Also update immediately to ensure instant display
     setCurrentTime(Date.now())
-    
+
     return () => clearInterval(interval)
   }, [])
 
@@ -346,11 +346,11 @@ export function TrenchesPage() {
         const cache = (window as any).solPriceCache
         solPrice = cache.price || 150
       }
-      
+
       // Fetch tokens with optimized timeout - fast but reliable
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 2000) // 2 second timeout - faster initial load
-      
+
       try {
         // Fetch tokens with minimal timeout
         const response = await fetch('/api/pump-fun/coins?sortBy=creationTime&limit=30&_=' + Date.now(), {
@@ -362,18 +362,18 @@ export function TrenchesPage() {
           cache: 'no-store',
           signal: controller.signal
         })
-        
+
         clearTimeout(timeoutId)
-        
+
         if (!response.ok) {
           if (process.env.NODE_ENV === 'development') {
             console.warn('⚠️ Pump.fun API returned error:', response.status, response.statusText)
           }
           return []
         }
-        
+
         const data = await response.json()
-        
+
         // Enhanced logging to debug why tokens aren't displaying
         if (process.env.NODE_ENV === 'development') {
           if (!data.success) {
@@ -385,16 +385,16 @@ export function TrenchesPage() {
             console.log('✅ Pump.fun API returned', data.coins.length, 'coins')
           }
         }
-        
+
         const coins = data.success ? (data.coins || []) : []
-        
+
         if (coins.length === 0) {
           if (process.env.NODE_ENV === 'development') {
             console.warn('⚠️ No coins returned from pump.fun API - response:', data)
           }
           return []
         }
-        
+
         // Filter out invalid tokens before conversion
         const validCoins = coins.filter((coin: any) => {
           // Exclude tokens with missing required fields
@@ -407,21 +407,21 @@ export function TrenchesPage() {
           }
           return true
         })
-        
+
         // ULTRA-FAST conversion: Pre-allocate array, minimal processing
         const convertedTokens: TrenchesToken[] = new Array(Math.min(validCoins.length, 30))
         const now = Date.now()
-        
+
         for (let i = 0; i < convertedTokens.length; i++) {
           const coin = validCoins[i]
           const creationTime = coin.creationTime || now
           const ageDiff = now - creationTime
           const initialAge = ageDiff < 1000 ? '0s' : formatTimeAgo(creationTime)
-          
+
           // Convert volume from SOL to USD (pump.fun API returns volume in SOL)
           const volumeInSol = typeof coin.volume === 'number' ? coin.volume : parseFloat(coin.volume || '0') || 0
           const volumeInUsd = volumeInSol * solPrice
-          
+
           convertedTokens[i] = {
             id: coin.coinMint || (i + 1).toString(),
             name: coin.name || '',
@@ -468,7 +468,7 @@ export function TrenchesPage() {
             creationTime: creationTime > now ? now : creationTime // Ensure creationTime is not in the future
           } as any
         }
-        
+
         return convertedTokens
       } catch (fetchError: any) {
         clearTimeout(timeoutId)
@@ -502,11 +502,11 @@ export function TrenchesPage() {
         const cache = (window as any).solPriceCache
         solPrice = cache.price || 150
       }
-      
+
       // Fetch tokens with optimized timeout - fast but reliable
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 2000) // 2 second timeout - faster initial load
-      
+
       try {
         // Fetch MC tokens (sorted by marketCap) with minimal timeout
         // Request more tokens to increase chances of finding tokens in 70-99% range
@@ -519,18 +519,18 @@ export function TrenchesPage() {
           cache: 'no-store',
           signal: controller.signal
         })
-        
+
         clearTimeout(timeoutId)
-        
+
         if (!response.ok) {
           if (process.env.NODE_ENV === 'development') {
             console.warn('⚠️ Pump.fun MC API returned error:', response.status, response.statusText)
           }
           return []
         }
-        
+
         const data = await response.json()
-        
+
         // Enhanced logging to debug why tokens aren't displaying
         if (process.env.NODE_ENV === 'development') {
           if (!data.success) {
@@ -542,30 +542,30 @@ export function TrenchesPage() {
             console.log('✅ Pump.fun MC API returned', data.coins.length, 'coins')
           }
         }
-        
+
         const coins = data.success ? (data.coins || []) : []
-        
+
         if (coins.length === 0) {
           if (process.env.NODE_ENV === 'development') {
             console.warn('⚠️ No coins returned from pump.fun MC API - response:', data)
           }
           return []
         }
-        
+
         // Convert all coins from API response - no filtering, no sorting, display exactly as returned
         const now = Date.now()
         const convertedTokens: TrenchesToken[] = new Array(Math.min(coins.length, 30))
-        
+
         for (let i = 0; i < convertedTokens.length; i++) {
           const coin = coins[i]
           const creationTime = coin.creationTime || now
           const ageDiff = now - creationTime
           const initialAge = ageDiff < 1000 ? '0s' : formatTimeAgo(creationTime)
-          
+
           // Convert volume from SOL to USD (pump.fun API returns volume in SOL)
           const volumeInSol = typeof coin.volume === 'number' ? coin.volume : parseFloat(coin.volume || '0') || 0
           const volumeInUsd = volumeInSol * solPrice
-          
+
           convertedTokens[i] = {
             id: coin.coinMint || (i + 1).toString(),
             name: coin.name || '',
@@ -612,7 +612,7 @@ export function TrenchesPage() {
             creationTime: creationTime > now ? now : creationTime // Ensure creationTime is not in the future
           } as any
         }
-        
+
         return convertedTokens
       } catch (fetchError: any) {
         clearTimeout(timeoutId)
@@ -646,11 +646,11 @@ export function TrenchesPage() {
         const cache = (window as any).solPriceCache
         solPrice = cache.price || 150
       }
-      
+
       // Fetch tokens with optimized timeout - faster for initial load
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 2000) // 2 second timeout - faster initial load
-      
+
       try {
         // Fetch Graduated tokens (sorted by creationTime) with minimal timeout
         const response = await fetch('/api/pump-fun/coins-graduated?limit=30&_=' + Date.now(), {
@@ -662,18 +662,18 @@ export function TrenchesPage() {
           cache: 'no-store',
           signal: controller.signal
         })
-        
+
         clearTimeout(timeoutId)
-        
+
         if (!response.ok) {
           if (process.env.NODE_ENV === 'development') {
             console.warn('⚠️ Pump.fun Graduated API returned error:', response.status, response.statusText)
           }
           return []
         }
-        
+
         const data = await response.json()
-        
+
         // Enhanced logging to debug why tokens aren't displaying
         if (process.env.NODE_ENV === 'development') {
           if (!data.success) {
@@ -685,16 +685,16 @@ export function TrenchesPage() {
             console.log('✅ Pump.fun Graduated API returned', data.coins.length, 'coins')
           }
         }
-        
+
         const coins = data.success ? (data.coins || []) : []
-        
+
         if (coins.length === 0) {
           if (process.env.NODE_ENV === 'development') {
             console.warn('⚠️ No coins returned from pump.fun Graduated API - response:', data)
           }
           return []
         }
-        
+
         // Filter out invalid/error tokens before conversion
         const validCoins = coins.filter((coin: any) => {
           // Exclude tokens with missing required fields
@@ -711,21 +711,21 @@ export function TrenchesPage() {
           }
           return true
         })
-        
+
         // ULTRA-FAST conversion: Pre-allocate array, minimal processing
         const convertedTokens: TrenchesToken[] = new Array(Math.min(validCoins.length, 30))
         const now = Date.now()
-        
+
         for (let i = 0; i < convertedTokens.length; i++) {
           const coin = validCoins[i]
           const creationTime = coin.creationTime || now
           const ageDiff = now - creationTime
           const initialAge = ageDiff < 1000 ? '0s' : formatTimeAgo(creationTime)
-          
+
           // Convert volume from SOL to USD (pump.fun API returns volume in SOL)
           const volumeInSol = typeof coin.volume === 'number' ? coin.volume : parseFloat(coin.volume || '0') || 0
           const volumeInUsd = volumeInSol * solPrice
-          
+
           convertedTokens[i] = {
             id: coin.coinMint || (i + 1).toString(),
             name: coin.name || '',
@@ -772,7 +772,7 @@ export function TrenchesPage() {
             creationTime: creationTime > now ? now : creationTime // Ensure creationTime is not in the future
           } as any
         }
-        
+
         return convertedTokens
       } catch (fetchError: any) {
         clearTimeout(timeoutId)
@@ -801,10 +801,10 @@ export function TrenchesPage() {
     const pollPumpFunTokens = async () => {
       // Allow concurrent requests for live updates - don't block
       isPollingRef.current = true
-      
+
       try {
         const tokens = await fetchPumpFunTokensDirect()
-        
+
         if (process.env.NODE_ENV === 'development') {
           if (tokens.length === 0) {
             console.warn('⚠️ fetchPumpFunTokensDirect returned 0 tokens')
@@ -812,28 +812,28 @@ export function TrenchesPage() {
             console.log('✅ fetchPumpFunTokensDirect returned', tokens.length, 'tokens')
           }
         }
-        
+
         const now = Date.now()
-        
+
         if (tokens.length > 0) {
           // Filter and sort tokens directly - minimal processing
           const filteredTokens = tokens.filter((token: TrenchesToken) => {
             const tokenId = token.coinMint || token.id
             return !!tokenId
           })
-          
+
           // Sort by creation time (newest first), limit to 30
           const result = filteredTokens
-            .map(token => ({ 
+            .map(token => ({
               ...token,
               _updateTimestamp: now
             }))
             .sort((a, b) => (b.creationTime || 0) - (a.creationTime || 0))
             .slice(0, 30)
-          
+
           // DIRECT UPDATE: Always replace array - forces React to re-render with fresh data
           setPumpFunTokens(result)
-          
+
           // Update tracking map for stability (non-blocking)
           for (let i = 0; i < result.length; i++) {
             const token = result[i]
@@ -856,15 +856,15 @@ export function TrenchesPage() {
         isPollingRef.current = false
       }
     }
-    
+
     // Initial fetch - IMMEDIATE for fast first load
     pollPumpFunTokens()
-    
+
     // Poll every 1 second for live, non-stop updates
     const interval = setInterval(() => {
       pollPumpFunTokens()
     }, 1000)
-    
+
     return () => {
       clearInterval(interval)
       isPollingRef.current = false
@@ -876,14 +876,14 @@ export function TrenchesPage() {
     const pollBonkFunTokens = async () => {
       // Allow concurrent requests for live updates - don't block
       isPollingBonkFunRef.current = true
-      
+
       try {
         const tokens = await fetchBonkFunTokens()
         if (tokens && tokens.length > 0) {
           const now = Date.now()
           // Increased from 4 minutes to 1 hour to show more tokens and reduce filtering overhead
           const oneHourAgo = now - (60 * 60 * 1000)
-          
+
           // Convert and filter tokens - show tokens created within last hour
           const convertedTokens = tokens
             .slice(0, 30)
@@ -897,7 +897,7 @@ export function TrenchesPage() {
               return token.creationTime && token.creationTime > oneHourAgo
             })
             .sort((a, b) => (b.creationTime || 0) - (a.creationTime || 0))
-          
+
           // Update with fresh data
           if (convertedTokens.length > 0) {
             setBonkFunTokens(convertedTokens)
@@ -919,15 +919,15 @@ export function TrenchesPage() {
         isPollingBonkFunRef.current = false
       }
     }
-    
+
     // Initial fetch - IMMEDIATE for fast first load
     pollBonkFunTokens()
-    
+
     // Poll every 1 second for live, non-stop updates
     const interval = setInterval(() => {
       pollBonkFunTokens()
     }, 1000)
-    
+
     return () => {
       clearInterval(interval)
       isPollingBonkFunRef.current = false
@@ -939,13 +939,13 @@ export function TrenchesPage() {
     const pollMoonItTokens = async () => {
       // REMOVED: Polling guard - allow continuous updates for live trading
       isPollingMoonItRef.current = true
-      
+
       try {
         const tokens = await fetchMoonItTokens()
         if (tokens && tokens.length > 0) {
           const now = Date.now()
           const fourMinutesAgo = now - (4 * 60 * 1000) // 4 minutes for "New" section only
-          
+
           // Convert and filter tokens - only show tokens created within last 4 minutes
           // ALWAYS create new objects to force React updates
           const convertedTokens = tokens
@@ -953,7 +953,7 @@ export function TrenchesPage() {
             .map((token: any, index: number) => ({ ...convertMoonItToToken(token, index) })) // Create new objects
             .filter((token: TrenchesToken) => token.creationTime && token.creationTime > fourMinutesAgo)
             .sort((a, b) => (b.creationTime || 0) - (a.creationTime || 0))
-          
+
           // ALWAYS update with fresh data - direct replacement for live trading
           // New array forces React to detect changes and re-render
           // Add update timestamp to force React to detect changes even if values are the same
@@ -968,13 +968,13 @@ export function TrenchesPage() {
         isPollingMoonItRef.current = false
       }
     }
-    
+
     pollMoonItTokens()
     // Poll every 1 second for live, non-stop updates
     const interval = setInterval(() => {
       pollMoonItTokens()
     }, 1000)
-    
+
     return () => {
       clearInterval(interval)
       isPollingMoonItRef.current = false
@@ -987,10 +987,10 @@ export function TrenchesPage() {
       // REMOVED: Polling guard - allow continuous updates even if previous request is pending
       // Trading platform needs maximum update frequency - let requests overlap if needed
       isPollingMCTokensRef.current = true
-      
+
       try {
         const tokens = await fetchPumpFunMCTokensDirect()
-        
+
         // Always log to debug why tokens aren't displaying
         if (process.env.NODE_ENV === 'development') {
           if (tokens.length === 0) {
@@ -999,7 +999,7 @@ export function TrenchesPage() {
             console.log('✅ fetchPumpFunMCTokensDirect returned', tokens.length, 'tokens')
           }
         }
-        
+
         // Display exactly what API returns - no filtering, no sorting, no merging
         // Just update with fresh tokens from API
         if (tokens.length > 0) {
@@ -1026,15 +1026,15 @@ export function TrenchesPage() {
         // Don't reset isPollingMCTokensRef - allow concurrent requests
       }
     }
-    
+
     // Initial fetch - IMMEDIATE for fast first load
     pollPumpFunMCTokens()
-    
+
     // Poll every 1 second for live, non-stop updates
     const interval = setInterval(() => {
       pollPumpFunMCTokens()
     }, 1000)
-    
+
     return () => {
       clearInterval(interval)
       isPollingMCTokensRef.current = false
@@ -1046,10 +1046,10 @@ export function TrenchesPage() {
     const pollPumpFunGraduatedTokens = async () => {
       // Allow concurrent requests for live updates - don't block
       isPollingGraduatedRef.current = true
-      
+
       try {
         const tokens = await fetchPumpFunGraduatedTokensDirect()
-        
+
         // Always log to debug why tokens aren't displaying
         if (process.env.NODE_ENV === 'development') {
           if (tokens.length === 0) {
@@ -1058,11 +1058,11 @@ export function TrenchesPage() {
             console.log('✅ fetchPumpFunGraduatedTokensDirect returned', tokens.length, 'tokens')
           }
         }
-        
+
         // ALWAYS merge with existing tokens - never replace completely
         // Trading platform needs continuous updates - React will handle efficient rendering
         const now = Date.now()
-        
+
         // Update tracking map with new tokens (exclude error token)
         if (tokens.length > 0) {
           for (let i = 0; i < tokens.length; i++) {
@@ -1074,7 +1074,7 @@ export function TrenchesPage() {
             }
           }
         }
-        
+
         // Clean up old entries (older than 5 minutes) - keep recent tokens visible
         const fiveMinutesAgo = now - (5 * 60 * 1000)
         for (const [key, value] of recentGraduatedTokensRef.current.entries()) {
@@ -1082,11 +1082,11 @@ export function TrenchesPage() {
             recentGraduatedTokensRef.current.delete(key)
           }
         }
-        
+
         // Merge: Combine new tokens with recently seen tokens
         // This ensures tokens don't disappear even if API temporarily doesn't return them
         const tokenMap = new Map<string, TrenchesToken>()
-        
+
         // First, add all recently seen tokens (preserves tokens that might not be in current API response)
         // Filter out error token from recent tokens
         for (const [tokenId, { token }] of recentGraduatedTokensRef.current.entries()) {
@@ -1101,7 +1101,7 @@ export function TrenchesPage() {
           const uniqueKey = `${token.platform}-${tokenId}`
           tokenMap.set(uniqueKey, token)
         }
-        
+
         // Then, add/update with new tokens from API (overwrites with latest data)
         if (tokens.length > 0) {
           const filteredTokens = tokens.filter((token: TrenchesToken) => {
@@ -1116,7 +1116,7 @@ export function TrenchesPage() {
             }
             return true
           })
-          
+
           for (let i = 0; i < filteredTokens.length; i++) {
             const token = filteredTokens[i]
             const tokenId = token.coinMint || token.id
@@ -1124,10 +1124,10 @@ export function TrenchesPage() {
             tokenMap.set(uniqueKey, token) // Overwrite with latest data
           }
         }
-        
+
         // Convert to array and sort
         const mergedTokens = Array.from(tokenMap.values())
-          .map(token => ({ 
+          .map(token => ({
             ...token,
             _updateTimestamp: now // Force React to detect changes for live updates
           }))
@@ -1136,7 +1136,7 @@ export function TrenchesPage() {
             return (b.creationTime || 0) - (a.creationTime || 0)
           })
           .slice(0, 30)
-        
+
         // ALWAYS update - even if empty, merge ensures we keep existing tokens
         setGraduatedTokens(mergedTokens)
       } catch (error) {
@@ -1157,15 +1157,15 @@ export function TrenchesPage() {
         isPollingGraduatedRef.current = false
       }
     }
-    
+
     // Initial fetch - IMMEDIATE for fast first load
     pollPumpFunGraduatedTokens()
-    
+
     // Poll every 1 second for live, non-stop updates
     const interval = setInterval(() => {
       pollPumpFunGraduatedTokens()
     }, 1000)
-    
+
     return () => {
       clearInterval(interval)
       isPollingGraduatedRef.current = false
@@ -1225,7 +1225,7 @@ export function TrenchesPage() {
   const [showCustomize, setShowCustomize] = useState(false)
   const [selectedChain, setSelectedChain] = useState<'solana' | 'bnb'>('solana')
   const [echoSettings, setEchoSettings] = useState<EchoSettings | undefined>(undefined)
-  
+
   // BSC Token States
   const [bscRealTokens, setBscRealTokens] = useState<TrenchesToken[]>([])
   const [bscMcTokens, setBscMcTokens] = useState<TrenchesToken[]>([])
@@ -1235,12 +1235,12 @@ export function TrenchesPage() {
   const formatTimeAgo = (timestamp: number): string => {
     const now = Date.now()
     const diff = now - timestamp
-    
+
     const seconds = Math.floor(diff / 1000)
     const minutes = Math.floor(seconds / 60)
     const hours = Math.floor(minutes / 60)
     const days = Math.floor(hours / 24)
-    
+
     if (days > 0) return `${days}d`
     if (hours > 0) return `${hours}h`
     if (minutes > 0) return `${minutes}m`
@@ -1253,11 +1253,11 @@ export function TrenchesPage() {
   // Background SOL price fetcher to keep cache updated - using pump.fun API
   useEffect(() => {
     let isUpdating = false
-    
+
     const updateSolPrice = async () => {
       if (isUpdating) return // Prevent concurrent updates
       isUpdating = true
-      
+
       try {
         const response = await fetch('/api/pump-fun/sol-price?_=' + Date.now(), {
           cache: 'no-store',
@@ -1268,16 +1268,16 @@ export function TrenchesPage() {
           if (data.success && data.solPrice) {
             // Update the global cache
             if (typeof window !== 'undefined') {
-              (window as any).solPriceCache = { 
-                price: data.solPrice, 
-                timestamp: Date.now() 
+              (window as any).solPriceCache = {
+                price: data.solPrice,
+                timestamp: Date.now()
               }
             }
           }
         }
       } catch (error) {
         if (process.env.NODE_ENV === 'development') {
-        console.warn('Background SOL price update failed:', error)
+          console.warn('Background SOL price update failed:', error)
         }
       } finally {
         isUpdating = false
@@ -1296,184 +1296,184 @@ export function TrenchesPage() {
   useEffect(() => {
     let isFetching = false // Prevent concurrent fetches
     let fetchTimeout: NodeJS.Timeout | null = null
-    
+
     const fetchAllDataInParallel = async () => {
       if (isFetching) return // Skip if already fetching
       isFetching = true
-      
+
       try {
         console.log('🚀 Fetching all trading data in parallel for immediate loading...')
         setLastUpdateTime(Date.now())
-      
-      // Fetch migrated tokens through API route to avoid exposing API keys
-      const fetchMigratedTokensInline = async () => {
-        try {
-          const response = await fetch('/api/pump-tokens-migrated', {
-            method: 'GET',
-            headers: {
-              'Accept': 'application/json',
-              'Content-Type': 'application/json'
-            },
-            signal: AbortSignal.timeout(2000)
-          })
-          
-          if (!response.ok) return []
-          const data = await response.json()
-          return Array.isArray(data.coins) ? data.coins.slice(0, 30) : []
-        } catch (error) {
-          console.warn('Error fetching migrated tokens:', error)
-          return []
+
+        // Fetch migrated tokens through API route to avoid exposing API keys
+        const fetchMigratedTokensInline = async () => {
+          try {
+            const response = await fetch('/api/pump-tokens-migrated', {
+              method: 'GET',
+              headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+              },
+              signal: AbortSignal.timeout(2000)
+            })
+
+            if (!response.ok) return []
+            const data = await response.json()
+            return Array.isArray(data.coins) ? data.coins.slice(0, 30) : []
+          } catch (error) {
+            console.warn('Error fetching migrated tokens:', error)
+            return []
+          }
         }
-      }
 
-      
-      // Execute all API calls in parallel for maximum speed
-      const [
-        pumpFunResult,
-        pumpFunMCResult,
-        pumpFunGraduatedResult,
-        pumpFunMigratedResult,
-        bonkFunResult,
-        bonkFunMCResult,
-        bonkFunGraduatedResult,
-        moonItResult,
-        moonItMCResult,
-        moonItGraduatedResult
-      ] = await Promise.allSettled([
-        fetchPumpFunTokens(),
-        fetchPumpFunMCTokens(),
-        fetchPumpFunGraduatedTokens(),
-        fetchMigratedTokensInline(),
-        fetchBonkFunTokens(),
-        fetchBonkFunMCTokens(),
-        fetchBonkFunGraduatedTokens(),
-        fetchMoonItTokens(),
-        fetchMoonItMCTokens(),
-        fetchMoonItGraduatedTokens()
-        // REMOVED: fetchPumpFunTokensDirect() - now handled by live polling useEffect
-      ])
 
-      // Process results immediately as they come in
+        // Execute all API calls in parallel for maximum speed
+        const [
+          pumpFunResult,
+          pumpFunMCResult,
+          pumpFunGraduatedResult,
+          pumpFunMigratedResult,
+          bonkFunResult,
+          bonkFunMCResult,
+          bonkFunGraduatedResult,
+          moonItResult,
+          moonItMCResult,
+          moonItGraduatedResult
+        ] = await Promise.allSettled([
+          fetchPumpFunTokens(),
+          fetchPumpFunMCTokens(),
+          fetchPumpFunGraduatedTokens(),
+          fetchMigratedTokensInline(),
+          fetchBonkFunTokens(),
+          fetchBonkFunMCTokens(),
+          fetchBonkFunGraduatedTokens(),
+          fetchMoonItTokens(),
+          fetchMoonItMCTokens(),
+          fetchMoonItGraduatedTokens()
+          // REMOVED: fetchPumpFunTokensDirect() - now handled by live polling useEffect
+        ])
 
-      // REMOVED: pumpFunResult fallback for NEW column - we now use direct pump.fun API (pumpFunDirectResult)
-      // pumpFunResult is no longer used for NEW column
+        // Process results immediately as they come in
 
-      // REMOVED: Old MC tokens fetch - now handled by live polling useEffect
-      // MC tokens are now streamed live every 50ms via separate useEffect
+        // REMOVED: pumpFunResult fallback for NEW column - we now use direct pump.fun API (pumpFunDirectResult)
+        // pumpFunResult is no longer used for NEW column
 
-      // REMOVED: Old graduated tokens fetch - now handled by live polling useEffect
-      // Graduated tokens are now streamed live every 50ms via separate useEffect
-      // This prevents overwriting live polling updates
+        // REMOVED: Old MC tokens fetch - now handled by live polling useEffect
+        // MC tokens are now streamed live every 50ms via separate useEffect
 
-      if (pumpFunMigratedResult.status === 'fulfilled') {
-        const convertedMigratedTokens = pumpFunMigratedResult.value.slice(0, 30).map((coin: any, index: number) => 
-          convertPumpFunToToken(coin, index, 'migrated')
-        )
-        setMigratedTokens(convertedMigratedTokens)
-        console.log('✅ Pump.fun migrated tokens loaded:', convertedMigratedTokens.length)
-      }
+        // REMOVED: Old graduated tokens fetch - now handled by live polling useEffect
+        // Graduated tokens are now streamed live every 50ms via separate useEffect
+        // This prevents overwriting live polling updates
 
-      if (bonkFunResult.status === 'fulfilled') {
-        const convertedBonkFunTokens = bonkFunResult.value.slice(0, 30).map((coin: any, index: number) => 
-          convertBonkFunToToken(coin, index)
-        )
-        // Filter out Bonk.fun tokens older than 3 days
-        const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000)
-        const filteredBonkFunTokens = convertedBonkFunTokens.filter((token: any) => {
-          const tokenAge = parseTimeToMinutes(token.age)
-          const tokenAgeInMs = tokenAge * 60 * 1000
-          const tokenCreatedAt = Date.now() - tokenAgeInMs
-          return tokenCreatedAt > threeDaysAgo
-        })
-        setBonkFunTokens(filteredBonkFunTokens)
-        console.log('✅ Bonk.fun tokens loaded:', filteredBonkFunTokens.length, '(filtered from', convertedBonkFunTokens.length, 'to exclude tokens >3 days old)')
-      }
+        if (pumpFunMigratedResult.status === 'fulfilled') {
+          const convertedMigratedTokens = pumpFunMigratedResult.value.slice(0, 30).map((coin: any, index: number) =>
+            convertPumpFunToToken(coin, index, 'migrated')
+          )
+          setMigratedTokens(convertedMigratedTokens)
+          console.log('✅ Pump.fun migrated tokens loaded:', convertedMigratedTokens.length)
+        }
 
-      if (bonkFunMCResult.status === 'fulfilled') {
-        const convertedBonkFunMCTokens = bonkFunMCResult.value.slice(0, 30).map((coin: any, index: number) =>
-          convertBonkFunToToken(coin, index)
-        )
-        // Filter out Bonk.fun MC tokens older than 3 days
-        const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000)
-        const filteredBonkFunMCTokens = convertedBonkFunMCTokens.filter((token: any) => {
-          const tokenAge = parseTimeToMinutes(token.age)
-          const tokenAgeInMs = tokenAge * 60 * 1000
-          const tokenCreatedAt = Date.now() - tokenAgeInMs
-          return tokenCreatedAt > threeDaysAgo
-        })
-        setBonkFunMCTokens(filteredBonkFunMCTokens)
-        console.log('✅ Bonk.fun MC tokens loaded:', filteredBonkFunMCTokens.length, '(filtered from', convertedBonkFunMCTokens.length, 'to exclude tokens >3 days old)')
-      }
+        if (bonkFunResult.status === 'fulfilled') {
+          const convertedBonkFunTokens = bonkFunResult.value.slice(0, 30).map((coin: any, index: number) =>
+            convertBonkFunToToken(coin, index)
+          )
+          // Filter out Bonk.fun tokens older than 3 days
+          const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000)
+          const filteredBonkFunTokens = convertedBonkFunTokens.filter((token: any) => {
+            const tokenAge = parseTimeToMinutes(token.age)
+            const tokenAgeInMs = tokenAge * 60 * 1000
+            const tokenCreatedAt = Date.now() - tokenAgeInMs
+            return tokenCreatedAt > threeDaysAgo
+          })
+          setBonkFunTokens(filteredBonkFunTokens)
+          console.log('✅ Bonk.fun tokens loaded:', filteredBonkFunTokens.length, '(filtered from', convertedBonkFunTokens.length, 'to exclude tokens >3 days old)')
+        }
 
-      if (bonkFunGraduatedResult.status === 'fulfilled') {
-        const convertedBonkFunGraduatedTokens = bonkFunGraduatedResult.value.slice(0, 30).map((coin: any, index: number) => 
-          convertBonkFunToToken(coin, index)
-        )
-        // Filter out Bonk.fun graduated tokens older than 3 days
-        const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000)
-        const filteredBonkFunGraduatedTokens = convertedBonkFunGraduatedTokens.filter((token: any) => {
-          const tokenAge = parseTimeToMinutes(token.age)
-          const tokenAgeInMs = tokenAge * 60 * 1000
-          const tokenCreatedAt = Date.now() - tokenAgeInMs
-          return tokenCreatedAt > threeDaysAgo
-        })
-        setBonkFunGraduatedTokens(filteredBonkFunGraduatedTokens)
-        console.log('✅ Bonk.fun graduated tokens loaded:', filteredBonkFunGraduatedTokens.length, '(filtered from', convertedBonkFunGraduatedTokens.length, 'to exclude tokens >3 days old)')
-      }
+        if (bonkFunMCResult.status === 'fulfilled') {
+          const convertedBonkFunMCTokens = bonkFunMCResult.value.slice(0, 30).map((coin: any, index: number) =>
+            convertBonkFunToToken(coin, index)
+          )
+          // Filter out Bonk.fun MC tokens older than 3 days
+          const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000)
+          const filteredBonkFunMCTokens = convertedBonkFunMCTokens.filter((token: any) => {
+            const tokenAge = parseTimeToMinutes(token.age)
+            const tokenAgeInMs = tokenAge * 60 * 1000
+            const tokenCreatedAt = Date.now() - tokenAgeInMs
+            return tokenCreatedAt > threeDaysAgo
+          })
+          setBonkFunMCTokens(filteredBonkFunMCTokens)
+          console.log('✅ Bonk.fun MC tokens loaded:', filteredBonkFunMCTokens.length, '(filtered from', convertedBonkFunMCTokens.length, 'to exclude tokens >3 days old)')
+        }
 
-      if (moonItResult.status === 'fulfilled') {
-        const convertedMoonItTokens = moonItResult.value.slice(0, 30).map((coin: any, index: number) => 
-          convertMoonItToToken(coin, index)
-        )
-        // Filter out Moon.it tokens older than 3 days
-        const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000)
-        const filteredMoonItTokens = convertedMoonItTokens.filter((token: any) => {
-          const tokenAge = parseTimeToMinutes(token.age)
-          const tokenAgeInMs = tokenAge * 60 * 1000
-          const tokenCreatedAt = Date.now() - tokenAgeInMs
-          return tokenCreatedAt > threeDaysAgo
-        })
-        setMoonItTokens(filteredMoonItTokens)
-        console.log('✅ Moon.it tokens loaded:', filteredMoonItTokens.length, '(filtered from', convertedMoonItTokens.length, 'to exclude tokens >3 days old)')
-      }
+        if (bonkFunGraduatedResult.status === 'fulfilled') {
+          const convertedBonkFunGraduatedTokens = bonkFunGraduatedResult.value.slice(0, 30).map((coin: any, index: number) =>
+            convertBonkFunToToken(coin, index)
+          )
+          // Filter out Bonk.fun graduated tokens older than 3 days
+          const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000)
+          const filteredBonkFunGraduatedTokens = convertedBonkFunGraduatedTokens.filter((token: any) => {
+            const tokenAge = parseTimeToMinutes(token.age)
+            const tokenAgeInMs = tokenAge * 60 * 1000
+            const tokenCreatedAt = Date.now() - tokenAgeInMs
+            return tokenCreatedAt > threeDaysAgo
+          })
+          setBonkFunGraduatedTokens(filteredBonkFunGraduatedTokens)
+          console.log('✅ Bonk.fun graduated tokens loaded:', filteredBonkFunGraduatedTokens.length, '(filtered from', convertedBonkFunGraduatedTokens.length, 'to exclude tokens >3 days old)')
+        }
 
-      if (moonItMCResult.status === 'fulfilled') {
-        const convertedMoonItMCTokens = moonItMCResult.value.slice(0, 30).map((coin: any, index: number) => 
-          convertMoonItToToken(coin, index)
-        )
-        // Filter out Moon.it MC tokens older than 3 days
-        const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000)
-        const filteredMoonItMCTokens = convertedMoonItMCTokens.filter((token: any) => {
-          const tokenAge = parseTimeToMinutes(token.age)
-          const tokenAgeInMs = tokenAge * 60 * 1000
-          const tokenCreatedAt = Date.now() - tokenAgeInMs
-          return tokenCreatedAt > threeDaysAgo
-        })
-        setMoonItMCTokens(filteredMoonItMCTokens)
-        console.log('✅ Moon.it MC tokens loaded:', filteredMoonItMCTokens.length, '(filtered from', convertedMoonItMCTokens.length, 'to exclude tokens >3 days old)')
-      }
+        if (moonItResult.status === 'fulfilled') {
+          const convertedMoonItTokens = moonItResult.value.slice(0, 30).map((coin: any, index: number) =>
+            convertMoonItToToken(coin, index)
+          )
+          // Filter out Moon.it tokens older than 3 days
+          const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000)
+          const filteredMoonItTokens = convertedMoonItTokens.filter((token: any) => {
+            const tokenAge = parseTimeToMinutes(token.age)
+            const tokenAgeInMs = tokenAge * 60 * 1000
+            const tokenCreatedAt = Date.now() - tokenAgeInMs
+            return tokenCreatedAt > threeDaysAgo
+          })
+          setMoonItTokens(filteredMoonItTokens)
+          console.log('✅ Moon.it tokens loaded:', filteredMoonItTokens.length, '(filtered from', convertedMoonItTokens.length, 'to exclude tokens >3 days old)')
+        }
 
-      if (moonItGraduatedResult.status === 'fulfilled') {
-        const convertedMoonItGraduatedTokens = moonItGraduatedResult.value.slice(0, 30).map((coin: any, index: number) => 
-          convertMoonItToToken(coin, index)
-        )
-        // Filter out Moon.it graduated tokens older than 3 days
-        const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000)
-        const filteredMoonItGraduatedTokens = convertedMoonItGraduatedTokens.filter((token: any) => {
-          const tokenAge = parseTimeToMinutes(token.age)
-          const tokenAgeInMs = tokenAge * 60 * 1000
-          const tokenCreatedAt = Date.now() - tokenAgeInMs
-          return tokenCreatedAt > threeDaysAgo
-        })
-        setMoonItGraduatedTokens(filteredMoonItGraduatedTokens)
-        console.log('✅ Moon.it graduated tokens loaded:', filteredMoonItGraduatedTokens.length, '(filtered from', convertedMoonItGraduatedTokens.length, 'to exclude tokens >3 days old)')
-      }
+        if (moonItMCResult.status === 'fulfilled') {
+          const convertedMoonItMCTokens = moonItMCResult.value.slice(0, 30).map((coin: any, index: number) =>
+            convertMoonItToToken(coin, index)
+          )
+          // Filter out Moon.it MC tokens older than 3 days
+          const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000)
+          const filteredMoonItMCTokens = convertedMoonItMCTokens.filter((token: any) => {
+            const tokenAge = parseTimeToMinutes(token.age)
+            const tokenAgeInMs = tokenAge * 60 * 1000
+            const tokenCreatedAt = Date.now() - tokenAgeInMs
+            return tokenCreatedAt > threeDaysAgo
+          })
+          setMoonItMCTokens(filteredMoonItMCTokens)
+          console.log('✅ Moon.it MC tokens loaded:', filteredMoonItMCTokens.length, '(filtered from', convertedMoonItMCTokens.length, 'to exclude tokens >3 days old)')
+        }
 
-      // REMOVED: pump.fun direct API fetch from parallel fetch - now handled by live polling useEffect
-      // pump.fun tokens are now streamed live every 2 seconds via separate useEffect
+        if (moonItGraduatedResult.status === 'fulfilled') {
+          const convertedMoonItGraduatedTokens = moonItGraduatedResult.value.slice(0, 30).map((coin: any, index: number) =>
+            convertMoonItToToken(coin, index)
+          )
+          // Filter out Moon.it graduated tokens older than 3 days
+          const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000)
+          const filteredMoonItGraduatedTokens = convertedMoonItGraduatedTokens.filter((token: any) => {
+            const tokenAge = parseTimeToMinutes(token.age)
+            const tokenAgeInMs = tokenAge * 60 * 1000
+            const tokenCreatedAt = Date.now() - tokenAgeInMs
+            return tokenCreatedAt > threeDaysAgo
+          })
+          setMoonItGraduatedTokens(filteredMoonItGraduatedTokens)
+          console.log('✅ Moon.it graduated tokens loaded:', filteredMoonItGraduatedTokens.length, '(filtered from', convertedMoonItGraduatedTokens.length, 'to exclude tokens >3 days old)')
+        }
 
-      console.log('🚀 All trading data loaded in parallel!')
-      
+        // REMOVED: pump.fun direct API fetch from parallel fetch - now handled by live polling useEffect
+        // pump.fun tokens are now streamed live every 2 seconds via separate useEffect
+
+        console.log('🚀 All trading data loaded in parallel!')
+
       } catch (error) {
         console.error('Error in fetchAllDataInParallel:', error)
       } finally {
@@ -1486,7 +1486,7 @@ export function TrenchesPage() {
         console.log('Fetching Pump.fun data...')
         const pumpFunCoins = await fetchPumpFunTokens()
         console.log('Received coins:', pumpFunCoins.length)
-        const convertedTokens = pumpFunCoins.slice(0, 30).map((coin: any, index: number) => 
+        const convertedTokens = pumpFunCoins.slice(0, 30).map((coin: any, index: number) =>
           convertPumpFunToToken(coin, index, 'new')
         )
         console.log('Converted tokens:', convertedTokens.length)
@@ -1518,23 +1518,23 @@ export function TrenchesPage() {
             'Content-Type': 'application/json',
           }
         })
-        
+
         console.log('Migrated response status:', response.status)
-        
+
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`)
         }
-        
+
         const data = await response.json()
-        
+
         if (!data.coins || !Array.isArray(data.coins)) {
           console.warn('Invalid migrated response structure:', data)
           setMigratedTokens([])
           return
         }
-        
+
         console.log('Received migrated coins:', data.coins.length)
-        const convertedMigratedTokens = data.coins.slice(0, 30).map((coin: any, index: number) => 
+        const convertedMigratedTokens = data.coins.slice(0, 30).map((coin: any, index: number) =>
           convertPumpFunToToken(coin, index, 'migrated')
         )
         console.log('Converted migrated tokens:', convertedMigratedTokens.length)
@@ -1553,7 +1553,7 @@ export function TrenchesPage() {
         console.log('Fetching bonk.fun data...')
         const bonkFunTokensData = await fetchBonkFunTokens()
         console.log('Received bonk.fun tokens:', bonkFunTokensData.length)
-        const convertedBonkFunTokens = bonkFunTokensData.slice(0, 30).map((token, index) => 
+        const convertedBonkFunTokens = bonkFunTokensData.slice(0, 30).map((token, index) =>
           convertBonkFunToToken(token, index)
         )
         // Filter out Bonk.fun tokens older than 3 days
@@ -1608,7 +1608,7 @@ export function TrenchesPage() {
         console.log('Fetching bonk.fun graduated data...')
         const bonkFunGraduatedTokensData = await fetchBonkFunGraduatedTokens()
         console.log('Received bonk.fun graduated tokens:', bonkFunGraduatedTokensData.length)
-        const convertedBonkFunGraduatedTokens = bonkFunGraduatedTokensData.slice(0, 30).map((token, index) => 
+        const convertedBonkFunGraduatedTokens = bonkFunGraduatedTokensData.slice(0, 30).map((token, index) =>
           convertBonkFunToToken(token, index)
         )
         // Filter out Bonk.fun graduated tokens older than 3 days
@@ -1635,7 +1635,7 @@ export function TrenchesPage() {
         console.log('Fetching moon.it data...')
         const moonItTokensData = await fetchMoonItTokens()
         console.log('Received moon.it tokens:', moonItTokensData.length)
-        const convertedMoonItTokens = moonItTokensData.slice(0, 30).map((token, index) => 
+        const convertedMoonItTokens = moonItTokensData.slice(0, 30).map((token, index) =>
           convertMoonItToToken(token, index)
         )
         // Filter out Moon.it tokens older than 3 days
@@ -1662,7 +1662,7 @@ export function TrenchesPage() {
         console.log('Fetching moon.it MC data...')
         const moonItMCTokensData = await fetchMoonItMCTokens()
         console.log('Received moon.it MC tokens:', moonItMCTokensData.length)
-        const convertedMoonItMCTokens = moonItMCTokensData.slice(0, 30).map((token, index) => 
+        const convertedMoonItMCTokens = moonItMCTokensData.slice(0, 30).map((token, index) =>
           convertMoonItToToken(token, index)
         )
         // Filter out Moon.it MC tokens older than 3 days
@@ -1689,7 +1689,7 @@ export function TrenchesPage() {
         console.log('Fetching moon.it graduated data...')
         const moonItGraduatedTokensData = await fetchMoonItGraduatedTokens()
         console.log('Received moon.it graduated tokens:', moonItGraduatedTokensData.length)
-        const convertedMoonItGraduatedTokens = moonItGraduatedTokensData.slice(0, 30).map((token, index) => 
+        const convertedMoonItGraduatedTokens = moonItGraduatedTokensData.slice(0, 30).map((token, index) =>
           convertMoonItToToken(token, index)
         )
         // Filter out Moon.it graduated tokens older than 3 days
@@ -1719,7 +1719,7 @@ export function TrenchesPage() {
     const interval = setInterval(() => {
       // Auto-refresh token data
       console.log('Auto-refreshing token data...')
-        fetchAllDataInParallel()
+      fetchAllDataInParallel()
     }, 5000) // 5 seconds for REST API fallback only (WebSocket is instant)
 
     // Cleanup interval and timeout on component unmount
@@ -1850,10 +1850,10 @@ export function TrenchesPage() {
     // Process in reverse order so higher priority sources overwrite lower priority ones
     // OPTIMIZED: Direct array concatenation for speed - pumpFunTokens first for fastest display
     const allTokens = [...moonItTokens, ...bonkFunTokens, ...realTokens, ...pumpFunTokens]
-    
+
     // FAST deduplication - use Map for O(1) lookups
     const tokenMap = new Map<string, TrenchesToken>()
-    
+
     // Single pass deduplication - later tokens overwrite earlier ones
     for (let i = 0; i < allTokens.length; i++) {
       const token = allTokens[i]
@@ -1861,18 +1861,18 @@ export function TrenchesPage() {
       const uniqueKey = `${token.platform}-${tokenId}`
       tokenMap.set(uniqueKey, token) // Always overwrite - latest data wins
     }
-    
+
     // Convert Map to array - pre-allocate for speed
     const deduplicatedTokens = new Array(tokenMap.size)
     let idx = 0
     for (const token of tokenMap.values()) {
       deduplicatedTokens[idx++] = token
     }
-    
+
     // ULTRA-FAST age calculation - inline, pre-allocated array
     const now = currentTime
     const updatedTokens = new Array(deduplicatedTokens.length)
-    
+
     for (let i = 0; i < deduplicatedTokens.length; i++) {
       const token = deduplicatedTokens[i]
       // ALWAYS create new object to ensure React detects changes
@@ -1881,7 +1881,7 @@ export function TrenchesPage() {
       if (token.creationTime) {
         const diff = now - token.creationTime
         const seconds = Math.floor(diff / 1000)
-        
+
         // Fast age formatting - minimal branching
         let age: string
         if (seconds < 0) age = '0s'
@@ -1899,7 +1899,7 @@ export function TrenchesPage() {
         updatedTokens[i] = { ...token, _updateTimestamp: updateTimestamp }
       }
     }
-    
+
     return updatedTokens
   }, [realTokens, pumpFunTokens, bonkFunTokens, moonItTokens, currentTime])
 
@@ -1908,21 +1908,21 @@ export function TrenchesPage() {
     if (tokensWithLiveAge.length === 0) {
       return []
     }
-    
+
     // FAST: Pre-allocate arrays, avoid multiple map operations
     const combinedTokens = new Array(tokensWithLiveAge.length)
     for (let i = 0; i < tokensWithLiveAge.length; i++) {
       combinedTokens[i] = tokensWithLiveAge[i]
     }
-    
+
     // Apply filters - single pass
     const filteredTokens = applyFilters(combinedTokens)
-    
+
     // FAST sort - in-place for speed, then slice
     filteredTokens.sort((a, b) => {
       return (b.creationTime || 0) - (a.creationTime || 0) // Descending (newest first)
     })
-    
+
     // Return slice with new references - limit to 30 for performance
     const result = new Array(Math.min(30, filteredTokens.length))
     for (let i = 0; i < result.length; i++) {
@@ -1938,10 +1938,10 @@ export function TrenchesPage() {
     // Priority: mcTokens (pump.fun - most live) > bonkFunMCTokens > moonItMCTokens
     // Process in reverse order so higher priority sources overwrite lower priority ones
     const allTokens = [...moonItMCTokens, ...bonkFunMCTokens, ...mcTokens]
-    
+
     // FAST deduplication - use Map for O(1) lookups, preserve latest data
     const tokenMap = new Map<string, TrenchesToken>()
-    
+
     // Single pass deduplication - later tokens (higher priority) overwrite earlier ones
     for (let i = 0; i < allTokens.length; i++) {
       const token = allTokens[i]
@@ -1949,42 +1949,42 @@ export function TrenchesPage() {
       const uniqueKey = `${token.platform}-${tokenId}`
       tokenMap.set(uniqueKey, token) // Always overwrite - latest data wins
     }
-    
+
     // Convert Map to array - pre-allocate for speed
     const deduplicatedTokens = new Array(tokenMap.size)
     let idx = 0
     for (const token of tokenMap.values()) {
       deduplicatedTokens[idx++] = token
     }
-    
+
     // Update ages based on currentTime and creationTime
     // Preserve _updateTimestamp to force React updates
     const now = currentTime
     const updatedTokens = new Array(deduplicatedTokens.length)
-    
+
     for (let i = 0; i < deduplicatedTokens.length; i++) {
       const token = deduplicatedTokens[i]
       const updateTimestamp = (token as any)._updateTimestamp || now
-      
+
       if (token.creationTime) {
         const diff = currentTime - token.creationTime
         const seconds = Math.floor(diff / 1000)
         const minutes = Math.floor(seconds / 60)
         const hours = Math.floor(minutes / 60)
         const days = Math.floor(hours / 24)
-        
+
         let age = ''
         if (days > 0) age = `${days}d`
         else if (hours > 0) age = `${hours}h`
         else if (minutes > 0) age = `${minutes}m`
         else age = `${seconds}s`
-        
+
         updatedTokens[i] = { ...token, age, _updateTimestamp: updateTimestamp }
       } else {
         updatedTokens[i] = { ...token, _updateTimestamp: updateTimestamp }
       }
     }
-    
+
     return updatedTokens
   }, [mcTokens, bonkFunMCTokens, moonItMCTokens, currentTime])
 
@@ -1993,10 +1993,10 @@ export function TrenchesPage() {
     if (graduatingTokensWithLiveAge.length === 0) {
       return []
     }
-    
+
     // Apply filters - single pass
     const filteredGraduatingTokens = applyFilters(graduatingTokensWithLiveAge)
-    
+
     // STABLE sort: Sort by market cap (highest first) or bonding curve progress
     // This ensures tokens don't disappear when their age changes
     const sorted = filteredGraduatingTokens
@@ -2006,22 +2006,22 @@ export function TrenchesPage() {
         const aMc = parseFloat((a.mc || '0').replace(/[$,]/g, '')) || 0
         const bMc = parseFloat((b.mc || '0').replace(/[$,]/g, '')) || 0
         if (bMc !== aMc) return bMc - aMc
-        
+
         // Secondary sort: Bonding curve progress (highest first)
         const aProgress = a.bondingCurveProgress || 0
         const bProgress = b.bondingCurveProgress || 0
         if (bProgress !== aProgress) return bProgress - aProgress
-        
+
         // Tertiary sort: Creation time (newest first) for stability
         return (b.creationTime || 0) - (a.creationTime || 0)
       })
       .slice(0, 30)
-    
+
     // Always create new array with update timestamps to force React updates
     const now = Date.now()
-    return sorted.map(token => ({ 
-      ...token, 
-      _updateTimestamp: (token as any)._updateTimestamp || now 
+    return sorted.map(token => ({
+      ...token,
+      _updateTimestamp: (token as any)._updateTimestamp || now
     }))
   }, [graduatingTokensWithLiveAge, applyFilters])
 
@@ -2032,10 +2032,10 @@ export function TrenchesPage() {
     // Priority: graduatedTokens (pump.fun - most live) > others
     // Process in reverse order so higher priority sources overwrite lower priority ones
     const allTokens = [...moonItGraduatedTokens, ...bonkFunGraduatedTokens, ...migratedTokens, ...graduatedTokens]
-    
+
     // FAST deduplication - use Map for O(1) lookups, preserve latest data
     const tokenMap = new Map<string, TrenchesToken>()
-    
+
     // Single pass deduplication - later tokens (higher priority) overwrite earlier ones
     for (let i = 0; i < allTokens.length; i++) {
       const token = allTokens[i]
@@ -2043,42 +2043,42 @@ export function TrenchesPage() {
       const uniqueKey = `${token.platform}-${tokenId}`
       tokenMap.set(uniqueKey, token) // Always overwrite - latest data wins
     }
-    
+
     // Convert Map to array - pre-allocate for speed
     const deduplicatedTokens = new Array(tokenMap.size)
     let idx = 0
     for (const token of tokenMap.values()) {
       deduplicatedTokens[idx++] = token
     }
-    
+
     // Update ages based on currentTime and creationTime
     // Preserve _updateTimestamp to force React updates
     const now = currentTime
     const updatedTokens = new Array(deduplicatedTokens.length)
-    
+
     for (let i = 0; i < deduplicatedTokens.length; i++) {
       const token = deduplicatedTokens[i]
       const updateTimestamp = (token as any)._updateTimestamp || now
-      
+
       if (token.creationTime) {
         const diff = currentTime - token.creationTime
         const seconds = Math.floor(diff / 1000)
         const minutes = Math.floor(seconds / 60)
         const hours = Math.floor(minutes / 60)
         const days = Math.floor(hours / 24)
-        
+
         let age = ''
         if (days > 0) age = `${days}d`
         else if (hours > 0) age = `${hours}h`
         else if (minutes > 0) age = `${minutes}m`
         else age = `${seconds}s`
-        
+
         updatedTokens[i] = { ...token, age, _updateTimestamp: updateTimestamp }
       } else {
         updatedTokens[i] = { ...token, _updateTimestamp: updateTimestamp }
       }
     }
-    
+
     return updatedTokens
   }, [graduatedTokens, migratedTokens, bonkFunGraduatedTokens, moonItGraduatedTokens, currentTime])
 
@@ -2087,10 +2087,10 @@ export function TrenchesPage() {
     if (graduatedTokensWithLiveAge.length === 0) {
       return []
     }
-    
+
     // Apply filters - single pass
     const filteredGraduatedTokens = applyFilters(graduatedTokensWithLiveAge)
-    
+
     // STABLE sort: Sort by creation time (newest first) for graduated tokens
     // This ensures tokens don't disappear when their age changes
     const sorted = filteredGraduatedTokens
@@ -2100,12 +2100,12 @@ export function TrenchesPage() {
         return (b.creationTime || 0) - (a.creationTime || 0)
       })
       .slice(0, 30)
-    
+
     // Always create new array with update timestamps to force React updates
     const now = Date.now()
-    return sorted.map(token => ({ 
-      ...token, 
-      _updateTimestamp: (token as any)._updateTimestamp || now 
+    return sorted.map(token => ({
+      ...token,
+      _updateTimestamp: (token as any)._updateTimestamp || now
     }))
   }, [graduatedTokensWithLiveAge, applyFilters])
 
@@ -2196,31 +2196,29 @@ export function TrenchesPage() {
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-end space-x-4">
           <h1 className="text-2xl font-bold">Echo</h1>
-          
+
           {/* Chain Toggle */}
           <div className="flex items-center rounded-lg p-1 pb-0.5">
             <button
               onClick={() => setSelectedChain('solana')}
               className="flex items-center justify-center p-1.5 transition-all hover:bg-zinc-800/30 rounded-md"
             >
-              <img 
-                src="/sol-logo.png" 
-                alt="Solana" 
-                className={`w-3 h-3 transition-all ${
-                  selectedChain === 'solana' ? 'opacity-100' : 'opacity-50 grayscale'
-                }`}
+              <img
+                src="/sol-logo.png"
+                alt="Solana"
+                className={`w-3 h-3 transition-all ${selectedChain === 'solana' ? 'opacity-100' : 'opacity-50 grayscale'
+                  }`}
               />
             </button>
             <button
               onClick={() => setSelectedChain('bnb')}
               className="flex items-center justify-center p-1.5 transition-all hover:bg-zinc-800/30 rounded-md"
             >
-              <img 
-                src="/bnb-chain-binance-smart-chain-logo.svg" 
-                alt="BNB Chain" 
-                className={`w-3 h-3 transition-all ${
-                  selectedChain === 'bnb' ? 'opacity-100' : 'opacity-50 grayscale'
-                }`}
+              <img
+                src="/bnb-chain-binance-smart-chain-logo.svg"
+                alt="BNB Chain"
+                className={`w-3 h-3 transition-all ${selectedChain === 'bnb' ? 'opacity-100' : 'opacity-50 grayscale'
+                  }`}
               />
             </button>
           </div>
@@ -2242,78 +2240,107 @@ export function TrenchesPage() {
 
 
       {/* Three Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 items-start w-full">
-        {selectedChain === 'solana' ? (
-          <>
-            <div className="px-1">
-              <TrenchesColumn 
-                title="New" 
-                tokens={newTokens} 
-                onFiltersChange={handleFiltersChange}
-                initialFilters={filters}
-                selectedChain={selectedChain}
-                echoSettings={echoSettings}
-              />
-            </div>
-            <div>
-              <TrenchesColumn 
-                title="Nearly there" 
-                tokens={mcCategoryTokens} 
-                onFiltersChange={handleFiltersChange}
-                initialFilters={filters}
-                selectedChain={selectedChain}
-                echoSettings={echoSettings}
-              />
-            </div>
-            <div className="px-1">
-              <TrenchesColumn 
-                title="Migrated" 
-                tokens={graduatedCategoryTokens} 
-                onFiltersChange={handleFiltersChange}
-                initialFilters={filters}
-                selectedChain={selectedChain}
-                echoSettings={echoSettings}
-              />
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="px-1">
-              <TrenchesColumn 
-                title="New" 
-                tokens={bscRealTokens} 
-                onFiltersChange={handleFiltersChange}
-                initialFilters={filters}
-                selectedChain={selectedChain}
-                echoSettings={echoSettings}
-              />
-            </div>
-            <div>
-              <TrenchesColumn 
-                title="% MC" 
-                tokens={bscMcTokens} 
-                onFiltersChange={handleFiltersChange}
-                initialFilters={filters}
-                selectedChain={selectedChain}
-                echoSettings={echoSettings}
-              />
-            </div>
-            <div className="px-1">
-              <TrenchesColumn 
-                title="Migrated" 
-                tokens={bscGraduatedTokens} 
-                onFiltersChange={handleFiltersChange}
-                initialFilters={filters}
-                selectedChain={selectedChain}
-                echoSettings={echoSettings}
-              />
-            </div>
-          </>
-        )}
-      </div>
+      {/* Dynamic Column Layout */}
+      {(() => {
+        // Default to true if settings undefined
+        const showNew = echoSettings?.layout?.showNew !== false
+        const showAlmostBonded = echoSettings?.layout?.showAlmostBonded !== false
+        const showMigrated = echoSettings?.layout?.showMigrated !== false
+
+        const visibleCount = [showNew, showAlmostBonded, showMigrated].filter(Boolean).length
+        const columnsLayout = echoSettings?.layout?.columns || 'Compact'
+        const gapClass = columnsLayout === 'Spaced' ? 'gap-4' : 'gap-2'
+        const gridClass = visibleCount === 1 ? 'grid-cols-1 max-w-2xl mx-auto' :
+          visibleCount === 2 ? 'grid-cols-1 lg:grid-cols-2' :
+            'grid-cols-1 lg:grid-cols-3'
+
+        return (
+          <div className={`grid ${gridClass} ${gapClass} items-start w-full transition-all duration-300`}>
+            {selectedChain === 'solana' ? (
+              <>
+                {showNew && (
+                  <div className="px-1">
+                    <TrenchesColumn
+                      title="New"
+                      tokens={newTokens}
+                      onFiltersChange={handleFiltersChange}
+                      initialFilters={filters}
+                      selectedChain={selectedChain}
+                      echoSettings={echoSettings}
+                    />
+                  </div>
+                )}
+                {showAlmostBonded && (
+                  <div>
+                    <TrenchesColumn
+                      title="Nearly there"
+                      tokens={mcCategoryTokens}
+                      onFiltersChange={handleFiltersChange}
+                      initialFilters={filters}
+                      selectedChain={selectedChain}
+                      echoSettings={echoSettings}
+                    />
+                  </div>
+                )}
+                {showMigrated && (
+                  <div className="px-1">
+                    <TrenchesColumn
+                      title="Migrated"
+                      tokens={graduatedCategoryTokens}
+                      onFiltersChange={handleFiltersChange}
+                      initialFilters={filters}
+                      selectedChain={selectedChain}
+                      echoSettings={echoSettings}
+                    />
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                {showNew && (
+                  <div className="px-1">
+                    <TrenchesColumn
+                      title="New"
+                      tokens={bscRealTokens}
+                      onFiltersChange={handleFiltersChange}
+                      initialFilters={filters}
+                      selectedChain={selectedChain}
+                      echoSettings={echoSettings}
+                    />
+                  </div>
+                )}
+                {showAlmostBonded && (
+                  <div>
+                    <TrenchesColumn
+                      title="% MC"
+                      tokens={bscMcTokens}
+                      onFiltersChange={handleFiltersChange}
+                      initialFilters={filters}
+                      selectedChain={selectedChain}
+                      echoSettings={echoSettings}
+                    />
+                  </div>
+                )}
+                {showMigrated && (
+                  <div className="px-1">
+                    <TrenchesColumn
+                      title="Migrated"
+                      tokens={bscGraduatedTokens}
+                      onFiltersChange={handleFiltersChange}
+                      initialFilters={filters}
+                      selectedChain={selectedChain}
+                      echoSettings={echoSettings}
+                    />
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )
+      })()}
 
       {/* Customize Modal */}
-      <EchoCustomizeModal 
+      <EchoCustomizeModal
         isOpen={showCustomize}
         onClose={() => setShowCustomize(false)}
         settings={echoSettings}
