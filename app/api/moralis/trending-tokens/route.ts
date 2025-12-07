@@ -9,6 +9,23 @@ export async function GET(request: NextRequest) {
   try {
     console.log(`API: Fetching trending tokens with limit: ${limit}, timeframe: ${timeframe}`)
 
+    // Check if API key is configured
+    const apiKey = process.env.MORALIS_API_KEY || process.env.NEXT_PUBLIC_MORALIS_API_KEY
+    if (!apiKey) {
+      console.error('❌ Moralis API key not configured in environment variables')
+      return NextResponse.json({
+        success: false,
+        error: 'Moralis API key not configured',
+        data: [],
+        meta: {
+          limit,
+          timeframe,
+          timestamp: Date.now(),
+          pollingInterval: 3000
+        }
+      }, { status: 500 })
+    }
+
     const moralisService = MoralisComprehensiveService.getInstance()
     const trendingTokens = await moralisService.getTrendingTokens(limit, timeframe)
 
@@ -52,6 +69,7 @@ export async function GET(request: NextRequest) {
     console.error('Error details:', { errorMessage, errorStack })
     
     // Return error response with proper structure
+    // Don't return 500 status in production to prevent UI crashes
     return NextResponse.json({
       success: false,
       error: errorMessage,
@@ -62,6 +80,6 @@ export async function GET(request: NextRequest) {
         timestamp: Date.now(),
         pollingInterval: 3000
       }
-    }, { status: 500 })
+    }, { status: 200 }) // Return 200 so UI can handle the error gracefully
   }
 }

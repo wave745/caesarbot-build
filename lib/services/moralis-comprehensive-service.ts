@@ -1,8 +1,5 @@
 // Comprehensive Moralis API service with all features
-import { exec } from 'child_process'
-import { promisify } from 'util'
-
-const execAsync = promisify(exec)
+// Note: Using native fetch API instead of curl for Vercel compatibility
 
 // Moralis API Response Interfaces
 export interface MoralisTokenMetadata {
@@ -352,47 +349,63 @@ export class MoralisComprehensiveService {
     return MoralisComprehensiveService.instance
   }
 
-  // Helper method to execute curl commands with retry logic
+  // Helper method to execute HTTP requests with retry logic
+  // Uses native fetch API which works in Vercel serverless environment
   private async executeCurlCommand(url: string, params: Record<string, any> = {}, retries: number = 3): Promise<any> {
     const queryString = new URLSearchParams(params).toString()
     const fullUrl = queryString ? `${url}?${queryString}` : url
     
     for (let attempt = 1; attempt <= retries; attempt++) {
       try {
-        const curlCommand = `curl --request GET --url '${fullUrl}' --header 'accept: application/json' --header 'X-API-Key: ${this.apiKey}' --connect-timeout 10 --max-time 30 --retry 0 --no-keepalive --compressed --silent --show-error`
+        console.log(`Fetching from Moralis API (attempt ${attempt}/${retries}):`, fullUrl.replace(this.apiKey, '***'))
         
-        console.log(`Executing curl command (attempt ${attempt}/${retries}):`, curlCommand.replace(this.apiKey, '***'))
-        const { stdout, stderr } = await execAsync(curlCommand)
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
         
-        if (stderr) {
-          console.error('Curl stderr:', stderr)
-        }
-        
-        // Check if stdout is empty
-        if (!stdout || stdout.trim() === '') {
-          console.error('❌ Curl returned empty response')
-          throw new Error('Empty response from API')
-        }
-        
-        // Try to parse JSON
-        let parsed
         try {
-          parsed = JSON.parse(stdout)
-        } catch (parseError) {
-          console.error('❌ Failed to parse JSON response:', parseError)
-          console.error('Response text (first 500 chars):', stdout.substring(0, 500))
-          throw new Error(`Invalid JSON response: ${parseError instanceof Error ? parseError.message : 'Unknown parse error'}`)
+          const response = await fetch(fullUrl, {
+            method: 'GET',
+            headers: {
+              'accept': 'application/json',
+              'X-API-Key': this.apiKey
+            },
+            signal: controller.signal
+          })
+          
+          clearTimeout(timeoutId)
+          
+          if (!response.ok) {
+            const errorText = await response.text().catch(() => 'Unknown error')
+            console.error(`❌ API returned ${response.status}: ${response.statusText}`, errorText.substring(0, 200))
+            throw new Error(`API returned ${response.status}: ${response.statusText}`)
+          }
+          
+          // Check content type
+          const contentType = response.headers.get('content-type')
+          if (!contentType || !contentType.includes('application/json')) {
+            const text = await response.text()
+            console.error('❌ Response is not JSON. Content-Type:', contentType, 'Body:', text.substring(0, 200))
+            throw new Error('API returned non-JSON response')
+          }
+          
+          const data = await response.json()
+          
+          // Check if parsed result is valid
+          if (data === null || data === undefined) {
+            console.error('❌ Parsed result is null/undefined')
+            throw new Error('Parsed response is null or undefined')
+          }
+          
+          return data
+        } catch (fetchError: any) {
+          clearTimeout(timeoutId)
+          if (fetchError.name === 'AbortError') {
+            throw new Error('Request timeout after 30 seconds')
+          }
+          throw fetchError
         }
-        
-        // Check if parsed result is valid
-        if (parsed === null || parsed === undefined) {
-          console.error('❌ Parsed result is null/undefined')
-          throw new Error('Parsed response is null or undefined')
-        }
-        
-        return parsed
       } catch (error) {
-        console.error(`Error executing curl command (attempt ${attempt}/${retries}):`, error)
+        console.error(`Error fetching from Moralis API (attempt ${attempt}/${retries}):`, error)
         
         if (attempt === retries) {
           throw error

@@ -271,16 +271,26 @@ export function TrendingTokensSection({ sortBy: propSortBy, filters }: TrendingT
         } else if (data.success === false || (data.error && !data.data)) {
           // API explicitly returned an error
           console.error('❌ API returned error:', data.error || 'Unknown error')
+          // Don't clear existing tokens on error - keep them visible
           setError(data.error || 'Failed to load trending tokens')
           setIsLoading(false)
         } else {
-          // Unexpected response format
+          // Unexpected response format - but still try to use data if it exists
           console.error('❌ Invalid API response format. Expected {success, data[]}, got:', data)
-          setError('Invalid response format from API')
-          setIsLoading(false)
+          // If data exists but isn't in expected format, try to use it
+          if (Array.isArray(data)) {
+            console.log('⚠️ Response is array, using directly')
+            setTokens(data)
+            setLastUpdate(new Date())
+            setIsLoading(false)
+          } else {
+            setError('Invalid response format from API')
+            setIsLoading(false)
+          }
         }
       } else {
         console.error('❌ Response is not an object:', typeof data, data)
+        // Don't clear tokens on error - keep existing data visible
         setError('Invalid response from API')
         setIsLoading(false)
       }
