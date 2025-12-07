@@ -367,8 +367,11 @@ export class MoralisComprehensiveService {
             method: 'GET',
             headers: {
               'accept': 'application/json',
-              'X-API-Key': this.apiKey
+              'X-API-Key': this.apiKey,
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+              'Pragma': 'no-cache'
             },
+            cache: 'no-store', // Disable caching
             signal: controller.signal
           })
           
@@ -627,11 +630,13 @@ export class MoralisComprehensiveService {
       
       // Use the same format as moralis-trending-service.ts which is known to work
       // Build the URL with query params directly in the URL string
-      const url = `https://deep-index.moralis.io/api/v2.2/tokens/trending?chain=solana&limit=${limit}`
+      // Add cache-busting timestamp to ensure fresh data
+      const cacheBuster = Date.now()
+      const url = `https://deep-index.moralis.io/api/v2.2/tokens/trending?chain=solana&limit=${limit}&_t=${cacheBuster}`
       
       // Note: timeframe parameter might not be supported by this endpoint
       // The endpoint might only support specific timeframes or none at all
-      console.log(`🔍 Calling Moralis API: ${url}`)
+      console.log(`🔍 Calling Moralis API: ${url.replace(/_t=\d+/, '_t=***')}`)
       
       const data = await this.executeCurlCommand(url, {})
       

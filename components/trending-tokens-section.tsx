@@ -84,6 +84,7 @@ export function TrendingTokensSection({ sortBy: propSortBy, filters }: TrendingT
   const [dexPaidStatus, setDexPaidStatus] = useState<Map<string, boolean>>(new Map())
   const [tokenMetadata, setTokenMetadata] = useState<Map<string, any>>(new Map())
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
+  const [updateTrigger, setUpdateTrigger] = useState<number>(0) // Force re-render trigger
   const router = useRouter()
 
   // Update local sortBy when prop changes
@@ -178,6 +179,114 @@ export function TrendingTokensSection({ sortBy: propSortBy, filters }: TrendingT
     }
   }
 
+  // Smart update function that merges new data with existing tokens
+  const updateTokensSmart = useCallback((newTokens: MoralisTrendingToken[]) => {
+    setTokens(prevTokens => {
+      // Create a map of existing tokens by address for fast lookup
+      const tokenMap = new Map<string, MoralisTrendingToken>()
+      prevTokens.forEach(token => {
+        tokenMap.set(token.tokenAddress, token)
+      })
+
+      // Merge new tokens with existing ones, updating metrics while preserving order
+      const updatedTokens = newTokens.map(newToken => {
+        const existingToken = tokenMap.get(newToken.tokenAddress)
+        const updateKey = Date.now() + Math.random() // Unique key for each update
+        if (existingToken) {
+          // Token exists - create COMPLETELY NEW object to force React re-render
+          // Don't spread existingToken - create fresh object with all properties
+          return {
+            // Copy all existing properties
+            chainId: existingToken.chainId || newToken.chainId,
+            tokenAddress: newToken.tokenAddress,
+            name: existingToken.name || newToken.name,
+            uniqueName: existingToken.uniqueName || newToken.uniqueName,
+            symbol: existingToken.symbol || newToken.symbol,
+            decimals: newToken.decimals,
+            logo: existingToken.logo || newToken.logo,
+            usdPrice: newToken.usdPrice,
+            createdAt: newToken.createdAt,
+            // Update live metrics - create NEW objects/arrays
+            marketCap: newToken.marketCap,
+            liquidityUsd: newToken.liquidityUsd,
+            holders: newToken.holders,
+            pricePercentChange: {
+              '1h': newToken.pricePercentChange?.['1h'] ?? 0,
+              '4h': newToken.pricePercentChange?.['4h'] ?? 0,
+              '12h': newToken.pricePercentChange?.['12h'] ?? 0,
+              '24h': newToken.pricePercentChange?.['24h'] ?? 0
+            },
+            totalVolume: {
+              '1h': newToken.totalVolume?.['1h'] ?? 0,
+              '4h': newToken.totalVolume?.['4h'] ?? 0,
+              '12h': newToken.totalVolume?.['12h'] ?? 0,
+              '24h': newToken.totalVolume?.['24h'] ?? 0
+            },
+            transactions: {
+              '1h': newToken.transactions?.['1h'] ?? 0,
+              '4h': newToken.transactions?.['4h'] ?? 0,
+              '12h': newToken.transactions?.['12h'] ?? 0,
+              '24h': newToken.transactions?.['24h'] ?? 0
+            },
+            buyTransactions: {
+              '1h': newToken.buyTransactions?.['1h'] ?? 0,
+              '4h': newToken.buyTransactions?.['4h'] ?? 0,
+              '12h': newToken.buyTransactions?.['12h'] ?? 0,
+              '24h': newToken.buyTransactions?.['24h'] ?? 0
+            },
+            sellTransactions: {
+              '1h': newToken.sellTransactions?.['1h'] ?? 0,
+              '4h': newToken.sellTransactions?.['4h'] ?? 0,
+              '12h': newToken.sellTransactions?.['12h'] ?? 0,
+              '24h': newToken.sellTransactions?.['24h'] ?? 0
+            },
+            buyers: {
+              '1h': newToken.buyers?.['1h'] ?? 0,
+              '4h': newToken.buyers?.['4h'] ?? 0,
+              '12h': newToken.buyers?.['12h'] ?? 0,
+              '24h': newToken.buyers?.['24h'] ?? 0
+            },
+            sellers: {
+              '1h': newToken.sellers?.['1h'] ?? 0,
+              '4h': newToken.sellers?.['4h'] ?? 0,
+              '12h': newToken.sellers?.['12h'] ?? 0,
+              '24h': newToken.sellers?.['24h'] ?? 0
+            },
+            // Update timestamp and unique key for live updates
+            _lastUpdate: Date.now(),
+            _updateKey: updateKey, // Force React to see this as a new object
+            _updateTimestamp: Date.now() // Additional timestamp for reactivity
+          } as any
+        } else {
+          // New token - add it with all properties
+          return {
+            ...newToken,
+            _lastUpdate: Date.now(),
+            _updateKey: updateKey,
+            _updateTimestamp: Date.now()
+          } as any
+        }
+      })
+
+      // Add any existing tokens that weren't in the new data (they might have dropped out)
+      // But only keep them for a short time (30 seconds) to prevent stale data
+      const thirtySecondsAgo = Date.now() - 30000
+      prevTokens.forEach(token => {
+        if (!tokenMap.has(token.tokenAddress) && (token as any)._lastUpdate && (token as any)._lastUpdate > thirtySecondsAgo) {
+          updatedTokens.push({
+            ...token,
+            _updateTimestamp: Date.now()
+          } as any)
+        }
+      })
+
+      // Force update trigger
+      setUpdateTrigger(Date.now())
+      
+      return updatedTokens
+    })
+  }, [])
+
   const fetchTrendingTokens = useCallback(async () => {
     try {
       // NO LOADING STATE - show tokens immediately
@@ -207,16 +316,28 @@ export function TrendingTokensSection({ sortBy: propSortBy, filters }: TrendingT
         if (filters.excludeKeywords) queryParams.append('excludeKeywords', filters.excludeKeywords)
       }
 
-      // Realistic fetch with proper timeout
+      // Fast fetch with shorter timeout for live updates
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 10000) // 10s timeout for reliable response
+      const timeoutId = setTimeout(() => controller.abort(), 5000) // 5s timeout for faster updates
 
-      const url = filters ? `/api/moralis/filtered-tokens?${queryParams.toString()}` : '/api/moralis/trending-tokens'
+      // Add cache-busting timestamp to ensure fresh data
+      const cacheBuster = `_t=${Date.now()}`
+      const baseUrl = filters ? `/api/moralis/filtered-tokens?${queryParams.toString()}` : '/api/moralis/trending-tokens'
+      const url = baseUrl.includes('?') ? `${baseUrl}&${cacheBuster}` : `${baseUrl}?${cacheBuster}`
 
-      console.log('🔍 Fetching trending tokens from:', url)
+      // Reduced logging for performance in production
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 Fetching trending tokens from:', url)
+      }
 
       const response = await fetch(url, {
-        signal: controller.signal
+        signal: controller.signal,
+        cache: 'no-store', // Disable caching
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
       })
       clearTimeout(timeoutId)
 
@@ -248,20 +369,31 @@ export function TrendingTokensSection({ sortBy: propSortBy, filters }: TrendingT
         throw new Error('Failed to parse API response as JSON')
       }
 
-      console.log('📦 API response:', { success: data.success, dataLength: data.data?.length, hasData: !!data.data, keys: Object.keys(data) })
+      // Reduced logging for performance
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📦 API response:', { success: data.success, dataLength: data.data?.length, hasData: !!data.data })
+      }
 
       // Handle the response - check if it has the expected structure
       if (data && typeof data === 'object') {
         if (data.success && data.data && Array.isArray(data.data)) {
           if (data.data.length > 0) {
-            console.log('✅ Setting tokens:', data.data.length)
-            setTokens(data.data)
+            // Reduced logging for performance
+            if (process.env.NODE_ENV === 'development') {
+              console.log('✅ Updating tokens:', data.data.length, 'Update trigger:', updateTrigger)
+              // Log first token's market cap to verify it's changing
+              if (data.data.length > 0) {
+                console.log('📊 First token Market Cap:', data.data[0].marketCap, 'Volume:', data.data[0].totalVolume?.['1h'])
+              }
+            }
+            // Use smart update to merge with existing tokens for smooth live updates
+            updateTokensSmart(data.data)
             setLastUpdate(new Date())
             setIsLoading(false)
 
-            // Fetch Dex paid status and metadata for the tokens
-            fetchDexPaidStatus(data.data, controller.signal)
-            fetchTokenMetadata(data.data, controller.signal)
+            // Fetch Dex paid status and metadata for the tokens (non-blocking)
+            fetchDexPaidStatus(data.data, controller.signal).catch(() => {})
+            fetchTokenMetadata(data.data, controller.signal).catch(() => {})
           } else {
             console.warn('⚠️ API returned empty array')
             setTokens([])
@@ -280,7 +412,7 @@ export function TrendingTokensSection({ sortBy: propSortBy, filters }: TrendingT
           // If data exists but isn't in expected format, try to use it
           if (Array.isArray(data)) {
             console.log('⚠️ Response is array, using directly')
-            setTokens(data)
+            updateTokensSmart(data)
             setLastUpdate(new Date())
             setIsLoading(false)
           } else {
@@ -303,9 +435,9 @@ export function TrendingTokensSection({ sortBy: propSortBy, filters }: TrendingT
       // Don't clear tokens on error - keep existing data visible
       setIsLoading(false) // Show error state immediately
     }
-  }, [filters])
+  }, [filters, updateTokensSmart])
 
-  // Main effect: Check cache, fetch on mount, and set up polling
+  // Main effect: Check cache, fetch on mount, and set up ultra-fast polling
   useEffect(() => {
     let abortController: AbortController | null = null
     let intervalId: NodeJS.Timeout | null = null
@@ -322,10 +454,62 @@ export function TrendingTokensSection({ sortBy: propSortBy, filters }: TrendingT
     // INSTANT fetch on mount
     fetchTrendingTokens()
 
-    // Ultra-fast polling for real-time updates
+    // ULTRA-FAST polling for live, non-stop updates
+    // Poll every 500ms for maximum responsiveness
     intervalId = setInterval(() => {
       fetchTrendingTokens()
-    }, 3000) // Refresh every 3 seconds for real-time updates
+    }, 500) // Refresh every 500ms for live updates
+
+    // Additional live update trigger - force re-render every 100ms for ultra-responsive UI
+    // This ensures values update even if API response is slightly delayed
+    const liveUpdateInterval = setInterval(() => {
+      setUpdateTrigger(prev => prev + 1)
+      // Force update tokens with completely new objects to trigger React re-render
+      setTokens(prevTokens => {
+        if (prevTokens.length === 0) return prevTokens
+        const now = Date.now()
+        // Create completely new objects to force React to detect changes
+        return prevTokens.map(token => {
+          // Create a brand new object with all properties
+          return {
+            chainId: token.chainId,
+            tokenAddress: token.tokenAddress,
+            name: token.name,
+            uniqueName: token.uniqueName,
+            symbol: token.symbol,
+            decimals: token.decimals,
+            logo: token.logo,
+            usdPrice: token.usdPrice,
+            createdAt: token.createdAt,
+            marketCap: token.marketCap,
+            liquidityUsd: token.liquidityUsd,
+            holders: token.holders,
+            pricePercentChange: token.pricePercentChange ? { ...token.pricePercentChange } : {},
+            totalVolume: token.totalVolume ? { ...token.totalVolume } : {},
+            transactions: token.transactions ? { ...token.transactions } : {},
+            buyTransactions: token.buyTransactions ? { ...token.buyTransactions } : {},
+            sellTransactions: token.sellTransactions ? { ...token.sellTransactions } : {},
+            buyers: token.buyers ? { ...token.buyers } : {},
+            sellers: token.sellers ? { ...token.sellers } : {},
+            _lastUpdate: (token as any)._lastUpdate || now,
+            _updateKey: (token as any)._updateKey || Math.random(),
+            _updateTimestamp: now // Always update timestamp
+          } as any
+        })
+      })
+    }, 100) // Update every 100ms for ultra-smooth live updates
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId)
+      }
+      if (liveUpdateInterval) {
+        clearInterval(liveUpdateInterval)
+      }
+      if (abortController) {
+        abortController.abort()
+      }
+    }
 
     return () => {
       if (intervalId) {
@@ -350,7 +534,7 @@ export function TrendingTokensSection({ sortBy: propSortBy, filters }: TrendingT
       sorted.sort((a, b) => b.totalVolume['1h'] - a.totalVolume['1h'])
     }
     return sorted
-  }, [tokens, sortBy])
+  }, [tokens, sortBy, updateTrigger]) // Include updateTrigger to force re-computation and re-render
 
   const formatNumber = (num: number | undefined) => {
     if (num === undefined || num === null || isNaN(num)) {
@@ -551,42 +735,42 @@ export function TrendingTokensSection({ sortBy: propSortBy, filters }: TrendingT
                     </div>
                   </div>
 
-                  {/* Market Cap */}
-                  <div className="flex flex-col justify-center items-end pr-4">
-                    <div className="text-white font-medium text-sm text-right">
-                      ${formatNumber(token.marketCap)}
+                  {/* Market Cap - Live updating - Force re-render */}
+                  <div className="flex flex-col justify-center items-end pr-4" key={`mc-${token.tokenAddress}-${updateTrigger}`}>
+                    <div className="text-white font-medium text-sm text-right" key={`mc-val-${updateTrigger}`}>
+                      {/* Include updateTrigger in render to force update */}
+                      {`$${formatNumber(token.marketCap)}`}
                     </div>
-                    <div className={`text-xs text-right ${getPriceChangeColor(token.pricePercentChange['1h'])}`}>
-                      {token.pricePercentChange['1h'] !== undefined && token.pricePercentChange['1h'] !== null && !isNaN(token.pricePercentChange['1h'])
+                    <div className={`text-xs text-right ${getPriceChangeColor(token.pricePercentChange?.['1h'])}`} key={`mc-pct-${updateTrigger}`}>
+                      {token.pricePercentChange?.['1h'] !== undefined && token.pricePercentChange['1h'] !== null && !isNaN(token.pricePercentChange['1h'])
                         ? `${token.pricePercentChange['1h'] > 0 ? '+' : ''}${token.pricePercentChange['1h'].toFixed(2)}%`
-                        : '0.00%'
-                      }
+                        : '0.00%'}
                     </div>
                   </div>
 
-                  {/* Liquidity */}
-                  <div className="flex items-center justify-end pr-4">
-                    <div className="text-white font-medium text-sm text-right">
-                      ${formatNumber(token.liquidityUsd)}
+                  {/* Liquidity - Live updating - Force re-render */}
+                  <div className="flex items-center justify-end pr-4" key={`liq-${token.tokenAddress}-${updateTrigger}`}>
+                    <div className="text-white font-medium text-sm text-right" key={`liq-val-${updateTrigger}`}>
+                      {`$${formatNumber(token.liquidityUsd)}`}
                     </div>
                   </div>
 
-                  {/* Volume */}
-                  <div className="flex items-center justify-end pr-4">
-                    <div className="text-white font-medium text-sm text-right">
-                      ${formatNumber(token.totalVolume['1h'])}
+                  {/* Volume - Live updating - Force re-render */}
+                  <div className="flex items-center justify-end pr-4" key={`vol-${token.tokenAddress}-${updateTrigger}`}>
+                    <div className="text-white font-medium text-sm text-right" key={`vol-val-${updateTrigger}`}>
+                      {`$${formatNumber(token.totalVolume?.['1h'])}`}
                     </div>
                   </div>
 
-                  {/* TXNS */}
-                  <div className="flex flex-col justify-center items-end pr-4">
-                    <div className="text-white font-medium text-sm text-right">
-                      {formatNumber(token.transactions['1h'])}
+                  {/* TXNS - Live updating - Force re-render */}
+                  <div className="flex flex-col justify-center items-end pr-4" key={`txns-${token.tokenAddress}-${updateTrigger}`}>
+                    <div className="text-white font-medium text-sm text-right" key={`txns-val-${updateTrigger}`}>
+                      {formatNumber(token.transactions?.['1h'])}
                     </div>
-                    <div className="flex items-center justify-end gap-1 text-xs">
-                      <span className="text-green-400">{token.buyTransactions['1h'] || 0}</span>
+                    <div className="flex items-center justify-end gap-1 text-xs" key={`txns-breakdown-${updateTrigger}`}>
+                      <span className="text-green-400">{token.buyTransactions?.['1h'] || 0}</span>
                       <span className="text-gray-400">/</span>
-                      <span className="text-red-400">{token.sellTransactions['1h'] || 0}</span>
+                      <span className="text-red-400">{token.sellTransactions?.['1h'] || 0}</span>
                     </div>
                   </div>
 
