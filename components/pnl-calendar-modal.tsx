@@ -1,18 +1,48 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import Image from "next/image"
-import { X, ChevronLeft, ChevronRight, DollarSign } from "lucide-react"
+import { X, ChevronLeft, ChevronRight, DollarSign, ChevronDown } from "lucide-react"
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameMonth, isToday, addMonths, subMonths } from "date-fns"
+
+export type Currency = "SOL" | "BNB" | "BTC" | "ETH" | "USDC" | "USDT" | "USD" | "EUR" | "GBP" | "JPY" | "CAD" | "AUD" | "CHF" | "CNY" | "INR" | "MXN" | "NZD" | "SGD" | "ZAR" | "BRL" | "KRW" | "HKD" | "SEK" | "NOK" | "DKK" | "PLN" | "RUB" | "TRY" | "THB" | "IDR" | "PHP"
 
 interface PNLCalendarModalProps {
   isOpen: boolean
   onClose: () => void
-  currency?: "SOL" | "BNB" | "USD"
-  onCurrencyChange?: (currency: "SOL" | "BNB" | "USD") => void
+  currency?: Currency
+  onCurrencyChange?: (currency: Currency) => void
   onDayClick?: (date: Date) => void
   onMonthlyPNLClick?: (month: Date) => void
 }
+
+const CURRENCIES: { value: Currency; label: string; icon?: string }[] = [
+  { value: "USD", label: "US Dollar" },
+  { value: "EUR", label: "Euro" },
+  { value: "GBP", label: "British Pound" },
+  { value: "JPY", label: "Japanese Yen" },
+  { value: "CAD", label: "Canadian Dollar" },
+  { value: "AUD", label: "Australian Dollar" },
+  { value: "CHF", label: "Swiss Franc" },
+  { value: "CNY", label: "Chinese Yuan" },
+  { value: "INR", label: "Indian Rupee" },
+  { value: "MXN", label: "Mexican Peso" },
+  { value: "NZD", label: "New Zealand Dollar" },
+  { value: "SGD", label: "Singapore Dollar" },
+  { value: "ZAR", label: "South African Rand" },
+  { value: "BRL", label: "Brazilian Real" },
+  { value: "KRW", label: "South Korean Won" },
+  { value: "HKD", label: "Hong Kong Dollar" },
+  { value: "SEK", label: "Swedish Krona" },
+  { value: "NOK", label: "Norwegian Krone" },
+  { value: "DKK", label: "Danish Krone" },
+  { value: "PLN", label: "Polish Złoty" },
+  { value: "RUB", label: "Russian Ruble" },
+  { value: "TRY", label: "Turkish Lira" },
+  { value: "THB", label: "Thai Baht" },
+  { value: "IDR", label: "Indonesian Rupiah" },
+  { value: "PHP", label: "Philippine Peso" },
+]
 
 interface DayPNL {
   date: Date
@@ -28,12 +58,32 @@ export function PNLCalendarModal({
   onMonthlyPNLClick
 }: PNLCalendarModalProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date())
-  const [selectedCurrency, setSelectedCurrency] = useState<"SOL" | "BNB" | "USD">(currency)
+  const [selectedCurrency, setSelectedCurrency] = useState<Currency>(currency)
+  const [isCurrencyDropdownOpen, setIsCurrencyDropdownOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
-  const handleCurrencySwitch = (newCurrency: "SOL" | "BNB" | "USD") => {
+  const handleCurrencySwitch = (newCurrency: Currency) => {
     setSelectedCurrency(newCurrency)
     onCurrencyChange?.(newCurrency)
+    setIsCurrencyDropdownOpen(false)
   }
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsCurrencyDropdownOpen(false)
+      }
+    }
+
+    if (isCurrencyDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isCurrencyDropdownOpen])
 
   const handlePreviousMonth = () => {
     setCurrentMonth(subMonths(currentMonth, 1))
@@ -95,10 +145,46 @@ export function PNLCalendarModal({
   }
 
   const formatPNLValue = (pnl: number): string => {
-    if (selectedCurrency === "SOL" || selectedCurrency === "BNB") {
+    const cryptoCurrencies: Currency[] = ["SOL", "BNB", "BTC", "ETH", "USDC", "USDT"]
+    const currencySymbols: Record<Currency, string> = {
+      "SOL": "",
+      "BNB": "",
+      "BTC": "",
+      "ETH": "",
+      "USDC": "",
+      "USDT": "",
+      "USD": "$",
+      "EUR": "€",
+      "GBP": "£",
+      "JPY": "¥",
+      "CAD": "C$",
+      "AUD": "A$",
+      "CHF": "CHF",
+      "CNY": "¥",
+      "INR": "₹",
+      "MXN": "$",
+      "NZD": "NZ$",
+      "SGD": "S$",
+      "ZAR": "R",
+      "BRL": "R$",
+      "KRW": "₩",
+      "HKD": "HK$",
+      "SEK": "kr",
+      "NOK": "kr",
+      "DKK": "kr",
+      "PLN": "zł",
+      "RUB": "₽",
+      "TRY": "₺",
+      "THB": "฿",
+      "IDR": "Rp",
+      "PHP": "₱",
+    }
+    
+    if (cryptoCurrencies.includes(selectedCurrency)) {
       return pnl === 0 ? "0" : `${pnl.toFixed(4)}`
     } else {
-      return pnl === 0 ? "$0" : `$${pnl.toFixed(2)}`
+      const symbol = currencySymbols[selectedCurrency] || "$"
+      return pnl === 0 ? `${symbol}0` : `${symbol}${pnl.toFixed(2)}`
     }
   }
 
@@ -108,7 +194,7 @@ export function PNLCalendarModal({
       onClick={onClose}
     >
       <div 
-        className="bg-[#111111] border border-[#282828] rounded-lg shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col"
+        className="bg-[#111111] border border-[#282828] rounded-lg shadow-2xl w-full max-w-[95vw] sm:max-w-2xl max-h-[90vh] sm:max-h-[80vh] overflow-hidden flex flex-col mx-2 sm:mx-0"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -116,7 +202,7 @@ export function PNLCalendarModal({
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             <h2 className="text-sm sm:text-base md:text-lg font-semibold text-white">
               PNL Calendar
-            </h2>
+          </h2>
             {/* Currency Logos */}
             <div className="flex items-center gap-1 sm:gap-1.5">
               <button
@@ -153,6 +239,61 @@ export function PNLCalendarModal({
                   className="sm:w-4 sm:h-4"
                 />
               </button>
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  onClick={() => setIsCurrencyDropdownOpen(!isCurrencyDropdownOpen)}
+                  className={`p-0.5 sm:p-1 rounded-lg transition-all ${
+                    isCurrencyDropdownOpen 
+                      ? "bg-[#1a1a1a] ring-2 ring-yellow-500/50 opacity-100" 
+                      : "hover:bg-[#1a1a1a] opacity-60 hover:opacity-100"
+                  }`}
+                  title="Select Currency"
+                >
+                  <Image 
+                    src="/currencies-icon.svg" 
+                    alt="Currencies" 
+                    width={14} 
+                    height={14} 
+                    className="sm:w-4 sm:h-4"
+                    style={{ 
+                      filter: 'brightness(0) saturate(100%) invert(70%) sepia(100%) saturate(2000%) hue-rotate(0deg) brightness(110%) contrast(150%) drop-shadow(0.5px 0 0.5px currentColor) drop-shadow(-0.5px 0 0.5px currentColor) drop-shadow(0 0.5px 0.5px currentColor) drop-shadow(0 -0.5px 0.5px currentColor) drop-shadow(0.5px 0.5px 0.5px currentColor) drop-shadow(-0.5px -0.5px 0.5px currentColor) drop-shadow(0.5px -0.5px 0.5px currentColor) drop-shadow(-0.5px 0.5px 0.5px currentColor)'
+                    }}
+                  />
+                </button>
+                
+                {/* Currency Dropdown */}
+                {isCurrencyDropdownOpen && (
+                  <div className="absolute top-full left-0 sm:left-auto sm:right-0 mt-1 sm:mt-2 w-[calc(100vw-2rem)] sm:w-48 md:w-56 max-w-[280px] bg-[#111111] border border-[#282828] rounded-lg shadow-2xl z-50 max-h-[60vh] sm:max-h-80 overflow-y-auto">
+                    <div className="p-1.5 sm:p-2">
+                      {CURRENCIES.map((curr) => (
+                        <button
+                          key={curr.value}
+                          onClick={() => handleCurrencySwitch(curr.value)}
+                          className={`w-full flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg transition-colors text-left ${
+                            selectedCurrency === curr.value
+                              ? "bg-[#1a1a1a] text-yellow-500"
+                              : "text-gray-300 hover:bg-[#1a1a1a] hover:text-white"
+                          }`}
+                        >
+                          {curr.icon && (
+                            <Image 
+                              src={curr.icon} 
+                              alt={curr.label} 
+                              width={14} 
+                              height={14} 
+                              className="rounded flex-shrink-0 sm:w-4 sm:h-4"
+                            />
+                          )}
+                          <span className="text-xs sm:text-sm font-medium flex-1 truncate">{curr.label}</span>
+                          {selectedCurrency === curr.value && (
+                            <span className="ml-auto text-yellow-500 text-xs sm:text-sm flex-shrink-0">✓</span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-between sm:justify-end">
@@ -175,32 +316,34 @@ export function PNLCalendarModal({
               </button>
             </div>
             <div className="flex items-center gap-1.5 sm:gap-2">
-              {/* Currency Switch */}
-              <button
-                onClick={() => {
-                  // Switch to USD if on SOL or BNB, switch to SOL if on USD
-                  const newCurrency = selectedCurrency === "USD" ? "SOL" : "USD"
-                  handleCurrencySwitch(newCurrency)
-                }}
-                className="p-1.5 sm:p-2 hover:bg-[#1a1a1a] rounded-lg transition-colors"
-                title={`Switch to ${selectedCurrency === "USD" ? "SOL" : "USD"}`}
-              >
-                <Image 
-                  src="/icons/ui/switchcurrency-icon.svg" 
-                  alt="Switch currency" 
+            {/* Currency Switch */}
+            <button
+              onClick={() => {
+                // Switch to USD if on crypto, switch to SOL if on fiat
+                const cryptoCurrencies: Currency[] = ["SOL", "BNB", "BTC", "ETH", "USDC", "USDT"]
+                const fiatCurrencies: Currency[] = ["USD", "EUR", "GBP", "JPY", "CAD", "AUD", "CHF", "CNY", "INR", "MXN", "NZD", "SGD", "ZAR", "BRL", "KRW", "HKD", "SEK", "NOK", "DKK", "PLN", "RUB", "TRY", "THB", "IDR", "PHP"]
+                const newCurrency = cryptoCurrencies.includes(selectedCurrency) ? "USD" : "SOL"
+                handleCurrencySwitch(newCurrency)
+              }}
+              className="p-1.5 sm:p-2 hover:bg-[#1a1a1a] rounded-lg transition-colors"
+              title={`Switch to ${["USD", "EUR", "GBP", "JPY", "CAD", "AUD", "CHF", "CNY", "INR", "MXN", "NZD", "SGD", "ZAR", "BRL", "KRW", "HKD", "SEK", "NOK", "DKK", "PLN", "RUB", "TRY", "THB", "IDR", "PHP"].includes(selectedCurrency) ? "SOL" : "USD"}`}
+            >
+              <Image 
+                src="/icons/ui/switchcurrency-icon.svg" 
+                alt="Switch currency" 
                   width={16} 
                   height={16} 
                   className="opacity-60 hover:opacity-100 transition-opacity sm:w-5 sm:h-5"
-                  style={{ filter: 'brightness(0) saturate(100%) invert(48%) sepia(79%) saturate(2476%) hue-rotate(86deg) brightness(118%) contrast(119%)' }}
-                />
-              </button>
-              {/* Close Button */}
-              <button
-                onClick={onClose}
+                style={{ filter: 'brightness(0) saturate(100%) invert(48%) sepia(79%) saturate(2476%) hue-rotate(86deg) brightness(118%) contrast(119%)' }}
+              />
+            </button>
+            {/* Close Button */}
+            <button
+              onClick={onClose}
                 className="p-1.5 sm:p-2 hover:bg-[#1a1a1a] rounded-lg transition-colors"
-              >
+            >
                 <X className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 hover:text-white" />
-              </button>
+            </button>
             </div>
           </div>
         </div>

@@ -4,12 +4,13 @@ import { useState, useRef } from "react"
 import Image from "next/image"
 import { X, Settings, Download, Copy, Upload, RefreshCw } from "lucide-react"
 import { format } from "date-fns"
+import type { Currency } from "./pnl-calendar-modal"
 
 interface PNLCardsModalProps {
   isOpen: boolean
   onClose: () => void
   selectedDate?: Date
-  currency?: "SOL" | "USD"
+  currency?: Currency
   isMonthly?: boolean
   monthData?: {
     month: Date
@@ -88,10 +89,46 @@ export function PNLCardsModal({
   }
 
   const formatCurrency = (value: number): string => {
-    if (currency === "SOL") {
-      return `${value.toFixed(2)}`
+    const cryptoCurrencies: Currency[] = ["SOL", "BNB", "BTC", "ETH", "USDC", "USDT"]
+    const currencySymbols: Record<Currency, string> = {
+      "SOL": "",
+      "BNB": "",
+      "BTC": "",
+      "ETH": "",
+      "USDC": "",
+      "USDT": "",
+      "USD": "$",
+      "EUR": "€",
+      "GBP": "£",
+      "JPY": "¥",
+      "CAD": "C$",
+      "AUD": "A$",
+      "CHF": "CHF",
+      "CNY": "¥",
+      "INR": "₹",
+      "MXN": "$",
+      "NZD": "NZ$",
+      "SGD": "S$",
+      "ZAR": "R",
+      "BRL": "R$",
+      "KRW": "₩",
+      "HKD": "HK$",
+      "SEK": "kr",
+      "NOK": "kr",
+      "DKK": "kr",
+      "PLN": "zł",
+      "RUB": "₽",
+      "TRY": "₺",
+      "THB": "฿",
+      "IDR": "Rp",
+      "PHP": "₱",
+    }
+    
+    if (cryptoCurrencies.includes(currency || "SOL")) {
+      return `${value.toFixed(4)}`
     } else {
-      return `$${value.toFixed(2)}`
+      const symbol = currencySymbols[currency || "USD"] || "$"
+      return `${symbol}${value.toFixed(2)}`
     }
   }
 

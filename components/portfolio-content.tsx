@@ -6,7 +6,7 @@ import { Plus, SlidersHorizontal, ChevronDown, Grid3x3, RefreshCw, Calendar } fr
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { PNLChartInteractive } from "@/components/pnl-chart-interactive"
-import { PNLCalendarModal } from "@/components/pnl-calendar-modal"
+import { PNLCalendarModal, type Currency } from "@/components/pnl-calendar-modal"
 import { PNLCardsModal } from "@/components/pnl-cards-modal"
 
 export function PortfolioContent() {
@@ -15,7 +15,7 @@ export function PortfolioContent() {
   const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false)
   const [isCardsModalOpen, setIsCardsModalOpen] = useState(false)
   const [isMonthlyCard, setIsMonthlyCard] = useState(false)
-  const [selectedCurrency, setSelectedCurrency] = useState<"SOL" | "BNB" | "USD">("SOL")
+  const [selectedCurrency, setSelectedCurrency] = useState<Currency>("SOL")
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const [selectedMonth, setSelectedMonth] = useState<Date>(new Date())
 
