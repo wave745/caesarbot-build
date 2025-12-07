@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { 
-  ArrowUpRight, 
+import {
+  ArrowUpRight,
   ArrowDownRight,
   ExternalLink,
   Eye
@@ -96,7 +96,7 @@ export function TrendingTokensSection({ sortBy: propSortBy, filters }: TrendingT
   const formatTimeAgo = (timestamp: number) => {
     const now = Date.now() / 1000 // Current time in seconds
     const diff = now - timestamp // Difference in seconds
-    
+
     if (diff < 60) {
       return `${Math.floor(diff)}s`
     } else if (diff < 3600) {
@@ -110,7 +110,7 @@ export function TrendingTokensSection({ sortBy: propSortBy, filters }: TrendingT
 
   const fetchDexPaidStatus = async (tokens: MoralisTrendingToken[], signal?: AbortSignal) => {
     try {
-      
+
       const tokensToCheck = tokens.map(token => ({
         chainId: token.chainId || 'solana',
         tokenAddress: token.tokenAddress
@@ -145,7 +145,7 @@ export function TrendingTokensSection({ sortBy: propSortBy, filters }: TrendingT
 
   const fetchTokenMetadata = async (tokens: MoralisTrendingToken[], signal?: AbortSignal) => {
     try {
-      
+
       const tokenAddresses = tokens.map(token => token.tokenAddress)
 
       const response = await fetch('/api/moralis/token-metadata', {
@@ -178,14 +178,14 @@ export function TrendingTokensSection({ sortBy: propSortBy, filters }: TrendingT
     }
   }
 
-  const fetchTrendingTokens = async () => {
+  const fetchTrendingTokens = useCallback(async () => {
     try {
       // NO LOADING STATE - show tokens immediately
       setError(null)
 
       // Build query parameters from filters
       const queryParams = new URLSearchParams()
-      
+
       if (filters) {
         // Add range filters
         if (filters.marketCap?.min) queryParams.append('minMarketCap', filters.marketCap.min)
@@ -196,12 +196,12 @@ export function TrendingTokensSection({ sortBy: propSortBy, filters }: TrendingT
         if (filters.liquidity?.max) queryParams.append('maxLiquidity', filters.liquidity.max)
         if (filters.holders?.min) queryParams.append('minHolders', filters.holders.min)
         if (filters.holders?.max) queryParams.append('maxHolders', filters.holders.max)
-        
+
         // Add boolean filters
         if (filters.dexPaid) queryParams.append('isPaid', 'true')
         if (filters.devStillHolding) queryParams.append('devStillHolding', 'true')
         if (filters.pumpLive) queryParams.append('pumpLive', 'true')
-        
+
         // Add keyword filters
         if (filters.includeKeywords) queryParams.append('includeKeywords', filters.includeKeywords)
         if (filters.excludeKeywords) queryParams.append('excludeKeywords', filters.excludeKeywords)
@@ -210,47 +210,95 @@ export function TrendingTokensSection({ sortBy: propSortBy, filters }: TrendingT
       // Realistic fetch with proper timeout
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 10000) // 10s timeout for reliable response
-      
+
       const url = filters ? `/api/moralis/filtered-tokens?${queryParams.toString()}` : '/api/moralis/trending-tokens'
+
+      console.log('🔍 Fetching trending tokens from:', url)
+
       const response = await fetch(url, {
         signal: controller.signal
       })
       clearTimeout(timeoutId)
 
-      const data = await response.json()
+      if (!response.ok) {
+        console.error('❌ API response not OK:', response.status, response.statusText)
+        throw new Error(`API returned ${response.status}: ${response.statusText}`)
+      }
 
-      if (data.success && data.data.length > 0) {
-        setTokens(data.data)
-        setLastUpdate(new Date())
-        setIsLoading(false) // Never show loading - always show tokens immediately
-        
-        // Fetch Dex paid status and metadata for the tokens
-        fetchDexPaidStatus(data.data, controller.signal)
-        fetchTokenMetadata(data.data, controller.signal)
+      // Check if response has content
+      const contentType = response.headers.get('content-type')
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text()
+        console.error('❌ Response is not JSON. Content-Type:', contentType, 'Body:', text.substring(0, 200))
+        throw new Error('API returned non-JSON response')
+      }
+
+      // Get response text first to check if it's empty
+      const responseText = await response.text()
+      if (!responseText || responseText.trim() === '') {
+        console.error('❌ Empty response from API')
+        throw new Error('API returned empty response')
+      }
+
+      let data
+      try {
+        data = JSON.parse(responseText)
+      } catch (parseError) {
+        console.error('❌ Failed to parse JSON response:', parseError, 'Response text:', responseText.substring(0, 200))
+        throw new Error('Failed to parse API response as JSON')
+      }
+
+      console.log('📦 API response:', { success: data.success, dataLength: data.data?.length, hasData: !!data.data, keys: Object.keys(data) })
+
+      // Handle the response - check if it has the expected structure
+      if (data && typeof data === 'object') {
+        if (data.success && data.data && Array.isArray(data.data)) {
+          if (data.data.length > 0) {
+            console.log('✅ Setting tokens:', data.data.length)
+            setTokens(data.data)
+            setLastUpdate(new Date())
+            setIsLoading(false)
+
+            // Fetch Dex paid status and metadata for the tokens
+            fetchDexPaidStatus(data.data, controller.signal)
+            fetchTokenMetadata(data.data, controller.signal)
+          } else {
+            console.warn('⚠️ API returned empty array')
+            setTokens([])
+            setError('No trending tokens available')
+            setIsLoading(false)
+          }
+        } else if (data.success === false || (data.error && !data.data)) {
+          // API explicitly returned an error
+          console.error('❌ API returned error:', data.error || 'Unknown error')
+          setError(data.error || 'Failed to load trending tokens')
+          setIsLoading(false)
+        } else {
+          // Unexpected response format
+          console.error('❌ Invalid API response format. Expected {success, data[]}, got:', data)
+          setError('Invalid response format from API')
+          setIsLoading(false)
+        }
       } else {
-        setTokens([])
-        setError(data.error || 'No trending tokens available')
-        setIsLoading(false) // Show empty state immediately
+        console.error('❌ Response is not an object:', typeof data, data)
+        setError('Invalid response from API')
+        setIsLoading(false)
       }
     } catch (err: any) {
       if (err.name === 'AbortError') {
         return
       }
+      console.error('Error fetching trending tokens:', err)
       setError(err.message || 'Failed to load trending tokens')
-      setTokens([])
+      // Don't clear tokens on error - keep existing data visible
       setIsLoading(false) // Show error state immediately
-    }
-  }
-
-  // Refetch when filters change
-  useEffect(() => {
-    if (filters) {
-      fetchTrendingTokens()
     }
   }, [filters])
 
+  // Main effect: Check cache, fetch on mount, and set up polling
   useEffect(() => {
     let abortController: AbortController | null = null
+    let intervalId: NodeJS.Timeout | null = null
 
     // Check cache first for INSTANT display
     if (tokenCache.isDataAvailable()) {
@@ -265,39 +313,19 @@ export function TrendingTokensSection({ sortBy: propSortBy, filters }: TrendingT
     fetchTrendingTokens()
 
     // Ultra-fast polling for real-time updates
-    const interval = setInterval(() => {
-      abortController = new AbortController()
+    intervalId = setInterval(() => {
       fetchTrendingTokens()
     }, 3000) // Refresh every 3 seconds for real-time updates
 
     return () => {
-      clearInterval(interval)
+      if (intervalId) {
+        clearInterval(intervalId)
+      }
       if (abortController) {
         abortController.abort()
       }
     }
-  }, [])
-
-  // Live data updates - refresh trending tokens every 30 seconds
-  useEffect(() => {
-    if (tokens.length === 0) return
-
-    const interval = setInterval(async () => {
-      try {
-        const response = await fetch('/api/moralis/trending-tokens')
-        const data = await response.json()
-        
-        if (data.success && data.data.length > 0) {
-          setTokens(data.data)
-          setLastUpdate(new Date())
-        }
-      } catch (error) {
-        console.error('Live trending data update failed:', error)
-      }
-    }, 30000) // Update every 30 seconds
-
-    return () => clearInterval(interval)
-  }, [tokens.length])
+  }, [fetchTrendingTokens])
 
   const sortedTokens = useMemo(() => {
     let sorted = [...tokens]
@@ -363,10 +391,10 @@ export function TrendingTokensSection({ sortBy: propSortBy, filters }: TrendingT
         {/* Table Header - Fixed */}
         <div className="grid py-3 bg-[#1f1f1f] border-b border-gray-800 sticky top-0 z-10" style={{ gridTemplateColumns: 'auto 120px 120px 120px 80px auto' }}>
           <div className="text-xs font-medium text-gray-400 tracking-wide pl-4">Pair info</div>
-          <div className="text-xs font-medium text-gray-400 tracking-wide">Market Cap</div>
-          <div className="text-xs font-medium text-gray-400 tracking-wide">Liquidity</div>
-          <div className="text-xs font-medium text-gray-400 tracking-wide">Volume</div>
-          <div className="text-xs font-medium text-gray-400 tracking-wide">Txns</div>
+          <div className="text-xs font-medium text-gray-400 tracking-wide text-right pr-4">Market Cap</div>
+          <div className="text-xs font-medium text-gray-400 tracking-wide text-right pr-4">Liquidity</div>
+          <div className="text-xs font-medium text-gray-400 tracking-wide text-right pr-4">Volume</div>
+          <div className="text-xs font-medium text-gray-400 tracking-wide text-right pr-4">Txns</div>
           <div className="text-xs font-medium text-gray-400 tracking-wide pl-12 pr-4">Token info</div>
         </div>
 
@@ -382,10 +410,10 @@ export function TrendingTokensSection({ sortBy: propSortBy, filters }: TrendingT
                 {Array.from({ length: 9 }).map((_, index) => (
                   <div key={index} className="grid py-3 min-h-[60px] border-b border-gray-800" style={{ gridTemplateColumns: 'auto 120px 120px 120px 80px auto' }}>
                     <div className="flex items-center pl-4"></div>
-                    <div className="flex items-center"></div>
-                    <div className="flex items-center"></div>
-                    <div className="flex items-center"></div>
-                    <div className="flex items-center"></div>
+                    <div className="flex items-center justify-end pr-4"></div>
+                    <div className="flex items-center justify-end pr-4"></div>
+                    <div className="flex items-center justify-end pr-4"></div>
+                    <div className="flex items-center justify-end pr-4"></div>
                     <div className="flex items-center pl-12 pr-4"></div>
                   </div>
                 ))}
@@ -394,8 +422,8 @@ export function TrendingTokensSection({ sortBy: propSortBy, filters }: TrendingT
           ) : (
             <div className="divide-y divide-gray-800">
               {sortedTokens.length > 0 ? sortedTokens.map((token, index) => (
-                <div 
-                  key={token.tokenAddress} 
+                <div
+                  key={token.tokenAddress}
                   className="grid py-3 hover:bg-gray-900/50 transition-colors cursor-pointer"
                   style={{ gridTemplateColumns: 'auto 120px 120px 120px 80px auto' }}
                   onClick={() => {
@@ -407,24 +435,24 @@ export function TrendingTokensSection({ sortBy: propSortBy, filters }: TrendingT
                   }}
                 >
                   {/* Pair info */}
-                    <div className="flex items-center gap-3 pl-4">
+                  <div className="flex items-center gap-3 pl-4">
                     <div className="relative">
                       <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-700 flex items-center justify-center">
                         {(() => {
                           const metadata = tokenMetadata.get(token.tokenAddress)
                           const logoUrl = metadata?.logo || token.logo
-                          
+
                           return logoUrl && logoUrl !== null ? (
-                            <img 
-                              src={logoUrl} 
-                          alt={token.symbol}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement
-                            target.style.display = 'none'
-                            target.nextElementSibling?.classList.remove('hidden')
-                          }}
-                        />
+                            <img
+                              src={logoUrl}
+                              alt={token.symbol}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement
+                                target.style.display = 'none'
+                                target.nextElementSibling?.classList.remove('hidden')
+                              }}
+                            />
                           ) : null
                         })()}
                         <div className={`w-full h-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-sm font-bold ${(() => {
@@ -439,9 +467,9 @@ export function TrendingTokensSection({ sortBy: propSortBy, filters }: TrendingT
                       {(token.tokenAddress.includes('pump') || token.tokenAddress.includes('bonk')) && (
                         <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full overflow-hidden border border-white/20">
                           {token.tokenAddress.includes('pump') ? (
-                            <img 
-                              src="/icons/platforms/pump.fun-logo.svg" 
-                              alt="Pump.fun" 
+                            <img
+                              src="/icons/platforms/pump.fun-logo.svg"
+                              alt="Pump.fun"
                               className="w-full h-full object-cover"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement
@@ -450,9 +478,9 @@ export function TrendingTokensSection({ sortBy: propSortBy, filters }: TrendingT
                               }}
                             />
                           ) : (
-                            <img 
-                              src="/icons/platforms/bonk.fun-logo.svg" 
-                              alt="BONK.fun" 
+                            <img
+                              src="/icons/platforms/bonk.fun-logo.svg"
+                              alt="BONK.fun"
                               className="w-full h-full object-cover"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement
@@ -470,82 +498,82 @@ export function TrendingTokensSection({ sortBy: propSortBy, filters }: TrendingT
                       <div className="flex items-center gap-1 mt-1">
                         <span className="text-xs text-gray-500">{formatTimeAgo(token.createdAt)}</span>
                       </div>
-                  {/* Social/Web links below token info */}
-                  <div className="flex items-center gap-1 mt-2">
-                    {(() => {
-                      const metadata = tokenMetadata.get(token.tokenAddress)
-                      const socialLinks = metadata?.socialLinks || {}
-                      
-                      return (
-                        <>
-                          {/* Reddit - only show if token has reddit link */}
-                          {socialLinks.reddit && (
-                            <a href={socialLinks.reddit} target="_blank" rel="noopener noreferrer" className="w-3 h-3 text-white hover:text-gray-300">
-                              <img src="/icons/social/reddit-icon.svg" alt="Reddit" className="w-full h-full object-cover brightness-0 invert" />
-                            </a>
-                          )}
-                          {/* Twitter/X - only show if token has twitter link */}
-                          {socialLinks.twitter && (
-                            <a href={socialLinks.twitter} target="_blank" rel="noopener noreferrer" className="w-3 h-3 text-white hover:text-gray-300">
-                              <img src="/icons/social/x-logo.svg" alt="Twitter" className="w-full h-full object-cover brightness-0 invert" />
-                            </a>
-                          )}
-                          {/* Telegram - only show if token has telegram link */}
-                          {socialLinks.telegram && (
-                            <a href={socialLinks.telegram} target="_blank" rel="noopener noreferrer" className="w-3 h-3 text-white hover:text-gray-300">
-                              <img src="/icons/social/telegram-logo.svg" alt="Telegram" className="w-full h-full object-cover brightness-0 invert" />
-                            </a>
-                          )}
-                          {/* Website - only show if token has website link */}
-                          {socialLinks.website && (
-                            <a href={socialLinks.website} target="_blank" rel="noopener noreferrer" className="w-3 h-3 text-white hover:text-gray-300">
-                              <img src="/icons/ui/web-icon.svg" alt="Website" className="w-full h-full object-cover brightness-0 invert" />
-                            </a>
-                          )}
-                          {/* Solscan - always show as it's blockchain data */}
-                          <a href={`https://solscan.io/token/${token.tokenAddress}`} target="_blank" rel="noopener noreferrer" className="w-3 h-3 text-white hover:text-gray-300">
-                            <img src="/icons/ui/search-icon.svg" alt="Solscan" className="w-full h-full object-cover brightness-0 invert" />
-                          </a>
-                        </>
-                      )
-                    })()}
+                      {/* Social/Web links below token info */}
+                      <div className="flex items-center gap-1 mt-2">
+                        {(() => {
+                          const metadata = tokenMetadata.get(token.tokenAddress)
+                          const socialLinks = metadata?.socialLinks || {}
+
+                          return (
+                            <>
+                              {/* Reddit - only show if token has reddit link */}
+                              {socialLinks.reddit && (
+                                <a href={socialLinks.reddit} target="_blank" rel="noopener noreferrer" className="w-3 h-3 text-white hover:text-gray-300">
+                                  <img src="/icons/social/reddit-icon.svg" alt="Reddit" className="w-full h-full object-cover brightness-0 invert" />
+                                </a>
+                              )}
+                              {/* Twitter/X - only show if token has twitter link */}
+                              {socialLinks.twitter && (
+                                <a href={socialLinks.twitter} target="_blank" rel="noopener noreferrer" className="w-3 h-3 text-white hover:text-gray-300">
+                                  <img src="/icons/social/x-logo.svg" alt="Twitter" className="w-full h-full object-cover brightness-0 invert" />
+                                </a>
+                              )}
+                              {/* Telegram - only show if token has telegram link */}
+                              {socialLinks.telegram && (
+                                <a href={socialLinks.telegram} target="_blank" rel="noopener noreferrer" className="w-3 h-3 text-white hover:text-gray-300">
+                                  <img src="/icons/social/telegram-logo.svg" alt="Telegram" className="w-full h-full object-cover brightness-0 invert" />
+                                </a>
+                              )}
+                              {/* Website - only show if token has website link */}
+                              {socialLinks.website && (
+                                <a href={socialLinks.website} target="_blank" rel="noopener noreferrer" className="w-3 h-3 text-white hover:text-gray-300">
+                                  <img src="/icons/ui/web-icon.svg" alt="Website" className="w-full h-full object-cover brightness-0 invert" />
+                                </a>
+                              )}
+                              {/* Solscan - always show as it's blockchain data */}
+                              <a href={`https://solscan.io/token/${token.tokenAddress}`} target="_blank" rel="noopener noreferrer" className="w-3 h-3 text-white hover:text-gray-300">
+                                <img src="/icons/ui/search-icon.svg" alt="Solscan" className="w-full h-full object-cover brightness-0 invert" />
+                              </a>
+                            </>
+                          )
+                        })()}
                       </div>
                     </div>
                   </div>
 
                   {/* Market Cap */}
-                  <div className="flex flex-col justify-center">
-                    <div className="text-white font-medium text-sm">
+                  <div className="flex flex-col justify-center items-end pr-4">
+                    <div className="text-white font-medium text-sm text-right">
                       ${formatNumber(token.marketCap)}
                     </div>
-                    <div className={`text-xs ${getPriceChangeColor(token.pricePercentChange['1h'])}`}>
-                      {token.pricePercentChange['1h'] !== undefined && token.pricePercentChange['1h'] !== null && !isNaN(token.pricePercentChange['1h']) 
+                    <div className={`text-xs text-right ${getPriceChangeColor(token.pricePercentChange['1h'])}`}>
+                      {token.pricePercentChange['1h'] !== undefined && token.pricePercentChange['1h'] !== null && !isNaN(token.pricePercentChange['1h'])
                         ? `${token.pricePercentChange['1h'] > 0 ? '+' : ''}${token.pricePercentChange['1h'].toFixed(2)}%`
                         : '0.00%'
                       }
-                      </div>
+                    </div>
                   </div>
 
                   {/* Liquidity */}
-                  <div className="flex items-center">
-                    <div className="text-white font-medium text-sm">
+                  <div className="flex items-center justify-end pr-4">
+                    <div className="text-white font-medium text-sm text-right">
                       ${formatNumber(token.liquidityUsd)}
-                      </div>
                     </div>
+                  </div>
 
-                    {/* Volume */}
-                  <div className="flex items-center">
-                    <div className="text-white font-medium text-sm">
+                  {/* Volume */}
+                  <div className="flex items-center justify-end pr-4">
+                    <div className="text-white font-medium text-sm text-right">
                       ${formatNumber(token.totalVolume['1h'])}
                     </div>
                   </div>
 
                   {/* TXNS */}
-                  <div className="flex flex-col justify-center">
-                    <div className="text-white font-medium text-sm">
+                  <div className="flex flex-col justify-center items-end pr-4">
+                    <div className="text-white font-medium text-sm text-right">
                       {formatNumber(token.transactions['1h'])}
                     </div>
-                    <div className="flex items-center gap-1 text-xs">
+                    <div className="flex items-center justify-end gap-1 text-xs">
                       <span className="text-green-400">{token.buyTransactions['1h'] || 0}</span>
                       <span className="text-gray-400">/</span>
                       <span className="text-red-400">{token.sellTransactions['1h'] || 0}</span>
@@ -557,9 +585,9 @@ export function TrendingTokensSection({ sortBy: propSortBy, filters }: TrendingT
                     {/* Top 10 holders percentage */}
                     <div className="flex items-center gap-1 text-xs mb-2">
                       <div className="w-3 h-3 rounded-full flex items-center justify-center overflow-hidden">
-                        <img 
-                          src="/icons/ui/top10H-icon.svg" 
-                          alt="Top 10 Holders" 
+                        <img
+                          src="/icons/ui/top10H-icon.svg"
+                          alt="Top 10 Holders"
                           className="w-full h-full object-cover"
                           style={{ filter: 'brightness(0) saturate(100%) invert(100%)' }}
                           onError={(e) => {
@@ -575,12 +603,12 @@ export function TrendingTokensSection({ sortBy: propSortBy, filters }: TrendingT
                     {/* Dex paid status */}
                     <div className="flex items-center gap-1 text-xs mb-2">
                       <div className="w-3 h-3 rounded-full flex items-center justify-center overflow-hidden">
-                        <img 
-                          src="/icons/platforms/dexscreener-logo.svg" 
-                          alt="DexScreener" 
+                        <img
+                          src="/icons/platforms/dexscreener-logo.svg"
+                          alt="DexScreener"
                           className="w-full h-full object-cover"
-                          style={{ 
-                            filter: dexPaidStatus.get(token.tokenAddress) 
+                          style={{
+                            filter: dexPaidStatus.get(token.tokenAddress)
                               ? 'brightness(0) saturate(100%) invert(48%) sepia(79%) saturate(2476%) hue-rotate(86deg) brightness(118%) contrast(119%)' // Green for paid
                               : 'brightness(0) saturate(100%) invert(27%) sepia(51%) saturate(2878%) hue-rotate(346deg) brightness(104%) contrast(97%)' // Red for unpaid
                           }}

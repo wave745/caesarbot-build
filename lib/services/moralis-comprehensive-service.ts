@@ -361,14 +361,36 @@ export class MoralisComprehensiveService {
       try {
         const curlCommand = `curl --request GET --url '${fullUrl}' --header 'accept: application/json' --header 'X-API-Key: ${this.apiKey}' --connect-timeout 10 --max-time 30 --retry 0 --no-keepalive --compressed --silent --show-error`
         
-        console.log(`Executing curl command (attempt ${attempt}/${retries}):`, curlCommand)
+        console.log(`Executing curl command (attempt ${attempt}/${retries}):`, curlCommand.replace(this.apiKey, '***'))
         const { stdout, stderr } = await execAsync(curlCommand)
         
         if (stderr) {
           console.error('Curl stderr:', stderr)
         }
         
-        return JSON.parse(stdout)
+        // Check if stdout is empty
+        if (!stdout || stdout.trim() === '') {
+          console.error('❌ Curl returned empty response')
+          throw new Error('Empty response from API')
+        }
+        
+        // Try to parse JSON
+        let parsed
+        try {
+          parsed = JSON.parse(stdout)
+        } catch (parseError) {
+          console.error('❌ Failed to parse JSON response:', parseError)
+          console.error('Response text (first 500 chars):', stdout.substring(0, 500))
+          throw new Error(`Invalid JSON response: ${parseError instanceof Error ? parseError.message : 'Unknown parse error'}`)
+        }
+        
+        // Check if parsed result is valid
+        if (parsed === null || parsed === undefined) {
+          console.error('❌ Parsed result is null/undefined')
+          throw new Error('Parsed response is null or undefined')
+        }
+        
+        return parsed
       } catch (error) {
         console.error(`Error executing curl command (attempt ${attempt}/${retries}):`, error)
         
@@ -582,19 +604,64 @@ export class MoralisComprehensiveService {
   // 12. Get Trending Tokens (enhanced)
   async getTrendingTokens(limit: number = 100, timeframe: string = '1h'): Promise<MoralisTokenMetadata[]> {
     try {
-      console.log(`Fetching ${limit} trending tokens from Moralis...`)
+      console.log(`Fetching ${limit} trending tokens from Moralis (timeframe: ${timeframe})...`)
       
-      const url = `https://deep-index.moralis.io/api/v2.2/tokens/trending`
-      const data = await this.executeCurlCommand(url, { 
-        chain: 'solana', 
-        limit, 
-        timeframe 
+      // Check if API key is available
+      if (!this.apiKey) {
+        console.error('❌ Moralis API key is not configured')
+        throw new Error('Moralis API key is not configured. Please set MORALIS_API_KEY or NEXT_PUBLIC_MORALIS_API_KEY environment variable.')
+      }
+      
+      // Use the same format as moralis-trending-service.ts which is known to work
+      // Build the URL with query params directly in the URL string
+      const url = `https://deep-index.moralis.io/api/v2.2/tokens/trending?chain=solana&limit=${limit}`
+      
+      // Note: timeframe parameter might not be supported by this endpoint
+      // The endpoint might only support specific timeframes or none at all
+      console.log(`🔍 Calling Moralis API: ${url}`)
+      
+      const data = await this.executeCurlCommand(url, {})
+      
+      // Validate response
+      if (!data) {
+        console.error('❌ Moralis API returned null/undefined')
+        return []
+      }
+      
+      // Check if data is an array (most common case)
+      if (Array.isArray(data)) {
+        console.log(`✅ Received ${data.length} trending tokens from Moralis`)
+        return data
+      }
+      
+      // Check if data has a result or data property (some APIs wrap the array)
+      if (data.result && Array.isArray(data.result)) {
+        console.log(`✅ Received ${data.result.length} trending tokens from Moralis (wrapped in result)`)
+        return data.result
+      }
+      
+      if (data.data && Array.isArray(data.data)) {
+        console.log(`✅ Received ${data.data.length} trending tokens from Moralis (wrapped in data)`)
+        return data.data
+      }
+      
+      // Check for error responses
+      if (data.error || data.message) {
+        console.error('❌ Moralis API returned error:', data.error || data.message)
+        return []
+      }
+      
+      // If it's an object but not an array, log it and return empty
+      console.error('❌ Unexpected response format from Moralis:', {
+        type: typeof data,
+        keys: Object.keys(data),
+        data: JSON.stringify(data).substring(0, 500)
       })
-      
-      return data
+      return []
     } catch (error) {
       console.error('Error fetching trending tokens:', error)
-      throw error
+      // Return empty array instead of throwing to prevent API route failure
+      return []
     }
   }
 

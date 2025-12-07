@@ -12,30 +12,56 @@ export async function GET(request: NextRequest) {
     const moralisService = MoralisComprehensiveService.getInstance()
     const trendingTokens = await moralisService.getTrendingTokens(limit, timeframe)
 
-    return NextResponse.json({
-      success: true,
-      data: trendingTokens,
-      meta: {
-        limit,
-        timeframe,
-        timestamp: Date.now(),
-        pollingInterval: 3000 // 3 seconds for real-time updates
-      }
-    })
-  } catch (error) {
-    console.error('API Error:', error)
+    // Validate the response
+    if (!trendingTokens) {
+      console.warn('⚠️ Moralis service returned null/undefined')
+      return NextResponse.json({
+        success: true,
+        data: [],
+        meta: {
+          limit,
+          timeframe,
+          timestamp: Date.now(),
+          pollingInterval: 3000,
+          warning: 'Service returned no data'
+        }
+      })
+    }
+
+    // Ensure it's an array
+    const tokensArray = Array.isArray(trendingTokens) ? trendingTokens : []
     
-    // Return empty array instead of error to prevent UI issues
+    console.log(`✅ Returning ${tokensArray.length} trending tokens`)
+
     return NextResponse.json({
       success: true,
-      data: [],
+      data: tokensArray,
       meta: {
         limit,
         timeframe,
         timestamp: Date.now(),
         pollingInterval: 3000,
-        error: 'API timeout - showing empty state'
+        count: tokensArray.length
       }
     })
+  } catch (error) {
+    console.error('API Error:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorStack = error instanceof Error ? error.stack : undefined
+    
+    console.error('Error details:', { errorMessage, errorStack })
+    
+    // Return error response with proper structure
+    return NextResponse.json({
+      success: false,
+      error: errorMessage,
+      data: [],
+      meta: {
+        limit,
+        timeframe,
+        timestamp: Date.now(),
+        pollingInterval: 3000
+      }
+    }, { status: 500 })
   }
 }
