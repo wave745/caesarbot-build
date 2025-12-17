@@ -3,17 +3,14 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { 
   X, 
   RotateCcw, 
   Download, 
   Upload, 
-  Save,
-  Info,
-  Check
+  Info
 } from "lucide-react"
 
 interface FilterState {
@@ -98,7 +95,8 @@ const launchpadData = [
 ]
 
 export function TrendingFilterModal({ isOpen, onClose, onApply, initialFilters, selectedChain = 'solana' }: TrendingFilterModalProps) {
-  const [activeTab, setActiveTab] = useState<'manual' | 'saved'>('manual')
+  const [filterTab, setFilterTab] = useState<'audit' | 'metrics'>('audit')
+  const [ageUnit, setAgeUnit] = useState<'m' | 'h' | 'd'>('m')
   const [filters, setFilters] = useState<FilterState>({
     launchpads: {
       pumpfun: true,
@@ -347,58 +345,165 @@ export function TrendingFilterModal({ isOpen, onClose, onApply, initialFilters, 
               </div>
             </div>
 
-            {/* Range Filters */}
+            {/* Filter Tabs */}
             <div className="space-y-3">
-              <h3 className="text-sm font-medium text-white">Range Filters</h3>
-              
-              {[
-                { key: 'marketCap', label: 'Market cap', symbol: '$' },
-                { key: 'volume', label: 'Volume', symbol: '$' },
-                { key: 'liquidity', label: 'Liquidity', symbol: '$' },
-                { key: 'top10Holders', label: 'Top 10 holders', symbol: '%' },
-                { key: 'insidersHoldings', label: 'Insiders holdings', symbol: '%' },
-                { key: 'snipersHoldings', label: 'Snipers holdings', symbol: '%' },
-                { key: 'curveProgress', label: 'Curve progress', symbol: '%' },
-                { key: 'buys', label: 'Buys', symbol: '' },
-                { key: 'sells', label: 'Sells', symbol: '' },
-                { key: 'devBonded', label: 'Dev bonded', symbol: '' },
-                { key: 'totalFees', label: 'Total fees (SOL)', symbol: '' },
-                { key: 'freshWalletsBuys', label: 'Fresh wallets buys (SOL)', symbol: '' },
-                { key: 'tokenAge', label: 'Token age (mins)', symbol: '' },
-                { key: 'holders', label: 'Holders', symbol: '' },
-                { key: 'proHolders', label: 'Pro holders', symbol: '' },
-                { key: 'bundlesHolding', label: 'Bundles holding', symbol: '%' },
-                { key: 'devHolding', label: 'Dev holding', symbol: '%' },
-                { key: 'alphaGroupMentions', label: 'Alpha group mentions', symbol: '', hasInfo: true }
-              ].map((filter) => (
-                <div key={filter.key} className="space-y-2">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setFilterTab('audit')}
+                  className={`px-4 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                    filterTab === 'audit'
+                      ? 'bg-[#282828] text-white'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  Audit
+                </button>
+                <button
+                  onClick={() => setFilterTab('metrics')}
+                  className={`px-4 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                    filterTab === 'metrics'
+                      ? 'bg-[#282828] text-white'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  Metrics
+                </button>
+              </div>
+
+              {/* Audit Tab Content */}
+              {filterTab === 'audit' && (
+                <div className="space-y-3 overflow-y-auto scrollbar-hide max-h-[50vh] pr-1">
+                  {/* Dex Paid Checkbox */}
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-300">{filter.label}</span>
-                    {filter.hasInfo && <Info className="w-3 h-3 text-gray-500" />}
+                    <Checkbox
+                      checked={filters.dexPaid}
+                      onCheckedChange={(checked) => updateFilter('dexPaid', checked)}
+                    />
+                    <span className="text-xs text-gray-300">Dex Paid</span>
                   </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1">
-                      <Input
-                        value={filters[filter.key as keyof FilterState].min}
-                        onChange={(e) => updateFilter(`${filter.key}.min`, e.target.value)}
-                        placeholder="Min"
-                        className="bg-[#111111] border-[#282828] text-white text-xs"
-                      />
+
+                  {/* Age Filter with Time Unit Dropdown */}
+                  <div className="space-y-2">
+                    <span className="text-xs text-gray-300">Age</span>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1">
+                        <Input
+                          value={filters.tokenAge.min}
+                          onChange={(e) => updateFilter('tokenAge.min', e.target.value)}
+                          placeholder="Min"
+                          className="bg-[#111111] border-[#282828] text-white text-xs"
+                        />
+                      </div>
+                      <Select value={ageUnit} onValueChange={(value: 'm' | 'h' | 'd') => setAgeUnit(value)}>
+                        <SelectTrigger className="w-12 h-9 bg-[#111111] border-[#282828] text-white text-xs px-2">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-[#111111] border-[#282828] text-white">
+                          <SelectItem value="m" className="text-white focus:bg-[#282828]">m</SelectItem>
+                          <SelectItem value="h" className="text-white focus:bg-[#282828]">h</SelectItem>
+                          <SelectItem value="d" className="text-white focus:bg-[#282828]">d</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <div className="flex-1">
+                        <Input
+                          value={filters.tokenAge.max}
+                          onChange={(e) => updateFilter('tokenAge.max', e.target.value)}
+                          placeholder="Max"
+                          className="bg-[#111111] border-[#282828] text-white text-xs"
+                        />
+                      </div>
+                      <Select value={ageUnit} onValueChange={(value: 'm' | 'h' | 'd') => setAgeUnit(value)}>
+                        <SelectTrigger className="w-12 h-9 bg-[#111111] border-[#282828] text-white text-xs px-2">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-[#111111] border-[#282828] text-white">
+                          <SelectItem value="m" className="text-white focus:bg-[#282828]">m</SelectItem>
+                          <SelectItem value="h" className="text-white focus:bg-[#282828]">h</SelectItem>
+                          <SelectItem value="d" className="text-white focus:bg-[#282828]">d</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                    <span className="text-gray-400 text-xs">{filter.symbol}</span>
-                    <div className="flex-1">
-                      <Input
-                        value={filters[filter.key as keyof FilterState].max}
-                        onChange={(e) => updateFilter(`${filter.key}.max`, e.target.value)}
-                        placeholder="Max"
-                        className="bg-[#111111] border-[#282828] text-white text-xs"
-                      />
-                    </div>
-                    <span className="text-gray-400 text-xs">{filter.symbol}</span>
                   </div>
+
+                  {/* Other Range Filters */}
+                  {[
+                    { key: 'top10Holders', label: 'Top 10 Holders %', symbol: '%' },
+                    { key: 'insidersHoldings', label: 'Insider Holding %', symbol: '%' },
+                    { key: 'bundlesHolding', label: 'Bundlers %', symbol: '%' },
+                    { key: 'devHolding', label: 'Dev Holdings %', symbol: '%' },
+                    { key: 'holders', label: 'Holders Count', symbol: '' },
+                    { key: 'proHolders', label: 'Pro Traders Count', symbol: '' }
+                  ].map((filter) => (
+                    <div key={filter.key} className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-300">{filter.label}</span>
+                        {filter.hasInfo && <Info className="w-3 h-3 text-gray-500" />}
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1">
+                          <Input
+                            value={filters[filter.key as keyof FilterState].min}
+                            onChange={(e) => updateFilter(`${filter.key}.min`, e.target.value)}
+                            placeholder="Min"
+                            className="bg-[#111111] border-[#282828] text-white text-xs"
+                          />
+                        </div>
+                        <span className="text-gray-400 text-xs">{filter.symbol}</span>
+                        <div className="flex-1">
+                          <Input
+                            value={filters[filter.key as keyof FilterState].max}
+                            onChange={(e) => updateFilter(`${filter.key}.max`, e.target.value)}
+                            placeholder="Max"
+                            className="bg-[#111111] border-[#282828] text-white text-xs"
+                          />
+                        </div>
+                        <span className="text-gray-400 text-xs">{filter.symbol}</span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
+
+              {/* Metrics Tab Content */}
+              {filterTab === 'metrics' && (
+                <div className="space-y-3 overflow-y-auto scrollbar-hide max-h-[50vh] pr-1">
+                  {[
+                    { key: 'liquidity', label: 'Liquidity ($)', symbol: '$' },
+                    { key: 'volume', label: 'Volume ($)', symbol: '$' },
+                    { key: 'marketCap', label: 'Market Cap ($)', symbol: '$' },
+                    { key: 'buys', label: 'Transactions', symbol: '' }
+                  ].map((filter) => (
+                    <div key={filter.key} className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-300">{filter.label}</span>
+                        {filter.hasInfo && <Info className="w-3 h-3 text-gray-500" />}
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1">
+                          <Input
+                            value={filters[filter.key as keyof FilterState].min}
+                            onChange={(e) => updateFilter(`${filter.key}.min`, e.target.value)}
+                            placeholder="Min"
+                            className="bg-[#111111] border-[#282828] text-white text-xs"
+                          />
+                        </div>
+                        <span className="text-gray-400 text-xs">{filter.symbol}</span>
+                        <div className="flex-1">
+                          <Input
+                            value={filters[filter.key as keyof FilterState].max}
+                            onChange={(e) => updateFilter(`${filter.key}.max`, e.target.value)}
+                            placeholder="Max"
+                            className="bg-[#111111] border-[#282828] text-white text-xs"
+                          />
+                        </div>
+                        <span className="text-gray-400 text-xs">{filter.symbol}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
         </div>
 
