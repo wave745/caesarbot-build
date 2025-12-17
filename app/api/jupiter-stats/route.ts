@@ -1,185 +1,156 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+// In-memory cache for successful API responses
+let cache: { data: any; timestamp: number } | null = null
+const CACHE_TTL = 10 * 60 * 1000 // 10 minutes cache duration
+const PRIMARY_API_URL = 'https://datapi.jup.ag/v3/launchpads/stats'
+const MAX_RETRIES = 3
+const INITIAL_TIMEOUT = 15000 // 15 seconds
+const RETRY_DELAYS = [1000, 2000, 4000] // Exponential backoff delays in ms
+
+// Validate response data structure
+function validateResponseData(data: any): boolean {
+  if (!data || typeof data !== 'object') return false
+  if (!Array.isArray(data.launchpads)) return false
+  if (data.launchpads.length === 0) return false
+  
+  // Validate each launchpad has required structure
+  return data.launchpads.every((lp: any) => {
+    return (
+      lp.launchpad &&
+      lp.stats1d &&
+      lp.stats7d &&
+      lp.stats30d &&
+      typeof lp.stats1d.volume === 'number' &&
+      typeof lp.stats7d.volume === 'number' &&
+      typeof lp.stats30d.volume === 'number'
+    )
+  })
+}
+
+// Fetch with retry logic and exponential backoff
+async function fetchWithRetry(
+  url: string,
+  retries: number = MAX_RETRIES
+): Promise<Response> {
+  let lastError: Error | null = null
+
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      // Add delay before retry (except first attempt)
+      if (attempt > 0) {
+        const delay = RETRY_DELAYS[attempt - 1] || RETRY_DELAYS[RETRY_DELAYS.length - 1]
+        await new Promise(resolve => setTimeout(resolve, delay))
+      }
+
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), INITIAL_TIMEOUT)
+
+      try {
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'User-Agent': 'CaesarX/1.0'
+          },
+          signal: controller.signal,
+          // Add cache control to prevent stale responses
+          cache: 'no-store'
+        })
+
+        clearTimeout(timeoutId)
+
+        if (response.ok) {
+          return response
+        }
+
+        // If not OK, throw error to trigger retry
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      } catch (fetchError: any) {
+        clearTimeout(timeoutId)
+        
+        if (fetchError.name === 'AbortError') {
+          throw new Error(`Request timeout after ${INITIAL_TIMEOUT}ms`)
+        }
+        throw fetchError
+      }
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error))
+      
+      // Log retry attempt
+      if (attempt < retries - 1) {
+        console.log(`Jupiter API attempt ${attempt + 1}/${retries} failed, retrying...`, lastError.message)
+      }
+    }
+  }
+
+  // All retries failed
+  throw lastError || new Error('All retry attempts failed')
+}
+
 export async function GET(request: NextRequest) {
   try {
-    console.log('Fetching Jupiter launchpad stats...')
-    
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 15000) // 15 second timeout
-    
-    const response = await fetch('https://datapi.jup.ag/v3/launchpads/stats', {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'User-Agent': 'CaesarX/1.0'
-      },
-      signal: controller.signal
-    })
-    
-    clearTimeout(timeoutId)
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
-    
+    console.log('Fetching Jupiter launchpad stats from primary source...')
+
+    // Attempt to fetch from primary source with retries
+    const response = await fetchWithRetry(PRIMARY_API_URL)
     const data = await response.json()
-    console.log('Successfully fetched Jupiter stats:', data.launchpads?.length || 0, 'launchpads')
-    
+
+    // Validate response data structure
+    if (!validateResponseData(data)) {
+      throw new Error('Invalid response data structure from API')
+    }
+
+    // Update cache with fresh data
+    cache = {
+      data: data.launchpads,
+      timestamp: Date.now()
+    }
+
+    console.log('✅ Successfully fetched Jupiter stats:', data.launchpads?.length || 0, 'launchpads')
+
     return NextResponse.json({
       success: true,
-      data: data,
+      data: { launchpads: data.launchpads },
       meta: {
         source: 'jupiter-api',
         timestamp: Date.now(),
         count: data.launchpads?.length || 0
       }
     })
-    
+
   } catch (error) {
-    console.error('Error fetching Jupiter stats:', error)
-    
-    // Check if it's a timeout error
-    const isTimeout = error instanceof Error && (
-      error.name === 'AbortError' || 
-      error.message.includes('timeout') ||
-      error.message.includes('signal timed out')
-    )
-    
-    console.log('Is timeout error:', isTimeout)
-    
-    // Return fallback data when API fails
-    const fallbackData = {
-      launchpads: [
-        {
-          launchpad: "pump.fun",
-          stats1d: {
-            newMarketShare: 73.4,
-            newVolume: 251624023,
-            newTraders: 207835,
-            volume: 486717790,
-            traders: 325269,
-            marketShare: 69.7,
-            runners: 1,
-            mints: 18813,
-            graduates: 127
-          },
-          stats7d: {
-            newMarketShare: 70.8,
-            newVolume: 1608031147,
-            newTraders: 692859,
-            volume: 2841667366,
-            traders: 1143389,
-            marketShare: 67.1,
-            runners: 5,
-            mints: 127810,
-            graduates: 740
-          },
-          stats30d: {
-            newMarketShare: 80.3,
-            newVolume: 9777224134,
-            newTraders: 2719315,
-            volume: 14579638771,
-            traders: 3864615,
-            marketShare: 75.1,
-            runners: 23,
-            mints: 645109,
-            graduates: 3972
-          },
-          newDailyStats: [],
-          dailyStats: [],
-          runners: []
-        },
-        {
-          launchpad: "raydium",
-          stats1d: {
-            newMarketShare: 15.2,
-            newVolume: 45000000,
-            newTraders: 25000,
-            volume: 120000000,
-            traders: 75000,
-            marketShare: 18.5,
-            runners: 0,
-            mints: 500,
-            graduates: 25
-          },
-          stats7d: {
-            newMarketShare: 18.1,
-            newVolume: 320000000,
-            newTraders: 180000,
-            volume: 850000000,
-            traders: 450000,
-            marketShare: 22.3,
-            runners: 2,
-            mints: 3500,
-            graduates: 150
-          },
-          stats30d: {
-            newMarketShare: 12.8,
-            newVolume: 1200000000,
-            newTraders: 650000,
-            volume: 3500000000,
-            traders: 1200000,
-            marketShare: 18.2,
-            runners: 8,
-            mints: 15000,
-            graduates: 800
-          },
-          newDailyStats: [],
-          dailyStats: [],
-          runners: []
-        },
-        {
-          launchpad: "jupiter",
-          stats1d: {
-            newMarketShare: 8.1,
-            newVolume: 25000000,
-            newTraders: 15000,
-            volume: 75000000,
-            traders: 45000,
-            marketShare: 9.8,
-            runners: 0,
-            mints: 300,
-            graduates: 12
-          },
-          stats7d: {
-            newMarketShare: 7.9,
-            newVolume: 180000000,
-            newTraders: 120000,
-            volume: 520000000,
-            traders: 280000,
-            marketShare: 8.5,
-            runners: 1,
-            mints: 2200,
-            graduates: 85
-          },
-          stats30d: {
-            newMarketShare: 5.2,
-            newVolume: 650000000,
-            newTraders: 380000,
-            volume: 1800000000,
-            traders: 750000,
-            marketShare: 6.8,
-            runners: 3,
-            mints: 8500,
-            graduates: 420
-          },
-          newDailyStats: [],
-          dailyStats: [],
-          runners: []
+    console.error('❌ Error fetching Jupiter stats from primary source:', error)
+
+    // Check if we have valid cached data
+    if (cache && (Date.now() - cache.timestamp) < CACHE_TTL) {
+      console.log('📦 Using cached data (age:', Math.round((Date.now() - cache.timestamp) / 1000), 'seconds)')
+      
+      return NextResponse.json({
+        success: true,
+        data: { launchpads: cache.data },
+        meta: {
+          source: 'cache',
+          timestamp: cache.timestamp,
+          cacheAge: Date.now() - cache.timestamp,
+          note: 'Using cached data - primary API temporarily unavailable'
         }
-      ]
+      })
     }
+
+    // No cache available or cache expired
+    console.error('❌ No cached data available and primary API failed')
     
     return NextResponse.json({
-      success: true,
-      data: fallbackData,
-      error: isTimeout ? 'API timeout - using fallback data' : 'API error - using fallback data',
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      data: null,
       meta: {
-        source: 'fallback',
+        source: 'error',
         timestamp: Date.now(),
-        note: 'Using fallback data due to API error'
+        note: 'Primary API failed and no cached data available'
       }
-    })
+    }, { status: 503 })
   }
 }

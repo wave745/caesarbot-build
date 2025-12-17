@@ -230,42 +230,42 @@ export function TrendingFilterModal({ isOpen, onClose, onApply, initialFilters, 
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-[#0b0b0b] border border-[#1e1e1e] rounded-2xl max-w-[460px] w-full max-h-[90vh] flex flex-col backdrop-blur-xl shadow-[0_0_20px_rgba(0,0,0,0.6)]">
+      <div className="bg-[#0b0b0b] border border-[#1e1e1e] rounded-2xl max-w-[460px] w-full max-h-[85vh] flex flex-col backdrop-blur-xl shadow-[0_0_20px_rgba(0,0,0,0.6)]">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-[#282828]">
-          <div className="flex items-center gap-3">
-            <h2 className="text-xl font-semibold text-white">Filters</h2>
+        <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#282828]">
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-white">Filters</h2>
             <Button
               variant="ghost"
               size="sm"
               onClick={handleReset}
-              className="text-gray-400 hover:text-white"
+              className="text-gray-400 hover:text-white h-7 w-7 p-0"
             >
-              <RotateCcw className="w-4 h-4" />
+              <RotateCcw className="w-3.5 h-3.5" />
             </Button>
           </div>
           <Button
             variant="ghost"
             size="sm"
             onClick={onClose}
-            className="text-gray-400 hover:text-white"
+            className="text-gray-400 hover:text-white h-7 w-7 p-0"
           >
-            <X className="w-4 h-4" />
+            <X className="w-3.5 h-3.5" />
           </Button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide">
             {/* Protocols Section */}
             {selectedChain === 'solana' && (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-medium text-white">Protocols</h3>
+                  <h3 className="text-base font-medium text-white">Protocols</h3>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={selectAllLaunchpads}
-                    className="text-sm text-gray-400 hover:text-white"
+                    className="text-xs text-gray-400 hover:text-white"
                   >
                     {Object.values(filters.launchpads).every(Boolean) ? 'Unselect All' : 'Select All'}
                   </Button>
@@ -313,67 +313,42 @@ export function TrendingFilterModal({ isOpen, onClose, onApply, initialFilters, 
                           className="w-4 h-4 object-contain"
                         />
                       </div>
-                      <span className="text-sm font-medium text-white">{launchpad.name}</span>
+                      <span className="text-xs font-medium text-white">{launchpad.name}</span>
                     </button>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Checkbox Filters */}
-            <div className="space-y-3">
-              <h3 className="text-sm font-medium text-white">Filters</h3>
-              
-              {[
-                { key: 'atLeastOneSocial', label: 'At least one social', hasInfo: true },
-                { key: 'originalSocials', label: 'Original socials', hasInfo: true },
-                { key: 'originalAvatar', label: 'Original avatar', hasInfo: true },
-                { key: 'dexPaid', label: 'Dex paid', hasInfo: true },
-                { key: 'devStillHolding', label: 'Dev still holding', hasInfo: false },
-                { key: 'pumpLive', label: 'Pump live', hasInfo: false }
-              ].map((filter) => (
-                <div key={filter.key} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-300">{filter.label}</span>
-                    {filter.hasInfo && <Info className="w-3 h-3 text-gray-500" />}
-                  </div>
-                  <Checkbox
-                    checked={filters[filter.key as keyof FilterState] as boolean}
-                    onCheckedChange={(checked) => updateFilter(filter.key, checked)}
-                  />
-                </div>
-              ))}
-            </div>
-
             {/* Keyword Filters */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium text-white">Keywords</h3>
+            <div className="space-y-3">
+              <h3 className="text-base font-medium text-white">Keywords</h3>
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm text-gray-400 mb-2 block">Search Keywords</label>
+                  <label className="text-xs text-gray-400 mb-2 block">Search Keywords</label>
                   <Input
                     value={filters.includeKeywords}
                     onChange={(e) => updateFilter('includeKeywords', e.target.value)}
                     placeholder="keyword1, keyword2..."
-                    className="bg-[#111111] border-[#282828] text-white h-10"
+                    className="bg-[#111111] border-[#282828] text-white h-9 text-xs"
                   />
                 </div>
                 
                 <div>
-                  <label className="text-sm text-gray-400 mb-2 block">Exclude Keywords</label>
+                  <label className="text-xs text-gray-400 mb-2 block">Exclude Keywords</label>
                   <Input
                     value={filters.excludeKeywords}
                     onChange={(e) => updateFilter('excludeKeywords', e.target.value)}
                     placeholder="keyword1, keyword2..."
-                    className="bg-[#111111] border-[#282828] text-white h-10"
+                    className="bg-[#111111] border-[#282828] text-white h-9 text-xs"
                   />
                 </div>
               </div>
             </div>
 
             {/* Range Filters */}
-            <div className="space-y-4">
+            <div className="space-y-3">
               <h3 className="text-sm font-medium text-white">Range Filters</h3>
               
               {[
@@ -398,7 +373,7 @@ export function TrendingFilterModal({ isOpen, onClose, onApply, initialFilters, 
               ].map((filter) => (
                 <div key={filter.key} className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-300">{filter.label}</span>
+                    <span className="text-xs text-gray-300">{filter.label}</span>
                     {filter.hasInfo && <Info className="w-3 h-3 text-gray-500" />}
                   </div>
                   
@@ -408,19 +383,19 @@ export function TrendingFilterModal({ isOpen, onClose, onApply, initialFilters, 
                         value={filters[filter.key as keyof FilterState].min}
                         onChange={(e) => updateFilter(`${filter.key}.min`, e.target.value)}
                         placeholder="Min"
-                        className="bg-[#111111] border-[#282828] text-white text-sm"
+                        className="bg-[#111111] border-[#282828] text-white text-xs"
                       />
                     </div>
-                    <span className="text-gray-400 text-sm">{filter.symbol}</span>
+                    <span className="text-gray-400 text-xs">{filter.symbol}</span>
                     <div className="flex-1">
                       <Input
                         value={filters[filter.key as keyof FilterState].max}
                         onChange={(e) => updateFilter(`${filter.key}.max`, e.target.value)}
                         placeholder="Max"
-                        className="bg-[#111111] border-[#282828] text-white text-sm"
+                        className="bg-[#111111] border-[#282828] text-white text-xs"
                       />
                     </div>
-                    <span className="text-gray-400 text-sm">{filter.symbol}</span>
+                    <span className="text-gray-400 text-xs">{filter.symbol}</span>
                   </div>
                 </div>
               ))}
@@ -428,27 +403,27 @@ export function TrendingFilterModal({ isOpen, onClose, onApply, initialFilters, 
         </div>
 
         {/* Footer Actions */}
-        <div className="flex items-center justify-center gap-4 p-6 border-t border-[#282828]">
+        <div className="flex items-center justify-center gap-2 px-4 py-2.5 border-t border-[#282828]">
           <Button
             variant="outline"
-            size="lg"
-            className="bg-[#111111] border-[#282828] text-white hover:bg-[#282828] px-8"
+            size="sm"
+            className="bg-[#111111] border-[#282828] text-white hover:bg-[#282828] px-4 py-1.5 text-xs h-8"
           >
-            <Upload className="w-4 h-4 mr-2" />
+            <Upload className="w-3 h-3 mr-1.5" />
             Import
           </Button>
           <Button
             variant="outline"
-            size="lg"
-            className="bg-[#111111] border-[#282828] text-white hover:bg-[#282828] px-8"
+            size="sm"
+            className="bg-[#111111] border-[#282828] text-white hover:bg-[#282828] px-4 py-1.5 text-xs h-8"
           >
-            <Download className="w-4 h-4 mr-2" />
+            <Download className="w-3 h-3 mr-1.5" />
             Export
           </Button>
           <Button
             onClick={handleApply}
-            size="lg"
-            className="bg-blue-600 hover:bg-blue-700 text-white px-8"
+            size="sm"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 text-xs h-8"
           >
             Apply All
           </Button>

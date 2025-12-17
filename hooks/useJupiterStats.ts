@@ -52,140 +52,64 @@ export interface JupiterApiResponse {
   launchpads: JupiterStats[];
 }
 
+const STORAGE_KEY = 'jupiter-stats-cache';
+const STORAGE_TTL = 10 * 60 * 1000; // 10 minutes (matches server cache)
+
+// Load from localStorage cache
+function loadFromCache(): JupiterStats[] | null {
+  if (typeof window === 'undefined') return null;
+  
+  try {
+    const cached = localStorage.getItem(STORAGE_KEY);
+    if (!cached) return null;
+    
+    const { data, timestamp } = JSON.parse(cached);
+    const age = Date.now() - timestamp;
+    
+    if (age < STORAGE_TTL && Array.isArray(data) && data.length > 0) {
+      return data;
+    }
+    
+    // Cache expired, remove it
+    localStorage.removeItem(STORAGE_KEY);
+    return null;
+  } catch (error) {
+    console.error('Error loading from cache:', error);
+    return null;
+  }
+}
+
+// Save to localStorage cache
+function saveToCache(data: JupiterStats[]): void {
+  if (typeof window === 'undefined') return;
+  
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      data,
+      timestamp: Date.now()
+    }));
+  } catch (error) {
+    console.error('Error saving to cache:', error);
+  }
+}
+
 export function useJupiterStats() {
-  const [data, setData] = useState<JupiterStats[]>([]);
+  // Initialize with cached data if available
+  const [data, setData] = useState<JupiterStats[]>(() => loadFromCache() || []);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // Fallback data for when API fails
-  const fallbackData: JupiterStats[] = [
-    {
-      launchpad: "pump.fun",
-      stats1d: {
-        newMarketShare: 73.4,
-        newVolume: 251624023,
-        newTraders: 207835,
-        volume: 486717790,
-        traders: 325269,
-        marketShare: 69.7,
-        runners: 1,
-        mints: 18813,
-        graduates: 127
-      },
-      stats7d: {
-        newMarketShare: 70.8,
-        newVolume: 1608031147,
-        newTraders: 692859,
-        volume: 2841667366,
-        traders: 1143389,
-        marketShare: 67.1,
-        runners: 5,
-        mints: 127810,
-        graduates: 740
-      },
-      stats30d: {
-        newMarketShare: 80.3,
-        newVolume: 9777224134,
-        newTraders: 2719315,
-        volume: 14579638771,
-        traders: 3864615,
-        marketShare: 75.1,
-        runners: 23,
-        mints: 645109,
-        graduates: 3972
-      },
-      newDailyStats: [],
-      dailyStats: [],
-      runners: []
-    },
-    {
-      launchpad: "raydium",
-      stats1d: {
-        newMarketShare: 15.2,
-        newVolume: 45000000,
-        newTraders: 25000,
-        volume: 120000000,
-        traders: 75000,
-        marketShare: 18.5,
-        runners: 0,
-        mints: 500,
-        graduates: 25
-      },
-      stats7d: {
-        newMarketShare: 18.1,
-        newVolume: 320000000,
-        newTraders: 180000,
-        volume: 850000000,
-        traders: 450000,
-        marketShare: 22.3,
-        runners: 2,
-        mints: 3500,
-        graduates: 150
-      },
-      stats30d: {
-        newMarketShare: 12.8,
-        newVolume: 1200000000,
-        newTraders: 650000,
-        volume: 3500000000,
-        traders: 1200000,
-        marketShare: 18.2,
-        runners: 8,
-        mints: 15000,
-        graduates: 800
-      },
-      newDailyStats: [],
-      dailyStats: [],
-      runners: []
-    },
-    {
-      launchpad: "jupiter",
-      stats1d: {
-        newMarketShare: 8.1,
-        newVolume: 25000000,
-        newTraders: 15000,
-        volume: 75000000,
-        traders: 45000,
-        marketShare: 9.8,
-        runners: 0,
-        mints: 300,
-        graduates: 12
-      },
-      stats7d: {
-        newMarketShare: 7.9,
-        newVolume: 180000000,
-        newTraders: 120000,
-        volume: 520000000,
-        traders: 280000,
-        marketShare: 8.5,
-        runners: 1,
-        mints: 2200,
-        graduates: 85
-      },
-      stats30d: {
-        newMarketShare: 5.2,
-        newVolume: 650000000,
-        newTraders: 380000,
-        volume: 1800000000,
-        traders: 750000,
-        marketShare: 6.8,
-        runners: 3,
-        mints: 8500,
-        graduates: 420
-      },
-      newDailyStats: [],
-      dailyStats: [],
-      runners: []
-    }
-  ];
+  const [isCached, setIsCached] = useState(false);
 
   useEffect(() => {
     let controller: AbortController | null = null;
     let timeoutId: NodeJS.Timeout | null = null;
+    let isMounted = true;
     
     const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
+        setIsCached(false);
         
         // Clean up previous request if it exists
         if (controller) {
@@ -197,14 +121,15 @@ export function useJupiterStats() {
           if (controller) {
             controller.abort();
           }
-        }, 10000); // 10 second timeout
+        }, 20000); // 20 second timeout (longer than server retries)
         
-        // Use our server-side API route instead of direct external API call
+        // Fetch from our server-side API route
         const response = await fetch('/api/jupiter-stats', {
           method: 'GET',
           headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache'
           },
           signal: controller.signal
         });
@@ -215,41 +140,79 @@ export function useJupiterStats() {
         }
         
         if (!response.ok) {
+          // If 503, try to use cached data
+          if (response.status === 503) {
+            const cached = loadFromCache();
+            if (cached && cached.length > 0) {
+              if (isMounted) {
+                setData(cached);
+                setIsCached(true);
+                setError('Using cached data - API temporarily unavailable');
+              }
+              return;
+            }
+          }
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         
         const result = await response.json();
-        console.log('Jupiter API response:', result);
         
-        if (result.success && result.data) {
-          setData(result.data.launchpads || []);
-          setError(result.error || null);
+        if (!isMounted) return;
+        
+        if (result.success && result.data && Array.isArray(result.data.launchpads)) {
+          const launchpads = result.data.launchpads;
+          
+          // Update state with fresh data
+          setData(launchpads);
+          setIsCached(result.meta?.source === 'cache');
+          
+          // Save to localStorage cache
+          saveToCache(launchpads);
+          
+          // Clear error if we got data
+          if (result.meta?.source === 'jupiter-api') {
+            setError(null);
+          } else if (result.meta?.source === 'cache') {
+            setError('Using cached data - API temporarily unavailable');
+          }
         } else {
-          throw new Error('Invalid response from server');
+          throw new Error('Invalid response structure from server');
         }
       } catch (err) {
+        if (!isMounted) return;
+        
         // Don't log AbortError as it's expected when component unmounts
         if (err instanceof Error && err.name !== 'AbortError') {
           console.error('Error fetching Jupiter stats:', err);
-          setError(err.message);
-        }
-        
-        // Use fallback data when API fails (but not for AbortError)
-        if (!(err instanceof Error && err.name === 'AbortError')) {
-          console.log('Using fallback data due to API error');
-          setData(fallbackData);
+          
+          // Try to use cached data as last resort
+          const cached = loadFromCache();
+          if (cached && cached.length > 0) {
+            setData(cached);
+            setIsCached(true);
+            setError('Using cached data - API request failed');
+          } else {
+            setError(err.message);
+          }
         }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchData();
     
     // Refresh data every 30 seconds
-    const interval = setInterval(fetchData, 30000);
+    const interval = setInterval(() => {
+      if (isMounted) {
+        fetchData();
+      }
+    }, 30000);
     
     return () => {
+      isMounted = false;
       clearInterval(interval);
       if (controller) {
         controller.abort();
@@ -260,5 +223,5 @@ export function useJupiterStats() {
     };
   }, []);
 
-  return { data, loading, error };
+  return { data, loading, error, isCached };
 }

@@ -13,7 +13,7 @@ export function VolumeCard({ isOpen, onClose }: { isOpen: boolean; onClose: () =
   const dragStartRef = useRef({ x: 0, y: 0 });
   const animationFrameRef = useRef<number>();
 
-  const { data: jupiterData, loading, error } = useJupiterStats();
+  const { data: jupiterData, loading, error, isCached } = useJupiterStats();
 
   const tabs = ["1d", "7d", "30d"];
 
@@ -422,7 +422,9 @@ export function VolumeCard({ isOpen, onClose }: { isOpen: boolean; onClose: () =
                 <div className="bg-blue-500 w-[40%]"></div>
               </div>
               <p className="text-right text-xs mt-1 text-gray-500 dark:text-gray-500">
-                {formatNumber(currentStats.volume)} <span className="text-green-400">Live Data</span>
+                {formatNumber(currentStats.volume)} <span className={isCached ? "text-yellow-400" : "text-green-400"}>
+                  {isCached ? "Cached Data" : "Live Data"}
+                </span>
               </p>
             </>
           ) : (
