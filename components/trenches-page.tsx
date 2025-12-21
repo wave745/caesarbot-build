@@ -2224,15 +2224,15 @@ export function TrenchesPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            aria-label="Customize"
+          <Button
+            variant="default"
+            size="sm"
             onClick={() => setShowCustomize(!showCustomize)}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-zinc-900/60 border border-zinc-700 text-zinc-200 hover:bg-zinc-800/60 transition-colors shadow-sm"
+            className="flex items-center gap-1.5"
           >
-            <Settings className="w-3 h-3 text-zinc-400" />
-            <span className="text-xs">Customize</span>
-          </button>
+            <Settings className="w-4 h-4" />
+            <span>Customize</span>
+          </Button>
         </div>
       </div>
 
