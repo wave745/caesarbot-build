@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { TrenchesColumn } from "@/components/trenches-column"
 import { TrendingFilterModal } from "@/components/trending-filter-modal"
 import { EchoCustomizeModal, type EchoSettings } from "@/components/echo-customize-modal"
+import { useDatastream } from "@/hooks/useDatastream"
 import {
   Search,
   Zap,
@@ -295,6 +296,11 @@ interface FilterState {
   alphaGroupMentions: { min: string; max: string }
 }
 
+// Primary data source for the Solana columns. The CaesarX datastream replaces the
+// per-launchpad REST pollers with one Socket.IO subscription. Flip off via
+// NEXT_PUBLIC_USE_DATASTREAM=false to fall back to the REST pollers.
+const USE_DATASTREAM = process.env.NEXT_PUBLIC_USE_DATASTREAM !== 'false'
+
 export function TrenchesPage() {
   const [selectedColumn, setSelectedColumn] = useState<'new' | 'about-to-graduate' | 'graduated'>('new')
   const [realTokens, setRealTokens] = useState<TrenchesToken[]>([])
@@ -323,6 +329,20 @@ export function TrenchesPage() {
   const [error, setError] = useState<string | null>(null)
   const [currentTime, setCurrentTime] = useState<number>(Date.now())
   const [lastUpdateTime, setLastUpdateTime] = useState<number>(Date.now())
+
+  // CaesarX datastream: one Socket.IO subscription feeds the three Solana column
+  // source-states (pumpFunTokens / mcTokens / graduatedTokens). Everything
+  // downstream — dedup, filters, sort, live-age — is unchanged and just works.
+  const datastream = useDatastream(USE_DATASTREAM)
+  useEffect(() => {
+    if (USE_DATASTREAM) setPumpFunTokens(datastream.newTokens as TrenchesToken[])
+  }, [datastream.newTokens])
+  useEffect(() => {
+    if (USE_DATASTREAM) setMcTokens(datastream.graduatingTokens as TrenchesToken[])
+  }, [datastream.graduatingTokens])
+  useEffect(() => {
+    if (USE_DATASTREAM) setGraduatedTokens(datastream.graduatedTokens as TrenchesToken[])
+  }, [datastream.graduatedTokens])
 
   // Live timer to update token ages in real-time - ULTRA-FAST for live updates
   useEffect(() => {
@@ -798,6 +818,7 @@ export function TrenchesPage() {
 
   // Live streaming for pump.fun tokens - ULTRA-FAST for live, non-stop updates
   useEffect(() => {
+    if (USE_DATASTREAM) return // datastream feeds pumpFunTokens instead
     const pollPumpFunTokens = async () => {
       // Allow concurrent requests for live updates - don't block
       isPollingRef.current = true
@@ -873,6 +894,7 @@ export function TrenchesPage() {
 
   // Live streaming for bonk.fun tokens - ULTRA-FAST for live, non-stop updates
   useEffect(() => {
+    if (USE_DATASTREAM) return // datastream is multi-launchpad; covers bonk.fun
     const pollBonkFunTokens = async () => {
       // Allow concurrent requests for live updates - don't block
       isPollingBonkFunRef.current = true
@@ -936,6 +958,7 @@ export function TrenchesPage() {
 
   // Live streaming for moon.it tokens - CONTINUOUS updates
   useEffect(() => {
+    if (USE_DATASTREAM) return // datastream is multi-launchpad; covers moon.it
     const pollMoonItTokens = async () => {
       // REMOVED: Polling guard - allow continuous updates for live trading
       isPollingMoonItRef.current = true
@@ -983,6 +1006,7 @@ export function TrenchesPage() {
 
   // Live streaming for pump.fun MC tokens (about to graduate) - CONTINUOUS updates
   useEffect(() => {
+    if (USE_DATASTREAM) return // datastream 'graduating' room feeds mcTokens
     const pollPumpFunMCTokens = async () => {
       // REMOVED: Polling guard - allow continuous updates even if previous request is pending
       // Trading platform needs maximum update frequency - let requests overlap if needed
@@ -1043,6 +1067,7 @@ export function TrenchesPage() {
 
   // Live streaming for pump.fun Graduated tokens - OPTIMIZED for faster initial load
   useEffect(() => {
+    if (USE_DATASTREAM) return // datastream 'graduated' room feeds graduatedTokens
     const pollPumpFunGraduatedTokens = async () => {
       // Allow concurrent requests for live updates - don't block
       isPollingGraduatedRef.current = true
@@ -1252,6 +1277,7 @@ export function TrenchesPage() {
 
   // Background SOL price fetcher to keep cache updated - using pump.fun API
   useEffect(() => {
+    if (USE_DATASTREAM) return // datastream provides quote.solPriceUsd on every payload
     let isUpdating = false
 
     const updateSolPrice = async () => {
@@ -1294,6 +1320,7 @@ export function TrenchesPage() {
   // Fetch all trading data in parallel for immediate loading with live updates every 1 second
   // CACHE BUSTER - Force file change to resolve fetchPumpFunMigratedTokens error
   useEffect(() => {
+    if (USE_DATASTREAM) return // datastream supplies all three Solana columns
     let isFetching = false // Prevent concurrent fetches
     let fetchTimeout: NodeJS.Timeout | null = null
 
